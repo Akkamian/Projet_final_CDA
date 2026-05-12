@@ -4,15 +4,21 @@
 
 Les formateurs indépendants, occasionnels ou débutants doivent souvent préparer seuls leurs sessions, arbitrer entre objectifs pédagogiques, séquences, timing et modalités d’animation, puis améliorer leurs prochaines formations à partir des retours apprenants. Le problème ne se limite pas à “faire une journée de formation”, mais à structurer, piloter et améliorer chaque session de manière simple et professionnelle.
 
-Aujourd’hui, beaucoup utilisent Word, Excel, PowerPoint, Notion ou du papier, ce qui rend la préparation fragmentée et le suivi post-formation peu systématique. Le besoin central ressort donc comme un manque d’outil léger qui aide à garder une vision claire du scénario pédagogique, du déroulé, et des améliorations à apporter après la session.
+Aujourd’hui, beaucoup utilisent Word, Excel, PowerPoint, Notion ou du papier, ce qui rend la préparation fragmentée et le suivi post-formation peu systématique. Le besoin central ressort donc comme un manque d’outil léger qui vise à améliorer trois moments du travail du formateur :
+- la préparation de la journée, séquence par séquence ;
+- l’animation et le suivi du timing en direct ;
+- le retour d’expérience après la session pour améliorer la prochaine version.
 
 ## 2. Persona principal
 
+### Cible principale
 *Formateur débutant ou junior, indépendant ou occasionnel*, qui anime des formations présentielles pour adultes, prépare souvent ses séances seul.
 
 Il ou elle a entre 25 et 55 ans, est dans ses premières années d’activité, et cherche à professionnaliser sa méthode sans entrer dans un LMS complexe.
 
-Ce persona prépare ses séquences sur des outils généralistes, veut gagner du temps, éviter les oublis et les dépassement de timing, mieux rythmer ses journées et être plus à l’aise pendant l’animation. Il valorise une solution simple, visuelle et concrète, qui l’aide à passer de la préparation à l’animation puis au retour d’expérience.
+Ce formateur prépare ses séquences sur des outils généralistes, veut gagner du temps, éviter les oublis et les dépassement de timing, mieux rythmer ses journées et être plus à l’aise pendant l’animation. Il valorise une solution simple, visuelle et concrète, qui l’aide à passer de la préparation à l’animation puis au retour d’expérience.
+
+### Persona
 
 | Attribut | Description |
 | :-- | :-- |
@@ -39,7 +45,7 @@ Elle permet au formateur de garder sous les yeux son scénario pédagogique pend
 
 ## 4. Fonction principale V1
 
-La V1 se concentre sur un seul flux central : créer un scénario pédagogique de formation, le consulter pendant l’animation, puis y ajouter des retours apprenants après la session. 
+La V1 se concentre sur un seul flux central : créer un scénario pédagogique de formation, le consulter pendant l’animation, puis y ajouter des retours apprenants après la session afin d'amliorer la prochaine version. 
 
 L’utilisateur doit pouvoir structurer sa journée séquence par séquence avec les champs minimum utiles : objectif, durée, activité, support, notes d’animation et retour post-session.
 
@@ -72,6 +78,8 @@ H3 : Le fait d’avoir le scénario et les feedbacks au même endroit crée une 
 Le besoin peut sembler intéressant mais être trop faible pour un usage récurrent si l’outil n’apporte pas une simplicité d'utilisation et un gain de temps immédiat.
 
 Si la V1 est trop ambitieuse, elle risque de devenir un mini-LMS au lieu d’un produit simple. cela fait porter un risque important sur la livraison de la solution en temps et en heure pour le jury de fin de formation.
+
+Prévoir une structure suffisamment simple pour être utilisée rapidement.
 
 Le persona “formateur débutant/occasionnel” peut être large ; il faudra peut-être le resserrer ensuite sur un segment prioritaire.
 
