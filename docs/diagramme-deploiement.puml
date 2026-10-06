@@ -1,0 +1,73 @@
+' ============================================================================
+' Watch Restoration Tracker — Diagramme de déploiement UML (PlantUML)
+' ----------------------------------------------------------------------------
+' Deux diagrammes :
+'   1. Vue générique (indépendante de l'hébergeur)
+'   2. Vue cible : hébergement mutualisé PlanetHoster (N0C)
+' Génération : plantuml diagramme-deploiement.puml (ou plugin VS Code)
+' ============================================================================
+
+@startuml
+title Diagramme de déploiement générique — Watch Restoration Tracker
+
+node "« device » — Poste de travail de l'horloger (mobile-first)" as client {
+    artifact "SPA Vue 3 (TypeScript)\n— bundle JS/CSS" as spa
+}
+
+node "« device » — Serveur applicatif Node.js" as app {
+    artifact "API NestJS + Prisma Client" as api
+    artifact ".env\n(DATABASE_URL, secrets, bucket)" as env
+}
+
+database "« database » — PostgreSQL 16" as pg {
+    artifact "Schéma Watch Restoration Tracker\n(script_db.sql + seed_processes.sql)" as schema
+}
+
+node "« node » — Stockage objet (S3-compatible)" as store {
+    artifact "Bucket photos\n(étapes + avant / après)" as bucket
+}
+
+client --> app : « HTTPS » (443) — JSON API
+app --> pg : « TCP/IP » (5432) — Prisma Client
+app --> store : « HTTPS » — API S3 (upload / lecture)
+
+legend bottom
+  Vue générique : aucune hypothèse d'hébergeur,
+  valable pour mutualisé, VPS ou PaaS.
+endlegend
+
+@enduml
+
+@startuml
+title Diagramme de déploiement cible — PlanetHoster mutualisé (N0C)
+
+node "« device » — Poste de travail de l'horloger (mobile-first)" as client {
+    artifact "SPA Vue 3\n— bundle JS/CSS" as spa
+}
+
+node "« device » — Serveur mutualisé PlanetHoster (N0C)" as ph {
+    node "« node » — Serveur web LiteSpeed + Passenger" as web {
+        artifact "Build statique du front\n(public_html — domaine principal)" as front
+        artifact "API NestJS (Node.js)\n(Passenger — sous-domaine api.)" as api
+        artifact ".env\n(DATABASE_URL, secrets, bucket)" as env
+    }
+    database "« database » — PostgreSQL 16\n(127.0.0.1:5432)" as pg {
+        artifact "Schéma Watch Restoration Tracker" as schema
+    }
+    node "« node » — N0C Storage (S3-compatible)" as n0c {
+        artifact "Bucket photos\n(étapes + avant / après)" as bucket
+    }
+}
+
+client --> web : « HTTPS » (443)
+front --> api : « HTTP » reverse proxy /api/*
+api --> pg : « TCP/IP » 127.0.0.1:5432 — Prisma
+api --> n0c : « HTTPS » API S3 — upload / lecture
+
+legend bottom
+  Cible retenue : hébergement mutualisé PlanetHoster (N0C).
+  Application Node.js lancée par Passenger, base locale 127.0.0.1,
+  photos sur N0C Storage (S3-compatible, inclus dans l'offre).
+endlegend
+
+@enduml
