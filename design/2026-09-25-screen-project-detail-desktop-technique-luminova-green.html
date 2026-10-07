@@ -1,0 +1,1429 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Écran desktop — Détail montre/projet, 1 projet (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E ; statut « Terminé » en accent secondaire pour
+      ne pas se confondre avec une étape cochée.
+    - Menu « ⋯ » : « Nouvelle révision » retirée tant qu'un projet est en cours
+      (RG-PRJ-09, RG-AFF-04) ; suppression du projet / de la montre ajoutée (S37, S38).
+      Le bullet plus bas qui la décrit « discrète » dans ce menu est abandonné.
+    - Checklist d'après le référentiel : automatique + jour / date = 27 étapes.
+    - Coûts : plus de catégorie (« pièce », « consommable » n'existent pas au MCD),
+      date de chaque coût, modification / suppression (S32).
+    - Performances : trois courbes (marche, beat error, amplitude, S20) et
+      modification / suppression d'une mesure (S33).
+    - Avant / après : remplacer ou retirer une photo (S34).
+
+    Écran unique détail montre/projet — cas "1 projet" (le cas courant),
+    décision validée dans brief-ecran-unique.md (2026-09-25), qui remplace
+    les décisions 1, 6 et 7 de brief-parcours-maquettes.md : plus d'écran
+    "fiche montre" séparé, la fiche montre et le détail du projet fusionnent
+    en UN SEUL écran (route /watches/:id), à une seule rubrique Finances.
+    Voir aussi docs/superpowers/specs/2026-09-23-mcd-montre-complications-design.md
+    (§ Parcours utilisateur impactés — "Écran de détail unique").
+
+    Source : 2026-09-17-screen-project-detail-desktop-technique-luminova-green.html
+    (copiée puis modifiée — l'originale n'est pas touchée). Avec un seul
+    projet, cet écran est visuellement identique au détail projet maquetté à
+    l'origine : la checklist, les performances, le bloc Finances complet
+    (achat, coûts, "Renseigner la revente", marge) et l'avant/après ne
+    changent pas. Seuls changent :
+    - Sous-titre : "mouvement · complications" (ici "Automatique · Jour / date")
+      à la place de "Calibre 6119" — le calibre fait maintenant partie du nom
+      saisi ("Seiko 6119-8100"), il n'y a plus d'attribut calibre séparé.
+    - Fil d'Ariane : "Tableau de bord / Seiko 6119-8100" (inchangé dans les
+      faits, déjà le nom de la montre — pas de 3e niveau "Projet du <date>").
+    - Barre supérieure : "Modifier le projet" devient "Modifier la montre"
+      (on modifie les infos de la montre : marque/modèle, mouvement,
+      complications ; ça n'affecte pas les étapes déjà copiées dans ce
+      projet). Le bouton principal devient "Marquer le projet terminé"
+      (vocabulaire "projet", jamais "intervention" côté interface).
+    - Ajout d'un menu "⋯" avec "Nouvelle révision sur cette montre" : reste
+      discret tant que le projet est en cours (cas illustré ici), ouvert ici
+      pour la démonstration de son contenu (normalement replié). Il serait
+      mis en avant (bouton secondaire visible) une fois le projet terminé et
+      tant que la montre n'est pas vendue, et disparaîtrait si elle est
+      vendue — voir la variante -multi pour l'illustration de cet état.
+    - Le fait "Coût de revient" du bandeau d'en-tête est conservé tel quel
+      (pas de renommage en "Coûts du projet") : avec un seul projet, coût de
+      revient de la montre et coût de revient du projet sont la même chose.
+
+    Aucune mention "fiche montre", "historique" ni "1 projet" dans l'écran :
+    la divulgation progressive fait que ce vocabulaire n'existe pas tant
+    qu'il n'y a qu'un projet.
+
+    Adaptations desktop (héritées de la maquette source, vs. la version
+    mobile) :
+    - Les 3 blocs empilés en mobile passent en 2 colonnes : le travail en
+      cours (checklist + mesures) occupe la colonne large, la synthèse de
+      référence (finances, avant/après) tient dans un rail latéral collant.
+    - Fil d'Ariane à la place de la flèche retour.
+    - Les actions destinées au projet entier remontent dans la barre
+      supérieure ; les actions de section (+ Étape, + Mesure, + Coût)
+      restent dans l'en-tête de leur bloc.
+    - En-tête en bandeau horizontal ; tableau de mesures avec colonne
+      Position (masquée en mobile).
+
+    Éco-conception : fond uni, aucune webfont, icônes SVG inline, pas
+    d'ombre portée ni d'animation, rail collant en CSS pur (aucun listener
+    scroll), graphique en SVG inline (pas de librairie de charting), menu
+    "⋯" en CSS pur (aucun JS nécessaire pour cette maquette statique).
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --sidebar-w: 236px;
+    --content-max: 1280px;
+    --topbar-h: 69px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Shell ---------- */
+
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    width: var(--sidebar-w);
+    flex: none;
+    background: var(--page-bg);
+    border-right: 1px solid var(--border);
+    padding: var(--space-5) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
+  }
+
+  .brand .mark {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 38px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .nav a:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .nav a.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .nav a svg {
+    flex: none;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    min-width: 0;
+  }
+
+  .sidebar-footer .avatar {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-footer .email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--page-bg);
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: auto;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+
+  .breadcrumb .sep {
+    color: var(--text-secondary);
+  }
+
+  .breadcrumb .current {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page {
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  /* ---------- Boutons ---------- */
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  /* ---------- Menu "⋯" ---------- */
+
+  .menu {
+    position: relative;
+  }
+
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .menu-btn:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .menu-panel {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 10;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .menu-panel .menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .menu-panel .menu-item:hover {
+    background: var(--bg);
+  }
+
+  .menu-panel .menu-note {
+    padding: var(--space-1) var(--space-3) var(--space-2);
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-width: 220px;
+  }
+
+  /* ---------- En-tête projet ---------- */
+
+  .project-header {
+    display: flex;
+    gap: var(--space-5);
+    align-items: stretch;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+  }
+
+  .project-header .photo {
+    width: 200px;
+    height: 140px;
+    flex: none;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .project-header .identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .project-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .project-header .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .header-facts {
+    display: flex;
+    gap: var(--space-6);
+    margin-top: auto;
+    padding-top: var(--space-3);
+  }
+
+  .fact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .fact .fact-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .fact .fact-value {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fact .fact-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Grille 2 colonnes ---------- */
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .col-main,
+  .col-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .col-aside {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-5));
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-header .titles {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .card-header .meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card-body {
+    padding: var(--space-4);
+  }
+
+  /* ---------- Checklist ---------- */
+
+  .progress-bar {
+    height: 4px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .progress-bar .fill {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .step-row:last-child {
+    border-bottom: none;
+  }
+
+  .step-row:hover {
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .step-row .box {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-ink);
+  }
+
+  .step-row.done .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .step-row .index {
+    width: 22px;
+    flex: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-row .label {
+    flex: 1;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .step-row.done .label {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+  }
+
+  .step-row.current .label {
+    font-weight: 600;
+  }
+
+  .step-row .step-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .step-row .step-meta .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .step-row .chevron {
+    color: var(--text-secondary);
+    flex: none;
+  }
+
+  /* ---------- Performances ---------- */
+
+  .chart-wrap {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-legend {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+
+  .chart-legend .chart-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .chart-legend .chart-latest {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chart-legend .chart-latest strong {
+    color: var(--text);
+  }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table.data th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  table.data td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  table.data tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  table.data tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .delta {
+    font-size: 12px;
+    color: var(--success);
+  }
+
+  /* ---------- Rail : finances ---------- */
+
+  .money-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .money-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: 14px;
+  }
+
+  .money-row .label {
+    color: var(--text);
+  }
+
+  .money-row .sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .money-row .amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .money-row.muted .label,
+  .money-row.muted .amount {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: var(--space-4) 0;
+  }
+
+  .total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .total-row .total-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .total-row .total-value {
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .resale-empty {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+
+  .resale-empty p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Rail : avant / après ---------- */
+
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .before-after figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .before-after .img-slot {
+    height: 110px;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .before-after .img-slot.empty {
+    border-style: dashed;
+    color: var(--text-secondary);
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: 11px;
+    text-align: center;
+    padding: var(--space-2);
+    cursor: pointer;
+  }
+
+  .before-after figcaption {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  /* ---------- Adaptations écrans réduits ---------- */
+
+  @media (max-width: 1180px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .col-aside {
+      position: static;
+    }
+  }
+
+  @media (max-width: 900px) {
+    :root {
+      --sidebar-w: 64px;
+    }
+
+    .brand .name,
+    .nav a span,
+    .sidebar-footer .email {
+      display: none;
+    }
+
+    .nav a,
+    .brand,
+    .sidebar-footer {
+      justify-content: center;
+    }
+
+    .project-header {
+      flex-direction: column;
+    }
+
+    .project-header .photo {
+      width: 100%;
+    }
+  }
+
+  /* ---- Ajouts du 2026-10-07 ---- */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .badge.status-sold .dot { background: var(--success); }
+  .icon-btn { width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; padding: 0; }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent-secondary); }
+  .row-end { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .row-actions { width: 44px; text-align: right; }
+  table.data td.row-actions { padding-left: 0; }
+  .menu-panel .menu-item.danger { color: var(--danger); }
+  .menu-panel .menu-item:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
+  .menu-panel .menu-item:disabled:hover { background: transparent; }
+  .charts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  .charts .chart-legend { flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: var(--space-2); }
+  .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
+  .ghost-btn.danger { color: var(--danger); }
+  @media (max-width: 640px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="name">Watch Restoration<br />Tracker</span>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 11.5L12 5l8 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Recherche</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Mon compte</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.3-4 4.5-6 7-6s5.7 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="email">amateur@example.com</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <nav class="breadcrumb" aria-label="Fil d'Ariane">
+          <a href="#">Tableau de bord</a>
+          <span class="sep" aria-hidden="true">/</span>
+          <span class="current">Seiko 6119-8100</span>
+        </nav>
+
+        <button class="btn-secondary">Modifier la montre</button>
+
+        <!-- Menu "⋯" : discret tant que le projet est en cours. Panneau
+             ouvert ici pour la démonstration (repliable en implémentation). -->
+        <div class="menu">
+          <button class="menu-btn" aria-haspopup="true" aria-expanded="true" aria-label="Autres actions">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="5" cy="12" r="1.6" fill="currentColor"></circle>
+              <circle cx="12" cy="12" r="1.6" fill="currentColor"></circle>
+              <circle cx="19" cy="12" r="1.6" fill="currentColor"></circle>
+            </svg>
+          </button>
+          <div class="menu-panel">
+            <button class="menu-item danger">Supprimer ce projet</button>
+            <button class="menu-item danger">Supprimer la montre</button>
+            <p class="menu-note">Suppression définitive, après confirmation. La nouvelle révision n'est pas proposée tant qu'un projet est en cours.</p>
+          </div>
+        </div>
+
+        <button class="btn-primary">Marquer le projet terminé</button>
+      </header>
+
+      <div class="page">
+        <section class="project-header">
+          <div class="photo" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+              <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+
+          <div class="identity">
+            <h2>Seiko 6119-8100</h2>
+            <span class="subtitle">Automatique · Jour / date</span>
+            <span class="badge status-progress"><span class="dot"></span>En cours</span>
+
+            <div class="header-facts">
+              <div class="fact">
+                <span class="fact-label">Achat</span>
+                <span class="fact-value">95 €</span>
+                <span class="fact-meta">2026-08-02</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Coût de revient</span>
+                <span class="fact-value">137 €</span>
+                <span class="fact-meta">achat + 3 coûts</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Progression</span>
+                <span class="fact-value">3/27</span>
+                <span class="fact-meta">étapes terminées</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Dernière mesure</span>
+                <span class="fact-value">+14 s/j</span>
+                <span class="fact-meta">2026-09-06</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="columns">
+          <div class="col-main">
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Étapes du projet</h3>
+                  <span class="meta">3/27 terminées</span>
+                </div>
+                <button class="ghost-btn">+ Étape</button>
+              </div>
+              <div class="progress-bar" aria-hidden="true">
+                <span class="fill" style="width: 11%"></span>
+              </div>
+
+              <div class="steps">
+                <a class="step-row done" href="#">
+                  <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span class="index">01</span>
+                  <span class="label">Désarmer le ressort de barillet</span>
+                  <span class="step-meta"><span class="chip">2 photos</span>
+                    <span>2026-08-04</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row done" href="#">
+                  <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span class="index">02</span>
+                  <span class="label">Sortir le mouvement du boîtier</span>
+                  <span class="step-meta"><span class="chip">3 photos</span>
+                    <span>2026-08-09</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row done" href="#">
+                  <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                  <span class="index">03</span>
+                  <span class="label">Déposer le rotor et le module automatique</span>
+                  <span class="step-meta"><span class="chip">2 photos</span>
+                    <span>2026-08-18</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row current" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">04</span>
+                  <span class="label">Déposer les aiguilles</span>
+                  <span class="step-meta"><span class="chip">1 photo</span>
+                    <span>Notes en cours</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">05</span>
+                  <span class="label">Déposer le cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">06</span>
+                  <span class="label">Déposer les disques de jour et de quantième</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">07</span>
+                  <span class="label">Déposer les éléments côté cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">08</span>
+                  <span class="label">Déposer le balancier et le coq</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">09</span>
+                  <span class="label">Déposer l'ancre et son pont</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">10</span>
+                  <span class="label">Déposer le pont de rouage et le train de rouage</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">11</span>
+                  <span class="label">Déposer le barillet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">12</span>
+                  <span class="label">Déposer le remontoir, le rochet et le cliquet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">13</span>
+                  <span class="label">Contrôler, trier et nettoyer les pièces</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">14</span>
+                  <span class="label">Remonter le remontoir et la mise à l'heure</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">15</span>
+                  <span class="label">Lubrifier et remonter le barillet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">16</span>
+                  <span class="label">Remonter le train de rouage</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">17</span>
+                  <span class="label">Poser l'ancre et son pont</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">18</span>
+                  <span class="label">Poser le balancier et le coq</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">19</span>
+                  <span class="label">Vérifier le fonctionnement du mouvement de base</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">20</span>
+                  <span class="label">Remonter le module automatique et le rotor</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">21</span>
+                  <span class="label">Remonter les éléments côté cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">22</span>
+                  <span class="label">Remonter les disques de jour et de quantième</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">23</span>
+                  <span class="label">Poser le cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">24</span>
+                  <span class="label">Poser les aiguilles</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">25</span>
+                  <span class="label">Régler et mesurer la marche</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">26</span>
+                  <span class="label">Tester le saut du jour et de la date</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">27</span>
+                  <span class="label">Emboîter et tester</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Performances du mouvement</h3>
+                  <span class="meta">3 mesures</span>
+                </div>
+                <button class="ghost-btn">+ Mesure</button>
+              </div>
+
+              <div class="chart-wrap"><div class="charts">
+                  <div class="chart">
+                    <div class="chart-legend"><span class="chart-label">Marche (s/j)</span><span class="chart-latest"><strong>+14 s/j</strong></span></div>
+                    <svg width="100%" height="90" viewBox="0 0 220 90" preserveAspectRatio="none" role="img" aria-label="Évolution : Marche (s/j)"><polyline points="10.0,6.0 110.0,56.5 210.0,84.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="110.0" cy="56.5" r="3" fill="var(--accent)"></circle><circle cx="210.0" cy="84.0" r="4" fill="var(--accent)"></circle></svg>
+                  </div>
+                  <div class="chart">
+                    <div class="chart-legend"><span class="chart-label">Beat error (ms)</span><span class="chart-latest"><strong>0.4 ms</strong></span></div>
+                    <svg width="100%" height="90" viewBox="0 0 220 90" preserveAspectRatio="none" role="img" aria-label="Évolution : Beat error (ms)"><polyline points="10.0,6.0 110.0,55.3 210.0,84.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="110.0" cy="55.3" r="3" fill="var(--accent)"></circle><circle cx="210.0" cy="84.0" r="4" fill="var(--accent)"></circle></svg>
+                  </div>
+                  <div class="chart">
+                    <div class="chart-legend"><span class="chart-label">Amplitude (°)</span><span class="chart-latest"><strong>268°</strong></span></div>
+                    <svg width="100%" height="90" viewBox="0 0 220 90" preserveAspectRatio="none" role="img" aria-label="Évolution : Amplitude (°)"><polyline points="10.0,84.0 110.0,41.2 210.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="84.0" r="3" fill="var(--accent)"></circle><circle cx="110.0" cy="41.2" r="3" fill="var(--accent)"></circle><circle cx="210.0" cy="6.0" r="4" fill="var(--accent)"></circle></svg>
+                  </div>
+                </div></div>
+
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Position</th>
+                    <th>Marche (s/j)</th>
+                    <th>Beat error</th>
+                    <th>Amplitude</th>
+                    <th><span class="sr-only"></span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2026-09-06</td>
+                    <td>Cadran haut</td>
+                    <td>+14 <span class="delta">(−12)</span></td>
+                    <td>0.4 ms</td>
+                    <td>268°</td>
+                    <td class="row-actions"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-09-06"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td>
+                  </tr><tr>
+                    <td>2026-08-29</td>
+                    <td>Cadran haut</td>
+                    <td>+26 <span class="delta">(−22)</span></td>
+                    <td>1.1 ms</td>
+                    <td>231°</td>
+                    <td class="row-actions"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-08-29"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td>
+                  </tr><tr>
+                    <td>2026-08-11</td>
+                    <td>Couronne à gauche</td>
+                    <td>+48</td>
+                    <td>2.3 ms</td>
+                    <td>186°</td>
+                    <td class="row-actions"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-08-11"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+          </div>
+
+          <div class="col-aside">
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Finances</h3>
+                </div>
+                <button class="ghost-btn">+ Coût</button>
+              </div>
+              <div class="card-body">
+                <div class="money-rows">
+                  <div class="money-row">
+                    <span class="label">Achat <span class="sub">· 2026-08-02</span></span>
+                    <span class="amount">95 €</span>
+                  </div>
+                  <div class="money-row muted">
+                    <span class="label">Verre minéral <span class="sub">· 2026-08-12</span></span>
+                    <span class="row-end"><span class="amount">18 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Verre minéral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+                  </div>
+                  <div class="money-row muted">
+                    <span class="label">Kit de joints <span class="sub">· 2026-08-12</span></span>
+                    <span class="row-end"><span class="amount">9 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Kit de joints"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+                  </div>
+                  <div class="money-row muted">
+                    <span class="label">Bain de nettoyage <span class="sub">· 2026-08-20</span></span>
+                    <span class="row-end"><span class="amount">15 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Bain de nettoyage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+                  </div>
+                </div>
+
+                <div class="divider" aria-hidden="true"></div>
+
+                <div class="total-row">
+                  <span class="total-label">Coût de revient</span>
+                  <span class="total-value">137 €</span>
+                </div>
+
+                <div class="resale-empty">
+                  <p>Revente non renseignée — la marge sera calculée dès la saisie du prix de revente.</p>
+                  <button class="btn-secondary">Renseigner la revente</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Avant / Après</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="before-after">
+                  <figure>
+                    <div class="img-slot" aria-hidden="true">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
+                        <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+                      </svg>
+                    </div>
+                    <figcaption>Avant · 2026-08-02</figcaption>
+                    <div class="photo-actions"><button class="ghost-btn">Remplacer</button><button class="ghost-btn danger">Retirer</button></div>
+                  </figure>
+                  <figure>
+                    <button class="img-slot empty">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                      </svg>
+                      Photo d'état final
+                    </button>
+                    <figcaption>Après</figcaption>
+                  </figure>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

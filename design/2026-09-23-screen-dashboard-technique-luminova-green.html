@@ -1,0 +1,363 @@
+<title>Écran — Tableau de bord (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E à la place du Luminova green.
+    - Une montre sans projet s'affiche sans miniature, avec le statut « Sans projet »
+      (RG-AFF-05, S25) : carte Hamilton Khaki ajoutée.
+    - Un clic sur une carte ouvre le détail de la montre (S25) ; le projet le plus
+      récent n'est que la sélection par défaut.
+
+    Écran "Tableau de bord" du wireframe composé avec les tokens de la
+    variante Technique / Luminova green (#11E97E, vert Luminova). Même structure que la version Lume bleu, seul l'accent change.
+
+    Mise à jour du 2026-09-23, à partir de
+    2026-07-09-screen-dashboard-technique-luminova-green.html (fichier source non
+    modifié). Décisions de docs/superpowers/specs/brief-parcours-maquettes.md
+    et 2026-09-23-mcd-montre-complications-design.md :
+    - Compteur d'en-tête en « montres » (plus « projets »).
+    - Suppression de toute ligne « Calibre … » : sous le nom, on affiche
+      désormais `Type de mouvement · complications` (ou juste le type de
+      mouvement si la montre n'a aucune complication).
+    - Vocabulaire « Vendue » (accord avec « montre ») à la place de « Vendu ».
+    - Chaque carte devient un lien qui ouvre le projet le plus récent de la
+      montre (attribut title explicite), au lieu d'un bloc statique.
+    - Pas de filtre "À restaurer" sur cet écran mobile (il n'y en avait pas
+      dans la maquette source).
+
+    Éco-conception (inchangé) : aucune webfont (pile système), icônes SVG
+    inline (zéro image bitmap), pas d'animation coûteuse, liste scrollable
+    sans JS.
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --touch-min: 44px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .caption {
+    max-width: 390px;
+    margin: 0 auto var(--space-4);
+    color: #5b6472;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .phone {
+    width: 390px;
+    height: 780px;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 1px solid #2a2f3a;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-bar {
+    flex: none;
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .app-bar h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .app-bar p {
+    margin: var(--space-1) 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .project-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4);
+    padding-bottom: 96px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .project-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    display: flex;
+    gap: var(--space-4);
+    text-align: left;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .project-card .thumb {
+    width: 52px;
+    height: 52px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .project-card .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .project-card .title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .project-card .subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .project-card .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: auto;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .badge.status-sold .dot {
+    background: var(--success);
+  }
+
+  .margin {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .margin.positive {
+    color: var(--success);
+  }
+
+  .margin.negative {
+    color: var(--danger);
+  }
+
+  .fab {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-5);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--touch-min);
+    padding: 0 var(--space-5) 0 var(--space-4);
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 12px 24px -10px rgba(17, 233, 126, 0.55);
+  }
+  .project-card .thumb.empty { border-style: dashed; }
+  .badge.status-none .dot { background: var(--text-secondary); }
+</style>
+
+<div class="wrap">
+  <p class="caption">
+    Écran — Tableau de bord · variante Technique / Luminova green
+  </p>
+  <div class="phone">
+    <div class="app-bar">
+      <h1>Tableau de bord</h1>
+      <p>5 montres</p>
+    </div>
+
+    <div class="project-list">
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Seiko 6119-8100</span>
+          <span class="subtitle">Automatique · Jour / date</span>
+          <div class="meta-row">
+            <span class="badge status-progress"><span class="dot"></span>En cours</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Landeron 48 chrono</span>
+          <span class="subtitle">Manuel · Chronographe</span>
+          <div class="meta-row">
+            <span class="badge status-done"><span class="dot"></span>Terminé</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Oris Diver Sixty-Five</span>
+          <span class="subtitle">Automatique · Date</span>
+          <div class="meta-row">
+            <span class="badge status-sold"><span class="dot"></span>Vendue</span>
+            <span class="margin positive">+185 €</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Omega Seamaster</span>
+          <span class="subtitle">Automatique · Date</span>
+          <div class="meta-row">
+            <span class="badge status-sold"><span class="dot"></span>Vendue</span>
+            <span class="margin negative">−25 €</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb empty" aria-hidden="true"></div>
+        <div class="body">
+          <span class="title">Hamilton Khaki</span>
+          <span class="subtitle">Manuel</span>
+          <div class="meta-row">
+            <span class="badge status-none"><span class="dot"></span>Sans projet</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <button class="fab" aria-label="Nouveau projet">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+      </svg>
+      Nouveau projet
+    </button>
+  </div>
+</div>

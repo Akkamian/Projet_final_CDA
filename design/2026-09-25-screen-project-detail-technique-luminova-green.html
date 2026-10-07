@@ -1,0 +1,784 @@
+<!--
+  Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+  - Accent Luminova green #11E97E ; statut « Terminé » en accent secondaire pour
+    ne pas se confondre avec une étape cochée.
+  - Menu « ⋯ » : « Nouvelle révision » retirée tant qu'un projet est en cours
+    (une montre n'a qu'un projet en cours à la fois, RG-PRJ-09 / RG-AFF-04) ;
+    « Supprimer ce projet » et « Supprimer la montre » ajoutés (S37, S38).
+    Ce qui est dit plus bas d'une révision « discrète dans ce menu » est abandonné.
+  - Checklist d'après le référentiel : automatique + jour / date = 27 étapes.
+  - Coûts : date et accès à la modification / suppression (S32) ; plus de catégorie.
+  - Performances : marche, beat error et amplitude (S20) ; modification / suppression
+    d'une mesure (S33). Avant / après : remplacer ou retirer une photo (S34).
+
+  Écran unique montre/projet — cas "1 projet" (Technique / Luminova green), mobile.
+
+  Source : reprise fidèle de 2026-07-09-screen-project-detail-technique-luminova-green.html
+  (structure, tokens, composants — copié puis modifié, l'original n'est pas
+  touché). Décision validée dans 2026-09-25-brief-ecran-unique.md : elle
+  remplace les décisions 1, 6 et 7 de brief-parcours-maquettes.md (le reste
+  de ce brief — données fictives, vocabulaire "projet", pas de "À
+  restaurer", pas de calibre séparé — reste valable). Le constat : l'usage
+  principal est "acheter une montre → une restauration → revente", donc la
+  fiche montre et le détail projet FUSIONNENT en un seul écran plutôt que
+  de suivre la structure des tables. Divulgation progressive : dans le cas
+  courant (1 seul projet, illustré ici), rien ne distingue "montre" et
+  "projet" à l'écran — pas de sélecteur, pas de mention "fiche montre" ou
+  "historique". Voir la variante ≥ 2 projets :
+  2026-09-25-screen-project-detail-technique-luminova-green-multi.html (même
+  écran, avec sélecteur de projet).
+
+  Le formulaire de revente ("Renseigner la revente") reprend le langage du
+  bloc CTA de 2026-08-26-screen-project-detail-technique-luminova-green-termine.html
+  (encart pointillé + bouton pleine largeur).
+
+  Contexte métier (MCD inchangé) : 2026-09-23-mcd-montre-complications-design.md
+  — entité WATCH (mouvement, complications, achat/revente portés par la
+  montre), statut "Vendue" au niveau montre et non plus au niveau projet.
+
+  Ajouts par rapport à l'original :
+  - Sous-titre "mouvement · complications" (ex. "Automatique · Jour / date")
+    à la place de "Calibre …" : le calibre n'est plus un champ séparé.
+  - Bouton "Marquer le projet terminé" dans l'en-tête (projet en cours).
+  - Menu "⋯" (Modifier la montre / Nouvelle révision sur cette montre) —
+    affiché ouvert ici à des fins de documentation ; "Nouvelle révision"
+    reste discrète (dans ce menu) tant que le projet est en cours.
+  - Une seule rubrique "Finances", complète, au même emplacement que dans
+    l'original : achat, coûts additionnels ("+ Coût"), revente ("Renseigner
+    la revente" — non renseignée pour ce projet en cours), marge (calculée
+    dès la saisie de la revente).
+
+  Données fictives : Seiko 6119-8100, automatique · jour/date, projet en
+  cours (3/9 étapes), achat 95 € le 2026-08-02, coûts additionnels : verre
+  minéral 18 €, kit de joints 9 €, bain de nettoyage 15 € (total 42 €),
+  revente non renseignée.
+
+  Éco-conception : fond uni, aucune webfont (police système), icônes SVG
+  inline, aucune image externe, pas d'ombre portée ni d'animation,
+  graphique de performance en SVG inline (pas de librairie de charting).
+-->
+<title>Écran — Détail montre/projet, 1 projet (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --touch-min: 44px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .caption {
+    max-width: 390px;
+    margin: 0 auto var(--space-4);
+    color: #5b6472;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .phone {
+    width: 390px;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 1px solid #2a2f3a;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+  }
+
+  .app-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    position: relative;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    flex: none;
+    margin-left: calc(-1 * var(--space-3));
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .app-bar h1 {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: 17px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-wrap {
+    position: relative;
+    flex: none;
+  }
+
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    margin-right: calc(-1 * var(--space-3));
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  .menu-popover {
+    position: absolute;
+    top: calc(100% - var(--space-2));
+    right: var(--space-3);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .menu-popover button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    min-height: var(--touch-min);
+    padding: 0 var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .menu-popover button + button {
+    border-top: 1px solid var(--border);
+  }
+
+  .block {
+    border-top: 1px solid var(--border);
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .hero {
+    height: 150px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .project-heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .project-heading h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 600;
+  }
+
+  .project-heading .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .primary-btn {
+    width: 100%;
+    min-height: var(--touch-min);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .secondary-btn {
+    width: 100%;
+    min-height: var(--touch-min);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .cta-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .kv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .kv {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .kv .kv-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .kv .kv-value {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kv .kv-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3.block-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cost-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .cost-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .cost-row .cost-amount {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+
+  .total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .total-row .total-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .resale-empty {
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .resale-empty p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .margin-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .before-after figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .before-after .img-slot {
+    height: 96px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .before-after figcaption {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .section-header .titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .section-header .progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ghost-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+  }
+
+  .checklist-item .box {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-ink);
+  }
+
+  .checklist-item.done .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checklist-item .label {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  .checklist-item.done .label {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+  }
+
+  .checklist-item .chevron {
+    color: var(--text-secondary);
+    flex: none;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+  }
+
+  .chart-card .chart-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--space-2);
+  }
+
+  .measurements {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .measurements th {
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0 var(--space-2) var(--space-2) 0;
+  }
+
+  .measurements td {
+    padding: var(--space-2) var(--space-2) var(--space-2) 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .measurements td:first-child,
+  .measurements th:first-child {
+    padding-left: 0;
+  }
+
+  /* ---- Ajouts du 2026-10-07 ---- */
+  .badge.status-sold .dot { background: var(--success); }
+  .badge.status-none .dot { background: var(--text-secondary); }
+  .cost-row { align-items: center; }
+  .cost-row .cost-date { margin-left: var(--space-2); font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .cost-end { display: inline-flex; align-items: center; gap: var(--space-1); }
+  .icon-btn { width: var(--touch-min); height: var(--touch-min); margin: -12px -12px -12px 0; flex: none; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; }
+  .measurements td.row-end { text-align: right; width: 32px; padding-right: 0; }
+  .measurements .icon-btn { width: 32px; height: 32px; margin: -8px 0; }
+  .menu-popover button.danger { color: var(--danger); }
+  .menu-popover button:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
+  .menu-popover .menu-note { margin: 0; padding: 0 var(--space-3) var(--space-2); font-size: 11px; color: var(--text-secondary); }
+  .chart-row + .chart-row { margin-top: var(--space-3); }
+  .chart-row .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-1); }
+  .chart-row .chart-label { margin-bottom: 0; }
+  .chart-row .chart-latest { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .before-after .img-slot.empty { border-style: dashed; color: var(--text-secondary); gap: var(--space-2); font-size: 11px; }
+  .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
+  .ghost-btn.danger { color: var(--danger); }
+</style>
+
+<div class="wrap">
+  <p class="caption">
+    Écran — Détail montre/projet · cas 1 projet · variante Technique / Luminova green
+  </p>
+  <div class="phone">
+    <div class="app-bar">
+      <button class="back-btn" aria-label="Retour au tableau de bord">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <h1>Seiko 6119-8100</h1>
+      <div class="menu-wrap">
+        <button class="menu-btn" aria-label="Autres actions" aria-haspopup="true" aria-expanded="true">⋯</button>
+        <!-- Menu affiché ouvert à des fins de documentation. -->
+        <div class="menu-popover" role="menu">
+          <button role="menuitem">Modifier la montre</button>
+          <button role="menuitem" class="danger">Supprimer ce projet</button>
+          <button role="menuitem" class="danger">Supprimer la montre</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="hero" aria-hidden="true">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+          <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+        </svg>
+      </div>
+      <div class="project-heading">
+        <h2>Seiko 6119-8100</h2>
+        <span class="subtitle">Automatique · Jour / date</span>
+        <span class="badge status-progress"><span class="dot"></span>En cours</span>
+      </div>
+
+      <button class="primary-btn">Marquer le projet terminé</button>
+      <span class="cta-hint">Passe le projet au statut « Terminé »</span>
+    </div>
+
+    <div class="block">
+      <h3 class="block-title">Finances</h3>
+
+      <div class="kv-grid" style="grid-template-columns: 1fr;">
+        <div class="kv">
+          <span class="kv-label">Achat</span>
+          <span class="kv-value">95 €</span>
+          <span class="kv-date">2026-08-02</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">
+          <h3 class="block-title">Coûts additionnels</h3>
+          <button class="ghost-btn">+ Coût</button>
+        </div>
+        <div class="cost-list" style="margin-top: var(--space-2)">
+          <div class="cost-row">
+            <span>Verre minéral <span class="cost-date">2026-08-12</span></span>
+            <span class="cost-end"><span class="cost-amount">18 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Verre minéral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+          <div class="cost-row">
+            <span>Kit de joints <span class="cost-date">2026-08-12</span></span>
+            <span class="cost-end"><span class="cost-amount">9 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Kit de joints"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+          <div class="cost-row">
+            <span>Bain de nettoyage <span class="cost-date">2026-08-20</span></span>
+            <span class="cost-end"><span class="cost-amount">15 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Bain de nettoyage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+        </div>
+        <div class="total-row">
+          <span class="kv-label">Total des coûts additionnels</span>
+          <span class="total-value">42 €</span>
+        </div>
+      </div>
+
+      <div class="resale-empty">
+        <p>Revente non renseignée</p>
+        <button class="secondary-btn">Renseigner la revente</button>
+      </div>
+
+      <span class="margin-note">Marge : calculée dès la saisie de la revente</span>
+    </div>
+
+    <div class="block">
+      <h3 class="block-title">Avant / Après</h3>
+      <div class="before-after">
+        <figure>
+          <div class="img-slot" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect><circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle></svg></div>
+          <figcaption>Avant</figcaption>
+          <div class="photo-actions"><button class="ghost-btn">Remplacer</button><button class="ghost-btn danger">Retirer</button></div>
+        </figure>
+        <figure>
+          <div class="img-slot empty" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect><circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle></svg>Photo d'état final</div>
+          <figcaption>Après — pas encore ajoutée</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="section-header">
+        <span class="titles">
+          <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+            Checklist de restauration
+          </h3>
+          <span class="progress-text">3/27 terminées</span>
+        </span>
+        <button class="ghost-btn">+ Étape</button>
+      </div>
+
+      <div class="checklist">
+        <div class="checklist-item done">
+          <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span class="label">Désarmer le ressort de barillet</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item done">
+          <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span class="label">Sortir le mouvement du boîtier</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item done">
+          <span class="box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          <span class="label">Déposer le rotor et le module automatique</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item">
+          <span class="box" aria-hidden="true"></span>
+          <span class="label">Déposer les aiguilles</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item">
+          <span class="box" aria-hidden="true"></span>
+          <span class="label">Déposer le cadran</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item">
+          <span class="box" aria-hidden="true"></span>
+          <span class="label">Déposer les disques de jour et de quantième</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item">
+          <span class="box" aria-hidden="true"></span>
+          <span class="label">Déposer les éléments côté cadran</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div class="checklist-item">
+          <span class="box" aria-hidden="true"></span>
+          <span class="label">Déposer le balancier et le coq</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+      </div>
+      <span class="cta-hint">19 autres étapes non affichées dans ce cadrage</span>
+    </div>
+
+    <div class="block">
+      <div class="section-header">
+        <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+          Performances du mouvement
+        </h3>
+        <button class="ghost-btn">+ Mesure</button>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Marche (s/j)</span><span class="chart-latest">+14 s/j</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Marche (s/j)"><polyline points="10.0,6.0 150.0,24.1 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="150.0" cy="24.1" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Beat error (ms)</span><span class="chart-latest">0.4 ms</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Beat error (ms)"><polyline points="10.0,6.0 150.0,23.7 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="150.0" cy="23.7" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Amplitude (°)</span><span class="chart-latest">268°</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Amplitude (°)"><polyline points="10.0,34.0 150.0,18.6 290.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="34.0" r="3" fill="var(--accent)"></circle><circle cx="150.0" cy="18.6" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="6.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        </div>
+
+      <table class="measurements">
+          <thead><tr><th>Date</th><th>Marche (s/j)</th><th>Beat error</th><th>Amplitude</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>2026-08-11</td><td>+48</td><td>2.3 ms</td><td>186°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-08-11"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-08-29</td><td>+26</td><td>1.1 ms</td><td>231°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-08-29"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-09-06</td><td>+14</td><td>0.4 ms</td><td>268°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-09-06"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+          </tbody>
+        </table>
+    </div>
+  </div>
+</div>

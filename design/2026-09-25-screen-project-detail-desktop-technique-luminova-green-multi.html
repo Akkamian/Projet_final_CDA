@@ -1,0 +1,1421 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Écran desktop — Détail montre/projet, ≥ 2 projets (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E ; statut « Terminé » en accent secondaire.
+    - « Nouvelle révision » n'est pas proposée tant qu'un projet est en cours
+      (RG-PRJ-09, RG-AFF-04) : ici le projet du 2026-09-15 est en cours, elle est
+      donc absente du menu. Menu : suppression du projet / de la montre (S37, S38).
+    - Checklist d'après le référentiel : manuel + petite seconde = 24 étapes.
+    - Coûts datés et modifiables, sans catégorie (S32).
+
+    Écran unique détail montre/projet — cas "≥ 2 projets" (cas rare : une
+    montre déjà suivie sur laquelle une révision est rouverte), décision
+    validée dans brief-ecran-unique.md (2026-09-25), qui remplace les
+    décisions 1, 6 et 7 de brief-parcours-maquettes.md : même écran que la
+    variante à 1 projet, avec un sélecteur de projet en plus. Toujours une
+    seule rubrique Finances, à un seul endroit. Voir aussi
+    docs/superpowers/specs/2026-09-23-mcd-montre-complications-design.md
+    (§ Parcours utilisateur impactés — "Écran de détail unique").
+
+    Source : cette maquette part de la coquille de
+    2026-09-25-screen-project-detail-desktop-technique-luminova-green.html (cas
+    1 projet) et s'inspire, pour le regroupement des coûts par projet, de
+    l'ancienne maquette « fiche montre » desktop du 2026-09-23
+    (supprimée, remplacée par cet écran unique).
+
+    Ce qui change par rapport au cas 1 projet :
+    - Sélecteur de projet (onglets par date) sous le bandeau d'en-tête, le
+      plus récent sélectionné par défaut : "Projet du 2026-09-15 · En cours"
+      (sélectionné) / "Projet du 2025-10-04 · Terminé".
+    - Colonne principale (checklist, performances, avant/après) : celle du
+      projet SÉLECTIONNÉ uniquement — ici le projet du 2026-09-15, tout
+      juste rouvert (0/24 étapes, aucune mesure, aucune photo).
+    - Rail Finances : reste au niveau de la MONTRE, au même endroit, et ne
+      change PAS quand on change d'onglet — achat, coûts regroupés par
+      projet (sous-total par projet, groupe du projet sélectionné mis en
+      évidence, "+ Coût" ajoute au projet sélectionné), revente, marge
+      globale (Σ coûts des deux projets).
+    - Bandeau d'en-tête : "Coût de revient" devient celui de la MONTRE
+      (achat + coûts des 2 projets = 45 + 38 + 0 = 83 €) ; "Progression" et
+      "Dernière mesure" restent ceux du projet sélectionné.
+    - "Nouvelle révision sur cette montre" (menu "⋯") : le projet
+      sélectionné par défaut (2026-09-15) est en cours, donc le bouton reste
+      discret ici, comme dans le cas à 1 projet. Règle : la révision n'est
+      mise en avant (bouton visible) que lorsque AUCUN projet n'est en cours
+      (le plus récent est terminé) et que la montre n'est pas vendue — ce
+      n'est pas le cas ici, quel que soit l'onglet sélectionné. (Corrigé le
+      2026-09-25 : la première version liait la mise en avant à l'onglet.)
+
+    Données fictives (brief-ecran-unique.md) : Lip T18, manuel · petite
+    seconde, achat 45 € le 2025-10-04. Projet du 2025-10-04 : terminé,
+    24/24 étapes, coûts verre 22 € + relumage 16 € = 38 €. Projet du
+    2026-09-15 : en cours, 0/24 étapes, 0 € de coût. Montre non vendue.
+
+    Vocabulaire "projet", jamais "intervention" (terme de conception réservé
+    au MCD).
+
+    Éco-conception : fond uni, aucune webfont, icônes SVG inline, pas
+    d'ombre portée ni d'animation, rail collant en CSS pur (aucun listener
+    scroll), menu "⋯" et onglets en CSS pur (aucun JS nécessaire pour cette
+    maquette statique).
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --sidebar-w: 236px;
+    --content-max: 1280px;
+    --topbar-h: 69px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Shell ---------- */
+
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    width: var(--sidebar-w);
+    flex: none;
+    background: var(--page-bg);
+    border-right: 1px solid var(--border);
+    padding: var(--space-5) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
+  }
+
+  .brand .mark {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 38px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .nav a:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .nav a.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .nav a svg {
+    flex: none;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    min-width: 0;
+  }
+
+  .sidebar-footer .avatar {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-footer .email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--page-bg);
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-right: auto;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .breadcrumb a {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+
+  .breadcrumb .sep {
+    color: var(--text-secondary);
+  }
+
+  .breadcrumb .current {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page {
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  /* ---------- Boutons ---------- */
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  /* ---------- Menu "⋯" ---------- */
+
+  .menu {
+    position: relative;
+  }
+
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .menu-btn:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .menu-panel {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 10;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .menu-panel .menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .menu-panel .menu-item:hover {
+    background: var(--bg);
+  }
+
+  .menu-panel .menu-note {
+    padding: var(--space-1) var(--space-3) var(--space-2);
+    font-size: 11px;
+    color: var(--text-secondary);
+    max-width: 220px;
+  }
+
+  /* ---------- En-tête projet ---------- */
+
+  .project-header {
+    display: flex;
+    gap: var(--space-5);
+    align-items: stretch;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-5);
+  }
+
+  .project-header .photo {
+    width: 200px;
+    height: 140px;
+    flex: none;
+    border-radius: var(--radius);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .project-header .identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .project-header h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .project-header .subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .badge.sm {
+    padding: 2px var(--space-2);
+    font-size: 11px;
+  }
+
+  .header-facts {
+    display: flex;
+    gap: var(--space-6);
+    margin-top: auto;
+    padding-top: var(--space-3);
+  }
+
+  .fact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .fact .fact-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .fact .fact-value {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fact .fact-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Sélecteur de projet ---------- */
+
+  .project-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .project-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .tab .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .tab.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .tab.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .tab.active {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--bg);
+    font-weight: 600;
+  }
+
+  .selector-note {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    max-width: 62ch;
+  }
+
+  /* ---------- Grille 2 colonnes ---------- */
+
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .col-main,
+  .col-aside {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+
+  .col-aside {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-5));
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-header .titles {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .card-header .meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card-body {
+    padding: var(--space-4);
+  }
+
+  .empty-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Checklist ---------- */
+
+  .progress-bar {
+    height: 4px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .progress-bar .fill {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .step-row:last-child {
+    border-bottom: none;
+  }
+
+  .step-row:hover {
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .step-row .box {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-ink);
+  }
+
+  .step-row.done .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .step-row .index {
+    width: 22px;
+    flex: none;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-row .label {
+    flex: 1;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .step-row.done .label {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+  }
+
+  .step-row.current .label {
+    font-weight: 600;
+  }
+
+  .step-row .step-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .step-row .step-meta .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .step-row .chevron {
+    color: var(--text-secondary);
+    flex: none;
+  }
+
+  /* ---------- Rail : finances ---------- */
+
+  .money-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .money-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: 14px;
+  }
+
+  .money-row .label {
+    color: var(--text);
+  }
+
+  .money-row .sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .money-row .amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .money-row.muted .label,
+  .money-row.muted .amount {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: var(--space-4) 0;
+  }
+
+  .total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .total-row .total-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .total-row .total-value {
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .resale-empty {
+    margin-top: var(--space-4);
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+
+  .resale-empty p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .margin-note {
+    margin-top: var(--space-3);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Rail : coûts regroupés par projet ---------- */
+
+  .section-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cost-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+
+  .cost-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+  }
+
+  .cost-group.selected {
+    border-color: var(--accent);
+    background: rgba(17, 233, 126, 0.06);
+  }
+
+  .cost-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .cost-group-header .project-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .cost-group-header .subtotal {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cost-items {
+    margin-top: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .cost-group .empty-note {
+    margin-top: var(--space-2);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Rail : avant / après ---------- */
+
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .before-after figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .before-after .img-slot {
+    height: 110px;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .before-after .img-slot.empty {
+    border-style: dashed;
+    color: var(--text-secondary);
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: 11px;
+    text-align: center;
+    padding: var(--space-2);
+    cursor: pointer;
+  }
+
+  .before-after figcaption {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  /* ---------- Adaptations écrans réduits ---------- */
+
+  @media (max-width: 1180px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .col-aside {
+      position: static;
+    }
+  }
+
+  @media (max-width: 900px) {
+    :root {
+      --sidebar-w: 64px;
+    }
+
+    .brand .name,
+    .nav a span,
+    .sidebar-footer .email {
+      display: none;
+    }
+
+    .nav a,
+    .brand,
+    .sidebar-footer {
+      justify-content: center;
+    }
+
+    .project-header {
+      flex-direction: column;
+    }
+
+    .project-header .photo {
+      width: 100%;
+    }
+  }
+
+  /* ---- Ajouts du 2026-10-07 ---- */
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .badge.status-sold .dot { background: var(--success); }
+  .icon-btn { width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; padding: 0; }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent-secondary); }
+  .row-end { display: inline-flex; align-items: center; gap: var(--space-2); }
+  .row-actions { width: 44px; text-align: right; }
+  table.data td.row-actions { padding-left: 0; }
+  .menu-panel .menu-item.danger { color: var(--danger); }
+  .menu-panel .menu-item:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
+  .menu-panel .menu-item:disabled:hover { background: transparent; }
+  .charts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+  .charts .chart-legend { flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: var(--space-2); }
+  .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
+  .ghost-btn.danger { color: var(--danger); }
+  @media (max-width: 640px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="name">Watch Restoration<br />Tracker</span>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 11.5L12 5l8 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Recherche</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Mon compte</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.3-4 4.5-6 7-6s5.7 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="email">amateur@example.com</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <nav class="breadcrumb" aria-label="Fil d'Ariane">
+          <a href="#">Tableau de bord</a>
+          <span class="sep" aria-hidden="true">/</span>
+          <span class="current">Lip T18</span>
+        </nav>
+
+        <button class="btn-secondary">Modifier la montre</button>
+
+        <!-- Menu "⋯" : le projet sélectionné par défaut (2026-09-15) est en
+             cours, donc "Nouvelle révision sur cette montre" reste discrète
+             ici, comme dans le cas à 1 projet. Panneau ouvert pour la
+             démonstration. -->
+        <div class="menu">
+          <button class="menu-btn" aria-haspopup="true" aria-expanded="true" aria-label="Autres actions">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <circle cx="5" cy="12" r="1.6" fill="currentColor"></circle>
+              <circle cx="12" cy="12" r="1.6" fill="currentColor"></circle>
+              <circle cx="19" cy="12" r="1.6" fill="currentColor"></circle>
+            </svg>
+          </button>
+          <div class="menu-panel">
+            <button class="menu-item danger">Supprimer ce projet</button>
+            <button class="menu-item danger">Supprimer la montre</button>
+            <p class="menu-note">Suppression définitive, après confirmation. La nouvelle révision n'est pas proposée tant qu'un projet est en cours.</p>
+          </div>
+        </div>
+
+        <button class="btn-primary">Marquer le projet terminé</button>
+      </header>
+
+      <div class="page">
+        <section class="project-header">
+          <div class="photo" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+              <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+
+          <div class="identity">
+            <h2>Lip T18</h2>
+            <span class="subtitle">Manuel · Petite seconde</span>
+            <span class="badge status-progress"><span class="dot"></span>En cours</span>
+
+            <div class="header-facts">
+              <div class="fact">
+                <span class="fact-label">Achat</span>
+                <span class="fact-value">45 €</span>
+                <span class="fact-meta">2025-10-04</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Coût de revient</span>
+                <span class="fact-value">83 €</span>
+                <span class="fact-meta">achat + 2 projets</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Progression</span>
+                <span class="fact-value">0/24</span>
+                <span class="fact-meta">projet sélectionné</span>
+              </div>
+              <div class="fact">
+                <span class="fact-label">Dernière mesure</span>
+                <span class="fact-value">—</span>
+                <span class="fact-meta">aucune mesure</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="project-selector">
+          <div class="project-tabs" role="tablist" aria-label="Projets de cette montre">
+            <a class="tab status-progress active" href="#" role="tab" aria-selected="true">
+              <span class="dot"></span>Projet du 2026-09-15 · En cours
+            </a>
+            <a class="tab status-done" href="#" role="tab" aria-selected="false">
+              <span class="dot"></span>Projet du 2025-10-04 · Terminé
+            </a>
+          </div>
+          <p class="selector-note">Un projet est en cours (2026-09-15) : « Nouvelle révision sur cette montre » n'est pas proposée, une montre n'ayant qu'un projet en cours à la fois. Elle apparaît quand plus aucun projet n'est en cours et que la montre n'est pas vendue.</p>
+        </div>
+
+        <div class="columns">
+          <div class="col-main">
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Étapes du projet</h3>
+                  <span class="meta">0/24 terminées</span>
+                </div>
+                <button class="ghost-btn">+ Étape</button>
+              </div>
+              <div class="progress-bar" aria-hidden="true">
+                <span class="fill" style="width: 0%"></span>
+              </div>
+
+              <div class="steps">
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">01</span>
+                  <span class="label">Désarmer le ressort de barillet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">02</span>
+                  <span class="label">Sortir le mouvement du boîtier</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">03</span>
+                  <span class="label">Déposer les aiguilles</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">04</span>
+                  <span class="label">Déposer le cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">05</span>
+                  <span class="label">Déposer les éléments côté cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">06</span>
+                  <span class="label">Déposer le balancier et le coq</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">07</span>
+                  <span class="label">Déposer l'ancre et son pont</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">08</span>
+                  <span class="label">Déposer le pont de rouage et le train de rouage</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">09</span>
+                  <span class="label">Déposer la roue et le mécanisme de petite seconde</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">10</span>
+                  <span class="label">Déposer le barillet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">11</span>
+                  <span class="label">Déposer le remontoir, le rochet et le cliquet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">12</span>
+                  <span class="label">Contrôler, trier et nettoyer les pièces</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">13</span>
+                  <span class="label">Remonter le remontoir et la mise à l'heure</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">14</span>
+                  <span class="label">Lubrifier et remonter le barillet</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">15</span>
+                  <span class="label">Remonter le train de rouage</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">16</span>
+                  <span class="label">Remonter la roue et le mécanisme de petite seconde</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">17</span>
+                  <span class="label">Poser l'ancre et son pont</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">18</span>
+                  <span class="label">Poser le balancier et le coq</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">19</span>
+                  <span class="label">Vérifier le fonctionnement du mouvement de base</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">20</span>
+                  <span class="label">Remonter les éléments côté cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">21</span>
+                  <span class="label">Poser le cadran</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">22</span>
+                  <span class="label">Poser les aiguilles</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">23</span>
+                  <span class="label">Régler et mesurer la marche</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+                <a class="step-row" href="#">
+                  <span class="box" aria-hidden="true"></span>
+                  <span class="index">24</span>
+                  <span class="label">Emboîter et tester</span>
+                  <span class="step-meta"><span>—</span></span>
+                  <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </a>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Performances du mouvement</h3>
+                  <span class="meta">0 mesure</span>
+                </div>
+                <button class="ghost-btn">+ Mesure</button>
+              </div>
+              <div class="card-body">
+                <p class="empty-hint">Aucune mesure enregistrée pour ce projet — la première mesure ajoutera le graphique et le tableau.</p>
+              </div>
+            </section>
+          </div>
+
+          <div class="col-aside">
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Finances</h3>
+                </div>
+                <button class="ghost-btn">+ Coût</button>
+              </div>
+              <div class="card-body">
+                <div class="money-rows">
+                  <div class="money-row">
+                    <span class="label">Achat <span class="sub">· 2025-10-04</span></span>
+                    <span class="amount">45 €</span>
+                  </div>
+                </div>
+
+                <div class="divider" aria-hidden="true"></div>
+
+                <span class="section-label">Coûts par projet</span>
+                <div class="cost-groups">
+                  <div class="cost-group selected">
+                    <div class="cost-group-header">
+                      <span class="project-label"><span class="badge status-progress sm"><span class="dot"></span>2026-09-15</span></span>
+                      <span class="subtotal">0 €</span>
+                    </div>
+                    <p class="empty-note">Aucun coût pour l'instant — « + Coût » l'ajoute à ce projet (sélectionné).</p>
+                  </div>
+
+                  <div class="cost-group">
+                    <div class="cost-group-header">
+                      <span class="project-label"><span class="badge status-done sm"><span class="dot"></span>2025-10-04</span></span>
+                      <span class="subtotal">38 €</span>
+                    </div>
+                    <div class="cost-items">
+                      <div class="money-row muted">
+                    <span class="label">Verre <span class="sub">· 2025-10-12</span></span>
+                    <span class="row-end"><span class="amount">22 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Verre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+                  </div>
+                      <div class="money-row muted">
+                    <span class="label">Relumage <span class="sub">· 2025-10-20</span></span>
+                    <span class="row-end"><span class="amount">16 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Relumage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+                  </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="divider" aria-hidden="true"></div>
+
+                <div class="total-row">
+                  <span class="total-label">Coût de revient</span>
+                  <span class="total-value">83 €</span>
+                </div>
+
+                <div class="resale-empty">
+                  <p>Revente non renseignée — la marge sera calculée dès la saisie du prix de revente.</p>
+                  <button class="btn-secondary">Renseigner la revente</button>
+                </div>
+
+                <p class="margin-note">Marge : achat + coûts des 2 projets, calculée dès la saisie de la revente</p>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <div class="titles">
+                  <h3>Avant / Après</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="before-after">
+                  <figure>
+                    <button class="img-slot empty">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                      </svg>
+                      Photo initiale
+                    </button>
+                    <figcaption>Avant</figcaption>
+                  </figure>
+                  <figure>
+                    <button class="img-slot empty">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
+                      </svg>
+                      Photo d'état final
+                    </button>
+                    <figcaption>Après</figcaption>
+                  </figure>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

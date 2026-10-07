@@ -1,0 +1,1139 @@
+<!--
+  Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+  - Accent Luminova green #11E97E ; statut « Terminé » en accent secondaire.
+  - « Nouvelle révision » n'est PAS proposée tant qu'un projet est en cours : ici un
+    projet est en cours, donc elle est absente du menu des deux téléphones
+    (RG-PRJ-09, RG-AFF-04). Les passages plus bas qui la disent « discrète dans le
+    menu » sont abandonnés.
+  - Téléphone B : « Rouvrir ce projet » est indisponible (un autre projet est en
+    cours, RG-PRJ-10). Suppression d'un projet / de la montre ajoutée (S37, S38).
+  - Checklist d'après le référentiel : manuel + petite seconde = 24 étapes.
+  - Coûts datés et modifiables (S32), mesures modifiables (S33), trois courbes (S20).
+
+  Écran unique montre/projet — cas "≥ 2 projets" (Technique / Luminova green), mobile.
+
+  Source : même écran que 2026-09-25-screen-project-detail-technique-luminova-green.html
+  (cas 1 projet — structure, tokens, composants repris de
+  2026-07-09-screen-project-detail-technique-luminova-green.html), complété ici
+  d'un SÉLECTEUR DE PROJET. Décision validée dans 2026-09-25-brief-ecran-unique.md
+  (remplace les décisions 1, 6 et 7 de brief-parcours-maquettes.md — le
+  reste de ce brief reste valable : vocabulaire "projet", pas de "À
+  restaurer", pas de calibre séparé, HTML autonome, éco-conception).
+
+  Principe : la fiche montre et le détail projet restent un seul écran même
+  quand une montre a plusieurs projets (cas rare — rouvrir une révision sur
+  une montre déjà suivie). Sous l'en-tête, un sélecteur de projet (segmented
+  par date, le plus récent sélectionné par défaut) commande la Checklist,
+  les Performances et l'Avant/Après affichés. La rubrique **Finances reste
+  unique et ne bouge pas** quand on change de projet : elle vit au niveau
+  de la montre, au même emplacement que dans le cas 1 projet, avec les
+  coûts regroupés par projet (sous-total par projet, projet sélectionné mis
+  en évidence visuellement — c'est la seule chose qui varie dans ce bloc :
+  les montants globaux, eux, sont identiques quel que soit le projet
+  sélectionné). C'est la preuve, ici, que Finances est bien une rubrique de
+  la montre et non du projet.
+
+  Deux téléphones côte à côte, sélecteur sur un projet différent à chaque
+  fois, pour montrer concrètement que les Finances ne bougent pas :
+  - Téléphone A : projet du 2026-09-15 sélectionné (en cours, 0/24 étapes) —
+    vue par défaut à l'arrivée sur l'écran. "Nouvelle révision sur cette
+    montre" reste discrète, dans le menu "⋯", tant que ce projet est en
+    cours.
+  - Téléphone B : projet du 2025-10-04 sélectionné (terminé, 12/12), consulté
+    en historique. "Nouvelle révision sur cette montre" reste dans le menu
+    "⋯" : un projet est déjà en cours sur cette montre (2026-09-15).
+    Règle : la révision n'est mise en avant (bouton visible) que lorsque
+    AUCUN projet n'est en cours — le plus récent est terminé — et que la
+    montre n'est pas vendue ; elle est absente si la montre est vendue.
+    (Corrigé le 2026-09-25 : la première version la mettait en avant ici,
+    alors qu'un projet était déjà en cours.)
+
+  Contexte métier (MCD inchangé) : 2026-09-23-mcd-montre-complications-design.md
+  — entité WATCH (mouvement, complications, achat/revente portés par la
+  montre, 0..n projets).
+
+  Données fictives : Lip T18, manuel · petite seconde, achat 45 € le
+  2025-10-04, montre non vendue.
+  - Projet du 2025-10-04 : terminé, 24/24 étapes, coûts verre 22 € +
+    relumage 16 € = 38 €.
+  - Projet du 2026-09-15 : en cours, 0/24 étapes, aucun coût.
+  - Total des coûts (tous projets) : 38 €.
+
+  Éco-conception : fond uni, aucune webfont (police système), icônes SVG
+  inline, aucune image externe, pas d'ombre portée ni d'animation,
+  graphique de performance en SVG inline (pas de librairie de charting) ;
+  historique affiché en totalité (2 projets, pas de pagination nécessaire
+  à cette échelle).
+-->
+<title>Écran — Détail montre/projet, ≥ 2 projets (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --touch-min: 44px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .phones-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--space-6);
+  }
+
+  .wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .caption {
+    max-width: 390px;
+    margin: 0 auto var(--space-4);
+    color: #5b6472;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .phone {
+    width: 390px;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 1px solid #2a2f3a;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+  }
+
+  .app-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    position: relative;
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    flex: none;
+    margin-left: calc(-1 * var(--space-3));
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .app-bar h1 {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: 17px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-wrap {
+    position: relative;
+    flex: none;
+  }
+
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    margin-right: calc(-1 * var(--space-3));
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 20px;
+    line-height: 1;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+
+  .menu-popover {
+    position: absolute;
+    top: calc(100% - var(--space-2));
+    right: var(--space-3);
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-1);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.6);
+  }
+
+  .menu-popover button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    min-height: var(--touch-min);
+    padding: 0 var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .menu-popover button + button {
+    border-top: 1px solid var(--border);
+  }
+
+  .block {
+    border-top: 1px solid var(--border);
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .hero {
+    height: 150px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .project-heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .project-heading h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 600;
+  }
+
+  .project-heading .subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .project-tabs {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .project-tab {
+    flex: 1;
+    min-height: 48px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    cursor: pointer;
+    padding: var(--space-1) var(--space-2);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .project-tab .tab-date {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .project-tab .tab-status {
+    display: block;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .project-tab.active {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  .project-tab.active .tab-status {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .primary-btn {
+    width: 100%;
+    min-height: var(--touch-min);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .secondary-btn {
+    width: 100%;
+    min-height: var(--touch-min);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .secondary-btn.accent {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .cta-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .kv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .kv {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .kv .kv-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .kv .kv-value {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kv .kv-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  h3.block-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cost-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .cost-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .cost-group.selected {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+
+  .cost-group-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .cost-group-header .cost-group-total {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+
+  .cost-group.selected .cost-group-header .cost-group-total {
+    color: var(--text);
+  }
+
+  .cost-group-header .selected-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .cost-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .cost-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .cost-row .cost-amount {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+
+  .cost-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border);
+  }
+
+  .total-row .total-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .resale-empty {
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .resale-empty p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .margin-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .before-after figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .before-after .img-slot {
+    height: 96px;
+    border-radius: var(--radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .before-after .img-slot.empty {
+    border-style: dashed;
+    color: var(--text-secondary);
+  }
+
+  .before-after figcaption {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .section-header .titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .section-header .progress-text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ghost-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+  }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+  }
+
+  .checklist-item .box {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-ink);
+  }
+
+  .checklist-item.done .box {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checklist-item .label {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  .checklist-item.done .label {
+    color: var(--text-secondary);
+    text-decoration: line-through;
+  }
+
+  .checklist-item .chevron {
+    color: var(--text-secondary);
+    flex: none;
+  }
+
+  .checklist-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+    cursor: pointer;
+  }
+
+  .checklist-summary .box {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border-radius: 5px;
+    background: var(--accent);
+    border-color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-ink);
+  }
+
+  .checklist-summary .label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .checklist-summary .chevron {
+    color: var(--text-secondary);
+    flex: none;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+  }
+
+  .chart-card .chart-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--space-2);
+  }
+
+  .measurements {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .measurements th {
+    text-align: left;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0 var(--space-2) var(--space-2) 0;
+  }
+
+  .measurements td {
+    padding: var(--space-2) var(--space-2) var(--space-2) 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .measurements td:first-child,
+  .measurements th:first-child {
+    padding-left: 0;
+  }
+
+  .empty-state {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: var(--space-4) 0;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ---- Ajouts du 2026-10-07 ---- */
+  .badge.status-sold .dot { background: var(--success); }
+  .badge.status-none .dot { background: var(--text-secondary); }
+  .cost-row { align-items: center; }
+  .cost-row .cost-date { margin-left: var(--space-2); font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .cost-end { display: inline-flex; align-items: center; gap: var(--space-1); }
+  .icon-btn { width: var(--touch-min); height: var(--touch-min); margin: -12px -12px -12px 0; flex: none; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; }
+  .measurements td.row-end { text-align: right; width: 32px; padding-right: 0; }
+  .measurements .icon-btn { width: 32px; height: 32px; margin: -8px 0; }
+  .menu-popover button.danger { color: var(--danger); }
+  .menu-popover button:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
+  .menu-popover .menu-note { margin: 0; padding: 0 var(--space-3) var(--space-2); font-size: 11px; color: var(--text-secondary); }
+  .chart-row + .chart-row { margin-top: var(--space-3); }
+  .chart-row .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-1); }
+  .chart-row .chart-label { margin-bottom: 0; }
+  .chart-row .chart-latest { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .before-after .img-slot.empty { border-style: dashed; color: var(--text-secondary); gap: var(--space-2); font-size: 11px; }
+  .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
+  .ghost-btn.danger { color: var(--danger); }
+</style>
+
+<div class="phones-row">
+  <!-- ============================================================
+       TÉLÉPHONE A — sélecteur sur le projet du 2026-09-15 (en cours)
+       C'est la vue par défaut à l'arrivée sur l'écran (projet le plus
+       récent sélectionné). "Nouvelle révision sur cette montre" reste
+       discrète, dans le menu "⋯".
+       ============================================================ -->
+  <div class="wrap">
+    <p class="caption">
+      Écran — Détail montre/projet · ≥ 2 projets · sélecteur sur le projet du
+      2026-09-15 (en cours) — vue par défaut · variante Technique / Luminova green
+    </p>
+    <div class="phone">
+      <div class="app-bar">
+        <button class="back-btn" aria-label="Retour au tableau de bord">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+        <h1>Lip T18</h1>
+        <div class="menu-wrap">
+          <button class="menu-btn" aria-label="Autres actions" aria-haspopup="true" aria-expanded="true">⋯</button>
+          <!-- Menu affiché ouvert à des fins de documentation. -->
+          <div class="menu-popover" role="menu">
+          <button role="menuitem">Modifier la montre</button>
+          <button role="menuitem" class="danger">Supprimer ce projet</button>
+          <button role="menuitem" class="danger">Supprimer la montre</button>
+        </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="hero" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="project-heading">
+          <h2>Lip T18</h2>
+          <span class="subtitle">Manuel · Petite seconde</span>
+          <span class="badge status-progress"><span class="dot"></span>En cours</span>
+        </div>
+
+        <div class="project-tabs">
+          <button class="project-tab active">
+            <span class="tab-date">2026-09-15</span>
+            <span class="tab-status">En cours</span>
+          </button>
+          <button class="project-tab">
+            <span class="tab-date">2025-10-04</span>
+            <span class="tab-status">Terminé</span>
+          </button>
+        </div>
+
+        <button class="primary-btn">Marquer le projet terminé</button>
+        <span class="cta-hint">Passe le projet sélectionné au statut « Terminé »</span>
+      </div>
+
+      <div class="block">
+        <h3 class="block-title">Finances</h3>
+
+        <div class="kv-grid" style="grid-template-columns: 1fr;">
+          <div class="kv">
+            <span class="kv-label">Achat</span>
+            <span class="kv-value">45 €</span>
+            <span class="kv-date">2025-10-04</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header">
+            <h3 class="block-title">Coûts par projet</h3>
+            <button class="ghost-btn">+ Coût</button>
+          </div>
+          <div class="cost-groups" style="margin-top: var(--space-2)">
+            <div class="cost-group selected">
+              <div class="cost-group-header">
+                <span>Projet du 2026-09-15 <span class="selected-tag">· sélectionné</span></span>
+                <span class="cost-group-total">0 €</span>
+              </div>
+              <p class="cost-empty">Aucun coût enregistré</p>
+            </div>
+            <div class="cost-group">
+              <div class="cost-group-header">
+                <span>Projet du 2025-10-04</span>
+                <span class="cost-group-total">38 €</span>
+              </div>
+              <div class="cost-list">
+                <div class="cost-row">
+            <span>Verre <span class="cost-date">2025-10-12</span></span>
+            <span class="cost-end"><span class="cost-amount">22 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Verre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+                <div class="cost-row">
+            <span>Relumage <span class="cost-date">2025-10-20</span></span>
+            <span class="cost-end"><span class="cost-amount">16 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Relumage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+              </div>
+            </div>
+          </div>
+          <div class="total-row">
+            <span class="kv-label">Total des coûts (tous projets)</span>
+            <span class="total-value">38 €</span>
+          </div>
+        </div>
+
+        <div class="resale-empty">
+          <p>Revente non renseignée</p>
+          <button class="secondary-btn">Renseigner la revente</button>
+        </div>
+
+        <span class="margin-note">Marge : calculée dès la saisie de la revente</span>
+      </div>
+
+      <div class="block">
+        <h3 class="block-title">Avant / Après — projet sélectionné</h3>
+        <div class="before-after">
+          <figure>
+            <div class="img-slot empty" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
+                <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+              </svg>
+            </div>
+            <figcaption>Avant — pas encore ajoutée</figcaption>
+          </figure>
+          <figure>
+            <div class="img-slot empty" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
+                <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+              </svg>
+            </div>
+            <figcaption>Après — pas encore ajoutée</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="section-header">
+          <span class="titles">
+            <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+              Checklist de restauration
+            </h3>
+            <span class="progress-text">0/24 terminées</span>
+          </span>
+          <button class="ghost-btn">+ Étape</button>
+        </div>
+
+        <div class="checklist">
+          <div class="checklist-item">
+            <span class="box" aria-hidden="true"></span>
+            <span class="label">Désarmer le ressort de barillet</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <div class="checklist-item">
+            <span class="box" aria-hidden="true"></span>
+            <span class="label">Sortir le mouvement du boîtier</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <div class="checklist-item">
+            <span class="box" aria-hidden="true"></span>
+            <span class="label">Déposer les aiguilles</span>
+            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+        </div>
+        <span class="cta-hint">21 autres étapes non affichées dans ce cadrage</span>
+      </div>
+
+      <div class="block">
+        <div class="section-header">
+          <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+            Performances du mouvement
+          </h3>
+          <button class="ghost-btn">+ Mesure</button>
+        </div>
+        <p class="empty-state">Aucune mesure enregistrée pour ce projet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TÉLÉPHONE B — sélecteur sur le projet du 2025-10-04 (terminé)
+       Projet terminé consulté en historique : un autre projet est déjà en
+       cours, donc "Nouvelle révision sur cette montre" reste dans le menu.
+       Comparer le bloc Finances avec le téléphone A : mêmes montants,
+       seul le groupe de coûts mis en évidence change.
+       ============================================================ -->
+  <div class="wrap">
+    <p class="caption">
+      Écran — Détail montre/projet · ≥ 2 projets · sélecteur sur le projet du
+      2025-10-04 (terminé), consulté en historique ·
+      variante Technique / Luminova green
+    </p>
+    <div class="phone">
+      <div class="app-bar">
+        <button class="back-btn" aria-label="Retour au tableau de bord">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+        <h1>Lip T18</h1>
+        <div class="menu-wrap">
+          <button class="menu-btn" aria-label="Autres actions" aria-haspopup="true" aria-expanded="true">⋯</button>
+          <div class="menu-popover" role="menu">
+          <button role="menuitem">Modifier la montre</button>
+          <button role="menuitem" disabled>Rouvrir ce projet</button>
+          <p class="menu-note">Indisponible : un autre projet est en cours sur cette montre.</p>
+          <button role="menuitem" class="danger">Supprimer ce projet</button>
+          <button role="menuitem" class="danger">Supprimer la montre</button>
+        </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="hero" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="project-heading">
+          <h2>Lip T18</h2>
+          <span class="subtitle">Manuel · Petite seconde</span>
+          <span class="badge status-done"><span class="dot"></span>Terminé</span>
+        </div>
+
+        <div class="project-tabs">
+          <button class="project-tab">
+            <span class="tab-date">2026-09-15</span>
+            <span class="tab-status">En cours</span>
+          </button>
+          <button class="project-tab active">
+            <span class="tab-date">2025-10-04</span>
+            <span class="tab-status">Terminé</span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="block">
+        <h3 class="block-title">Finances</h3>
+
+        <div class="kv-grid" style="grid-template-columns: 1fr;">
+          <div class="kv">
+            <span class="kv-label">Achat</span>
+            <span class="kv-value">45 €</span>
+            <span class="kv-date">2025-10-04</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-header">
+            <h3 class="block-title">Coûts par projet</h3>
+            <button class="ghost-btn">+ Coût</button>
+          </div>
+          <div class="cost-groups" style="margin-top: var(--space-2)">
+            <div class="cost-group">
+              <div class="cost-group-header">
+                <span>Projet du 2026-09-15</span>
+                <span class="cost-group-total">0 €</span>
+              </div>
+              <p class="cost-empty">Aucun coût enregistré</p>
+            </div>
+            <div class="cost-group selected">
+              <div class="cost-group-header">
+                <span>Projet du 2025-10-04 <span class="selected-tag">· sélectionné</span></span>
+                <span class="cost-group-total">38 €</span>
+              </div>
+              <div class="cost-list">
+                <div class="cost-row">
+            <span>Verre <span class="cost-date">2025-10-12</span></span>
+            <span class="cost-end"><span class="cost-amount">22 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Verre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+                <div class="cost-row">
+            <span>Relumage <span class="cost-date">2025-10-20</span></span>
+            <span class="cost-end"><span class="cost-amount">16 €</span><button class="icon-btn" aria-label="Modifier ou supprimer le coût Relumage"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></span>
+          </div>
+              </div>
+            </div>
+          </div>
+          <div class="total-row">
+            <span class="kv-label">Total des coûts (tous projets)</span>
+            <span class="total-value">38 €</span>
+          </div>
+        </div>
+
+        <div class="resale-empty">
+          <p>Revente non renseignée</p>
+          <button class="secondary-btn">Renseigner la revente</button>
+        </div>
+
+        <span class="margin-note">Marge : calculée dès la saisie de la revente</span>
+      </div>
+
+      <div class="block">
+        <h3 class="block-title">Avant / Après — projet sélectionné</h3>
+        <div class="before-after">
+          <figure>
+            <div class="img-slot" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
+                <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+              </svg>
+            </div>
+            <figcaption>Avant</figcaption>
+          </figure>
+          <figure>
+            <div class="img-slot" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="7" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect>
+                <circle cx="12" cy="13.5" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+              </svg>
+            </div>
+            <figcaption>Après</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="section-header">
+          <span class="titles">
+            <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+              Checklist de restauration
+            </h3>
+            <span class="progress-text">24/24 terminées</span>
+          </span>
+        </div>
+
+        <div class="checklist-summary">
+          <span class="box" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </span>
+          <span class="label">Toutes les étapes sont terminées</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="section-header">
+          <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">
+            Performances du mouvement
+          </h3>
+        </div>
+
+        <div class="chart-card">
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Marche (s/j)</span><span class="chart-latest">+9 s/j</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Marche (s/j)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Beat error (ms)</span><span class="chart-latest">0.4 ms</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Beat error (ms)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        <div class="chart-row">
+            <div class="chart-head"><span class="chart-label">Amplitude (°)</span><span class="chart-latest">250°</span></div>
+            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Amplitude (°)"><polyline points="10.0,34.0 290.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="34.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="6.0" r="4" fill="var(--accent)"></circle></svg>
+          </div>
+        </div>
+
+        <table class="measurements">
+          <thead><tr><th>Date</th><th>Marche (s/j)</th><th>Beat error</th><th>Amplitude</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>2025-10-10</td><td>+25</td><td>2.1 ms</td><td>190°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2025-10-10"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2025-10-22</td><td>+9</td><td>0.4 ms</td><td>250°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2025-10-22"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

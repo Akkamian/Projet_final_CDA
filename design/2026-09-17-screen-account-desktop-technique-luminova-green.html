@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Écran desktop — Mon compte (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E à la place du Luminova green.
+    - Statistiques comptées en montres (et non en projets).
+    - Section « Suppression du compte » ajoutée : confirmation par mot de passe,
+      effacement de toutes les données y compris les fichiers photos (S35, RG-CPT-15).
+    - Retrait de la promesse « Vous resterez connecté » : aucune règle ne la porte.
+
+    Version DESKTOP de "Mon compte", boîte de dialogue "Modifier le mot de
+    passe" ouverte (équivalent desktop de la bottom sheet mobile).
+
+    Adaptations desktop (vs. 2026-08-26-screen-account-technique-luminova-green.html) :
+    - Gabarit "réglages" : colonne étroite (720px) centrée, pas pleine largeur.
+      Une page de compte est faite de lignes label/valeur courtes ; les étirer
+      sur 1400px casse la lecture et éloigne l'action de son libellé.
+    - La bottom sheet devient une boîte de dialogue modale centrée, avec des
+      actions Annuler / Valider en pied — sur desktop la sheet glissée du bas
+      n'a aucun sens (pas de pouce, souris déjà au centre de l'écran).
+    - Bloc statistiques en 4 tuiles sur une ligne (l'espace horizontal existe),
+      au lieu d'une grille 2×2.
+    - Les actions de compte (déconnexion) ne prennent plus toute la largeur :
+      un bouton pleine largeur sur desktop signale à tort une action primaire.
+    - État de vérification de l'adresse affiché (emailVerifiedAt) et date du
+      dernier changement de mot de passe (passwordChangedAt) : deux champs déjà
+      présents au modèle, lisibles ici parce que la place le permet.
+
+    Éco-conception : fond uni, aucune webfont, icônes SVG inline, pas d'ombre
+    ni d'animation, aucune image bitmap (pas d'avatar uploadé — le compte n'a
+    pas de profil en v1).
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --sidebar-w: 236px;
+    --settings-max: 720px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Shell ---------- */
+
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    width: var(--sidebar-w);
+    flex: none;
+    background: var(--page-bg);
+    border-right: 1px solid var(--border);
+    padding: var(--space-5) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
+  }
+
+  .brand .mark {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 38px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .nav a:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .nav a.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .nav a svg {
+    flex: none;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    min-width: 0;
+  }
+
+  .sidebar-footer .avatar {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-footer .email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--page-bg);
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .topbar h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .page {
+    width: 100%;
+    max-width: var(--settings-max);
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  /* ---------- Sections de réglages ---------- */
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .section > header h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .section > header p {
+    margin: var(--space-1) 0 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .card-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-row:last-child {
+    border-bottom: none;
+  }
+
+  .card-row .row-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .card-row .row-label .label {
+    font-size: 14px;
+  }
+
+  .card-row .row-label .value {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .card-row .row-label .value.masked {
+    letter-spacing: 0.1em;
+  }
+
+  .account-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .account-identity .avatar-lg {
+    width: 52px;
+    height: 52px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .account-identity .info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .account-identity .email {
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .account-identity .member-since {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .verified {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--success);
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+  }
+
+  .stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .stat-tile .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-tile .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Boutons ---------- */
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--danger);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+
+  .btn-danger:hover {
+    border-color: var(--danger);
+  }
+
+  /* ---------- Boîte de dialogue ---------- */
+
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(5, 7, 10, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+  }
+
+  .dialog-overlay.open {
+    display: flex;
+  }
+
+  .dialog {
+    width: 100%;
+    max-width: 460px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dialog-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .dialog-close {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .dialog-close:hover {
+    color: var(--text);
+    border-color: var(--accent-secondary);
+  }
+
+  .dialog-body {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .field-group label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .field-group .field-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .field-input {
+    width: 100%;
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+  }
+
+  .field-input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Adaptations écrans réduits ---------- */
+
+  @media (max-width: 900px) {
+    :root {
+      --sidebar-w: 64px;
+    }
+
+    .brand .name,
+    .nav a span,
+    .sidebar-footer .email {
+      display: none;
+    }
+
+    .nav a,
+    .brand,
+    .sidebar-footer {
+      justify-content: center;
+    }
+
+    .stat-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  .btn-danger.solid { background: var(--danger); border-color: var(--danger); color: var(--text); align-self: auto; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="name">Watch Restoration<br />Tracker</span>
+      </div>
+
+      <nav class="nav">
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 11.5L12 5l8 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Recherche</span>
+        </a>
+        <a href="#" class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Mon compte</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.3-4 4.5-6 7-6s5.7 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="email">amateur@example.com</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h1>Mon compte</h1>
+      </header>
+
+      <div class="page">
+        <section class="section">
+          <header>
+            <h2>Compte</h2>
+          </header>
+          <div class="card">
+            <div class="account-identity">
+              <span class="avatar-lg" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"></circle>
+                  <path d="M5 20c1.3-4 4.5-6 7-6s5.7 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+              </span>
+              <div class="info">
+                <span class="email">amateur@example.com</span>
+                <span class="member-since">Membre depuis mars 2026</span>
+              </div>
+            </div>
+            <div class="card-row">
+              <div class="row-label">
+                <span class="label">Adresse email</span>
+                <span class="value">Vérifiée le 2026-03-04</span>
+              </div>
+              <span class="verified">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+                Vérifiée
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <header>
+            <h2>Statistiques</h2>
+          </header>
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <span class="stat-value">12</span>
+              <span class="stat-label">Montres</span>
+            </div>
+            <div class="stat-tile">
+              <span class="stat-value">3</span>
+              <span class="stat-label">En cours</span>
+            </div>
+            <div class="stat-tile">
+              <span class="stat-value">2</span>
+              <span class="stat-label">Terminées</span>
+            </div>
+            <div class="stat-tile">
+              <span class="stat-value">6</span>
+              <span class="stat-label">Vendues</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <header>
+            <h2>Sécurité</h2>
+          </header>
+          <div class="card">
+            <div class="card-row">
+              <div class="row-label">
+                <span class="label">Mot de passe</span>
+                <span class="value masked">••••••••</span>
+              </div>
+              <button class="btn-secondary" data-dialog-open="password-dialog">Modifier</button>
+            </div>
+            <div class="card-row">
+              <div class="row-label">
+                <span class="label">Dernier changement</span>
+                <span class="value">2026-06-11</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <header>
+            <h2>Session</h2>
+            <p>La déconnexion révoque le refresh token de cet appareil.</p>
+          </header>
+          <button class="btn-danger">Se déconnecter</button>
+        </section>
+
+        <section class="section">
+          <header>
+            <h2>Suppression du compte</h2>
+            <p>Supprime définitivement votre compte et toutes vos données : montres, projets, étapes, notes, photos, mesures et coûts.</p>
+          </header>
+          <button class="btn-danger" data-dialog-open="delete-dialog">Supprimer mon compte</button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- Équivalent desktop de la bottom sheet mobile : dialogue modal centré.
+       Fermé au chargement ; s'ouvre via "Modifier" dans le bloc Sécurité. -->
+  <div class="dialog-overlay" id="password-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h2 id="dialog-title">Modifier le mot de passe</h2>
+        <button class="dialog-close" aria-label="Fermer" data-dialog-close>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="field-group">
+          <label for="current-password">Mot de passe actuel</label>
+          <input class="field-input" id="current-password" type="password" placeholder="••••••••" />
+        </div>
+        <div class="field-group">
+          <label for="new-password">Nouveau mot de passe</label>
+          <input class="field-input" id="new-password" type="password" placeholder="8 caractères minimum" />
+          <span class="field-hint">8 caractères minimum.</span>
+        </div>
+        <div class="field-group">
+          <label for="confirm-password">Confirmer le nouveau mot de passe</label>
+          <input class="field-input" id="confirm-password" type="password" placeholder="8 caractères minimum" />
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn-secondary" data-dialog-close>Annuler</button>
+        <button class="btn-primary">Modifier le mot de passe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation de suppression du compte (S35, RG-CPT-15) : mot de passe exigé. -->
+  <div class="dialog-overlay" id="delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+    <div class="dialog">
+      <div class="dialog-header">
+        <h2 id="delete-title">Supprimer mon compte</h2>
+        <button class="dialog-close" aria-label="Fermer" data-dialog-close>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <p style="margin: 0; font-size: 14px; color: var(--text-secondary)">
+          Cette action est définitive : votre compte, toutes vos montres et leurs projets, les photos et les fichiers associés seront effacés.
+        </p>
+        <div class="field-group">
+          <label for="delete-password">Confirmez avec votre mot de passe</label>
+          <input class="field-input" id="delete-password" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn-secondary" data-dialog-close>Annuler</button>
+        <button class="btn-danger solid">Supprimer définitivement</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Maquette : ouverture/fermeture des dialogues pour pouvoir juger les deux états.
+    document.querySelectorAll("[data-dialog-open]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.getElementById(btn.dataset.dialogOpen).classList.add("open");
+      });
+    });
+    document.querySelectorAll(".dialog-overlay").forEach(function (overlay) {
+      overlay.addEventListener("click", function (event) {
+        if (event.target === overlay) overlay.classList.remove("open");
+      });
+      overlay.querySelectorAll("[data-dialog-close]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          overlay.classList.remove("open");
+        });
+      });
+    });
+  </script>
+</body>
+</html>

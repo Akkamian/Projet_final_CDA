@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Écran desktop — Tableau de bord (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E à la place du Luminova green.
+    - Progression recalculée d'après le référentiel d'étapes (22 étapes de base
+      pour un manuel, 24 pour un automatique, plus celles des complications).
+    - Statut « Sans projet » (RG-AFF-05) : tuile, filtre et ligne Hamilton Khaki.
+    - Marge non calculée (« — ») quand le prix d'achat est inconnu (RG-FIN-07) :
+      ligne Zenith Sporto.
+    - Hors périmètre des spécifications, conservés ici comme aides de lecture
+      desktop : recherche, tri, pagination, tuile « Marge cumulée ».
+
+    Version DESKTOP du tableau de bord — mêmes tokens Technique / Luminova green
+    que les écrans mobiles, fond uni (pas de texture).
+
+    Adaptations desktop (vs. 2026-07-09-screen-dashboard-technique-luminova-green.html) :
+    - Rail de navigation latéral persistant à la place de la barre d'onglets
+      basse (pattern mobile) ; l'item actif est marqué par un liseré accent.
+    - Le FAB "+ Nouveau projet" devient un bouton primaire en haut à droite,
+      là où l'œil finit son parcours de la barre d'outils.
+    - Liste dense en tableau plutôt qu'en cartes empilées : sur grand écran
+      l'utilisateur compare (achat / revente / marge / progression) plus
+      qu'il ne feuillette. Bonus éco-conception : une vignette 40px par ligne
+      au lieu d'une image par carte = beaucoup moins d'octets transférés.
+    - Bandeau de compteurs en tête : l'espace horizontal libre sert à la vue
+      d'ensemble. Tous les chiffres sont dérivables de GET /projects
+      (comptages par statut + somme des marges), aucune entité nouvelle.
+    - Recherche et filtre statut dans la barre d'outils (place disponible),
+      pas dans un écran dédié.
+
+    Éco-conception : aucune webfont (pile système), zéro image bitmap
+    (icônes SVG inline), pas d'ombre/flou/animation coûteuse, pagination
+    visible (8 projets par requête), sticky en CSS pur (aucun listener scroll).
+
+    Mise à jour du 2026-09-23, à partir de
+    2026-09-17-screen-dashboard-desktop-technique-luminova-green.html (fichier
+    source non modifié). Décisions de
+    docs/superpowers/specs/brief-parcours-maquettes.md et
+    2026-09-23-mcd-montre-complications-design.md :
+    - Bandeau de compteurs et en-tête en « montres » (plus « projets »).
+    - Filtre de statut sans « À restaurer » : Tous / En cours / Terminé /
+      Vendue.
+    - Plus de ligne « Calibre … » : sous le nom, `Type de mouvement ·
+      complications` (juste le type de mouvement si aucune complication).
+    - Vocabulaire « Vendue » (accord avec « montre ») à la place de « Vendu ».
+    - Données alignées sur le brief : la Lip T18 passe en « En cours 0/24 ».
+    - Chaque ligne mène désormais explicitement (attribut title) au projet le
+      plus récent de la montre.
+
+    Éco-conception (inchangé) : aucune webfont, icônes SVG inline, pas
+    d'ombre/flou/animation coûteuse, pagination visible, sticky en CSS pur.
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5b9279;
+    --danger: #c1494f;
+    --warning: #c99a3e;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --sidebar-w: 236px;
+    --content-max: 1280px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Shell ---------- */
+
+  .app {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    width: var(--sidebar-w);
+    flex: none;
+    background: var(--page-bg);
+    border-right: 1px solid var(--border);
+    padding: var(--space-5) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
+  }
+
+  .brand .mark {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .brand .name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: 38px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .nav a:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .nav a.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+
+  .nav a svg {
+    flex: none;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    min-width: 0;
+  }
+
+  .sidebar-footer .avatar {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-footer .email {
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--page-bg);
+    border-bottom: 1px solid var(--border);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .topbar .titles {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-right: auto;
+    min-width: 0;
+  }
+
+  .topbar h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .topbar .count {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .page {
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  /* ---------- Contrôles ---------- */
+
+  .search {
+    position: relative;
+    width: 260px;
+  }
+
+  .search svg {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+  }
+
+  .input,
+  .select {
+    height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0 var(--space-3);
+  }
+
+  .search .input {
+    width: 100%;
+    padding-left: 34px;
+  }
+
+  .input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 32px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--accent-secondary);
+  }
+
+  .btn-ghost:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  /* ---------- Compteurs ---------- */
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-3);
+  }
+
+  .stat-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .stat-tile .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-tile .stat-value.positive {
+    color: var(--success);
+  }
+
+  .stat-tile .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Tableau des projets ---------- */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  table.projects {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  table.projects th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  table.projects th.sortable {
+    cursor: pointer;
+  }
+
+  table.projects th .sort {
+    color: var(--accent);
+    margin-left: var(--space-1);
+  }
+
+  table.projects td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  table.projects tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  table.projects tbody tr:hover {
+    background: rgba(255, 255, 255, 0.025);
+  }
+
+  .watch-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .thumb {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .watch-cell .names {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .watch-cell .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .watch-cell .title:hover {
+    color: var(--accent);
+  }
+
+  .watch-cell .subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+  }
+
+  .badge.status-progress .dot {
+    background: var(--warning);
+  }
+
+  .badge.status-done .dot {
+    background: var(--accent-secondary);
+  }
+
+  .badge.status-sold .dot {
+    background: var(--success);
+  }
+
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-width: 120px;
+  }
+
+  .progress .track {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .progress .fill {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .progress .ratio {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .money {
+    display: flex;
+    flex-direction: column;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .money .amount {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .money .date {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .empty-value {
+    color: var(--text-secondary);
+  }
+
+  .margin-value {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .margin-value.positive {
+    color: var(--success);
+  }
+
+  .margin-value.negative {
+    color: var(--danger);
+  }
+
+  td.chevron-cell {
+    width: 40px;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  .table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--border);
+  }
+
+  .table-footer .range {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table-footer .pager {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  /* ---------- Adaptations écrans réduits ---------- */
+
+  @media (max-width: 1180px) {
+    .stat-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (max-width: 900px) {
+    :root {
+      --sidebar-w: 64px;
+    }
+
+    .brand .name,
+    .nav a span,
+    .sidebar-footer .email {
+      display: none;
+    }
+
+    .nav a,
+    .brand,
+    .sidebar-footer {
+      justify-content: center;
+    }
+
+    .search {
+      width: 160px;
+    }
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .thumb.empty { border-style: dashed; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="name">Watch Restoration<br />Tracker</span>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 11.5L12 5l8 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M6 10.5V19h12v-8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span>Tableau de bord</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Recherche</span>
+        </a>
+        <a href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <span>Mon compte</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="avatar" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M5 20c1.3-4 4.5-6 7-6s5.7 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
+        <span class="email">amateur@example.com</span>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="titles">
+          <h1>Tableau de bord</h1>
+          <span class="count">12 montres</span>
+        </div>
+
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          <input class="input" type="search" placeholder="Rechercher une montre…" aria-label="Rechercher une montre" />
+        </div>
+
+        <select class="select" aria-label="Filtrer par statut">
+          <option>Tous</option>
+          <option>En cours</option>
+          <option>Terminé</option>
+          <option>Vendue</option>
+          <option>Sans projet</option>
+        </select>
+
+        <button class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+          </svg>
+          Nouveau projet
+        </button>
+      </header>
+
+      <div class="page">
+        <section class="stat-row" aria-label="Vue d'ensemble">
+          <div class="stat-tile">
+            <span class="stat-value">12</span>
+            <span class="stat-label">Montres</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value">3</span>
+            <span class="stat-label">En cours</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Terminées</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value">6</span>
+            <span class="stat-label">Vendues</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Sans projet</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value positive">+640 €</span>
+            <span class="stat-label">Marge cumulée</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <table class="projects">
+            <thead>
+              <tr>
+                <th>Montre</th>
+                <th>Statut</th>
+                <th>Progression</th>
+                <th class="sortable">Achat <span class="sort" aria-hidden="true">↓</span></th>
+                <th>Revente</th>
+                <th>Marge</th>
+                <th><span class="sr-only"></span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Seiko 6119-8100</a>
+                      <span class="subtitle">Automatique · Jour / date</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-progress"><span class="dot"></span>En cours</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 11%"></span></span>
+                    <span class="ratio">3/27</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">95 €</span><span class="date">2026-08-02</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Seiko 6309-7040</a>
+                      <span class="subtitle">Automatique · Jour / date</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-done"><span class="dot"></span>Terminé</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="ratio">27/27</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">85 €</span><span class="date">2026-07-30</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Tissot Seastar</a>
+                      <span class="subtitle">Manuel</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-progress"><span class="dot"></span>En cours</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 9%"></span></span>
+                    <span class="ratio">2/22</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">140 €</span><span class="date">2026-07-12</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Oris Diver Sixty-Five</a>
+                      <span class="subtitle">Automatique · Date</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-sold"><span class="dot"></span>Vendue</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="ratio">27/27</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">120 €</span><span class="date">2026-03-14</span></span></td>
+                <td><span class="money"><span class="amount">350 €</span><span class="date">2026-06-20</span></span></td>
+                <td><span class="margin-value positive">+185 €</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Landeron 48 chrono</a>
+                      <span class="subtitle">Manuel · Chronographe</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-done"><span class="dot"></span>Terminé</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="ratio">27/27</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">210 €</span><span class="date">2026-02-28</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Omega Seamaster</a>
+                      <span class="subtitle">Automatique · Date</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-sold"><span class="dot"></span>Vendue</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="ratio">27/27</span>
+                  </div></td>
+                <td><span class="money"><span class="amount">320 €</span><span class="date">2026-01-08</span></span></td>
+                <td><span class="money"><span class="amount">295 €</span><span class="date">2026-04-02</span></span></td>
+                <td><span class="margin-value negative">−25 €</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle><path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Zenith Sporto</a>
+                      <span class="subtitle">Manuel</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-sold"><span class="dot"></span>Vendue</span></td>
+                <td><div class="progress">
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="ratio">22/22</span>
+                  </div></td>
+                <td><span class="empty-value">Inconnu</span></td>
+                <td><span class="money"><span class="amount">420 €</span><span class="date">2026-02-15</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="watch-cell">
+                    <span class="thumb empty" aria-hidden="true"></span>
+                    <span class="names">
+                      <a class="title" href="#" title="Ouvre le détail de la montre">Hamilton Khaki</a>
+                      <span class="subtitle">Manuel</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="badge status-none"><span class="dot"></span>Sans projet</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="money"><span class="amount">60 €</span><span class="date">2026-05-18</span></span></td>
+                <td><span class="empty-value">—</span></td>
+                <td><span class="empty-value">—</span></td>
+                <td class="chevron-cell">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="table-footer">
+            <span class="range">1–8 sur 12</span>
+            <div class="pager">
+              <button class="btn-ghost" disabled>Précédent</button>
+              <button class="btn-ghost">Suivant</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
