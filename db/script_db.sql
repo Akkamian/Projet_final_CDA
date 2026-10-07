@@ -72,7 +72,10 @@ CREATE TABLE watches (
     CONSTRAINT chk_watches_resale_price   CHECK (resale_price >= 0),
     -- prix et date de revente renseignés ensemble ou pas du tout
     CONSTRAINT chk_watches_resale
-        CHECK ((resale_price IS NULL) = (resale_date IS NULL))
+        CHECK ((resale_price IS NULL) = (resale_date IS NULL)),
+    -- la revente ne précède pas l'achat (sans effet si l'une des dates est inconnue)
+    CONSTRAINT chk_watches_resale_after_purchase
+        CHECK (resale_date >= purchase_date)
 );
 
 -- association N-N « comporte »
@@ -137,7 +140,11 @@ CREATE TABLE performance_measurements (
     watch_position       VARCHAR(50),
 
     CONSTRAINT fk_performance_measurements_project
-        FOREIGN KEY (project_id) REFERENCES restoration_projects (id) ON DELETE CASCADE
+        FOREIGN KEY (project_id) REFERENCES restoration_projects (id) ON DELETE CASCADE,
+
+    -- la marche (rate_seconds_per_day) peut être négative : la montre retarde
+    CONSTRAINT chk_performance_measurements_beat_error CHECK (beat_error_ms >= 0),
+    CONSTRAINT chk_performance_measurements_amplitude  CHECK (amplitude_degrees >= 0)
 );
 
 CREATE TABLE expenses (
@@ -165,3 +172,10 @@ CREATE INDEX idx_restoration_steps_project_id  ON restoration_steps (project_id)
 CREATE INDEX idx_step_pics_restoration_step_id ON step_pics (restoration_step_id);
 CREATE INDEX idx_measurements_project_id       ON performance_measurements (project_id);
 CREATE INDEX idx_expenses_project_id           ON expenses (project_id);
+
+-- ---------- Un seul projet en cours par montre ----------
+-- Index unique partiel : deux projets « in_progress » sur la même montre sont refusés.
+
+CREATE UNIQUE INDEX uq_restoration_projects_one_in_progress
+    ON restoration_projects (watch_id)
+    WHERE status = 'in_progress';
