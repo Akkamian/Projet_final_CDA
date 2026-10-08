@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <title>Écran desktop — Tableau de bord (Technique / Luminova green)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   /*
     Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
@@ -66,9 +67,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -104,7 +109,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -144,7 +149,7 @@
     border-radius: var(--radius-sm);
     background: var(--surface);
     border: 1px solid var(--border);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -292,7 +297,7 @@
   .select {
     height: 36px;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     color: var(--text);
     font-family: inherit;
@@ -400,7 +405,7 @@
 
   table.projects th {
     text-align: left;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -415,7 +420,7 @@
   }
 
   table.projects th .sort {
-    color: var(--accent);
+    color: var(--accent-text);
     margin-left: var(--space-1);
   }
 
@@ -468,7 +473,7 @@
   }
 
   .watch-cell .title:hover {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   .watch-cell .subtitle {
@@ -567,7 +572,7 @@
   }
 
   .margin-value.negative {
-    color: var(--danger);
+    color: var(--danger-text);
   }
 
   td.chevron-cell {
@@ -627,6 +632,8 @@
   }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .thumb.empty { border-style: dashed; }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>

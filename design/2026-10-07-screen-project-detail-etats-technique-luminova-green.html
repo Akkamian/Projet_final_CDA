@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="fr">
 <!--
   Écran — Fiche montre : états non couverts par les maquettes « 1 projet » et « ≥ 2 projets »
   (Technique / Luminova green), mobile. Créé le 2026-10-07 pour aligner les maquettes sur le
@@ -14,9 +16,14 @@
   4. Confirmation de suppression d'un projet (S37, RG-GEN-03) ; celle de la montre (S38) suit
      le même gabarit avec « tous ses projets et toutes leurs données ».
   Coûts datés et modifiables (S32), mesures modifiables (S33), photos remplaçables (S34).
+
+  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
+  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
+  lang="fr", color-scheme, prefers-reduced-motion.
 -->
 <title>Écran — Fiche montre, états (Technique / Luminova green)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   :root {
     --page-bg: #05070a;
@@ -28,9 +35,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -65,7 +76,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -86,7 +97,7 @@
   .caption {
     max-width: 390px;
     margin: 0 auto var(--space-4);
-    color: #5b6472;
+    color: var(--text-secondary);
     font-size: 12px;
     text-align: center;
   }
@@ -95,7 +106,7 @@
     width: 390px;
     background: var(--bg);
     border-radius: 36px;
-    border: 1px solid #2a2f3a;
+    border: 1px solid var(--border);
     box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
     overflow: hidden;
   }
@@ -281,17 +292,17 @@
 
   .project-tab .tab-status {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     margin-top: 2px;
   }
 
   .project-tab.active {
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     background: var(--surface);
   }
 
   .project-tab.active .tab-status {
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
   }
 
@@ -311,7 +322,7 @@
   .secondary-btn {
     width: 100%;
     min-height: var(--touch-min);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text);
@@ -322,8 +333,8 @@
   }
 
   .secondary-btn.accent {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--accent-text);
+    color: var(--accent-text);
   }
 
   .cta-hint {
@@ -349,7 +360,7 @@
   }
 
   .kv .kv-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -392,7 +403,7 @@
   }
 
   .cost-group.selected {
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     background: var(--surface);
   }
 
@@ -414,11 +425,11 @@
   }
 
   .cost-group-header .selected-tag {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   .cost-list {
@@ -511,7 +522,7 @@
   }
 
   .before-after figcaption {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-align: center;
   }
@@ -538,7 +549,7 @@
   .ghost-btn {
     background: transparent;
     border: none;
-    color: var(--accent);
+    color: var(--accent-text);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -569,7 +580,7 @@
     height: 20px;
     flex: none;
     border-radius: 5px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -578,7 +589,7 @@
 
   .checklist-item.done .box {
     background: var(--accent);
-    border-color: var(--accent);
+    border-color: var(--accent-text);
   }
 
   .checklist-item .label {
@@ -614,7 +625,7 @@
     flex: none;
     border-radius: 5px;
     background: var(--accent);
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -640,7 +651,7 @@
   }
 
   .chart-card .chart-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -658,7 +669,7 @@
     text-align: left;
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     padding: 0 var(--space-2) var(--space-2) 0;
@@ -692,16 +703,16 @@
   .icon-btn { width: var(--touch-min); height: var(--touch-min); margin: -12px -12px -12px 0; flex: none; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0; }
   .measurements td.row-end { text-align: right; width: 32px; padding-right: 0; }
   .measurements .icon-btn { width: 32px; height: 32px; margin: -8px 0; }
-  .menu-popover button.danger { color: var(--danger); }
+  .menu-popover button.danger { color: var(--danger-text); }
   .menu-popover button:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
-  .menu-popover .menu-note { margin: 0; padding: 0 var(--space-3) var(--space-2); font-size: 11px; color: var(--text-secondary); }
+  .menu-popover .menu-note { margin: 0; padding: 0 var(--space-3) var(--space-2); font-size: 12px; color: var(--text-secondary); }
   .chart-row + .chart-row { margin-top: var(--space-3); }
   .chart-row .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--space-1); }
   .chart-row .chart-label { margin-bottom: 0; }
   .chart-row .chart-latest { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .before-after .img-slot.empty { border-style: dashed; color: var(--text-secondary); gap: var(--space-2); font-size: 11px; }
+  .before-after .img-slot.empty { border-style: dashed; color: var(--text-secondary); gap: var(--space-2); font-size: 12px; }
   .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
-  .ghost-btn.danger { color: var(--danger); }
+  .ghost-btn.danger { color: var(--danger-text); }
 
   /* ---- États de la fiche montre (2026-10-07) ---- */
   .resale-box { padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); display: flex; flex-direction: column; gap: var(--space-3); }
@@ -710,9 +721,9 @@
   .resale-line .resale-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
   .resale-actions { display: flex; gap: var(--space-2); }
   .resale-actions .secondary-btn { flex: 1; }
-  .secondary-btn.danger-outline { color: var(--danger); }
+  .secondary-btn.danger-outline { color: var(--danger-text); }
   .margin-box { padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: var(--space-1); align-items: center; }
-  .margin-box .margin-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .margin-box .margin-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
   .margin-box .margin-big { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .margin-box .margin-big.positive { color: var(--success); }
   .margin-box .margin-formula { font-size: 12px; color: var(--text-secondary); text-align: center; font-variant-numeric: tabular-nums; }
@@ -722,8 +733,43 @@
   .confirm-sheet { width: 100%; background: var(--bg); border: 1px solid var(--border); border-bottom: none; border-radius: 20px 20px 0 0; padding: var(--space-5) var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
   .confirm-sheet h2 { margin: 0; font-size: 17px; font-weight: 600; }
   .confirm-sheet p { margin: 0; font-size: 14px; color: var(--text-secondary); }
-  .btn-danger-solid { width: 100%; min-height: var(--touch-min); border: none; border-radius: var(--radius-sm); background: var(--danger); color: var(--text); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn-danger-solid { width: 100%; min-height: var(--touch-min); border: none; border-radius: var(--radius-sm); background: var(--danger); color: var(--danger-ink); font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
   .actions-stack { display: flex; flex-direction: column; gap: var(--space-2); }
+
+  /* ---- Performances : échelles avec zone cible et position (2026-10-07) ---- */
+  .perf-context { font-size: 12px; color: var(--text-secondary); margin-bottom: var(--space-3); }
+  .perf-context strong { color: var(--text); font-weight: 600; }
+  .pos-filter { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+  .pos-chip { min-height: 30px; padding: 0 var(--space-3); border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .pos-chip span { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: 0.8; }
+  .pos-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent-text); color: var(--accent-ink); }
+  .scales { display: flex; flex-direction: column; gap: var(--space-4); }
+  .scale { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .scale-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+  .scale-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .scale-change { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scale-change strong { color: var(--text); font-weight: 600; }
+  .scale-track { position: relative; height: 16px; margin: 4px 7px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+  .scale-track .zone { position: absolute; top: -1px; bottom: -1px; min-width: 4px; background: rgba(17, 233, 126, 0.16); border-left: 1px solid var(--accent-text); border-right: 1px solid var(--accent-text); }
+  .scale-track .link { position: absolute; top: 50%; height: 2px; margin-top: -1px; background: var(--text-secondary); opacity: 0.6; }
+  .scale-track .mk { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; box-sizing: border-box; }
+  .mk.first, .mk-legend.first { background: var(--surface); border: 2px solid var(--text-secondary); }
+  .mk.last, .mk-legend.last { border: 2px solid var(--surface); background: var(--text-secondary); }
+  .mk.last.ok { background: var(--accent-text); }
+  .mk.last.warn { background: var(--warning); }
+  .mk.last.bad { background: var(--danger-text); }
+  .scale-axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; padding: 0 2px; }
+  .scale-verdict { font-size: 12px; font-weight: 600; }
+  .scale-verdict.ok { color: var(--accent-text); }
+  .scale-verdict.warn { color: var(--warning); }
+  .scale-verdict.bad { color: var(--danger-text); }
+  .perf-legend { margin: var(--space-3) 0 0; font-size: 12px; color: var(--text-secondary); }
+  .mk-legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; vertical-align: -1px; }
+  .chart-wrap.perf { padding: var(--space-4); }
+  .measurements .pos { display: block; font-size: 12px; color: var(--text-secondary); }
+  @media (min-width: 700px) { .chart-wrap.perf .scales { flex-direction: row; gap: var(--space-5); } .chart-wrap.perf .scale { flex: 1; } }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 
 <div class="phones-row">
@@ -826,25 +872,41 @@
           <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">Performances du mouvement</h3>
           <button class="ghost-btn">+ Mesure</button>
         </div>
-        <div class="chart-card">
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Marche (s/j)</span><span class="chart-latest">+7 s/j</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Marche (s/j)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+        <div class="chart-card perf">
+          <div class="perf-context">Première → dernière mesure, position <strong>Cadran haut</strong></div>
+          <div class="scales">
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Marche</span><span class="scale-change">+126 → <strong>+7</strong> s/j</span></div>
+              <div class="scale-track" role="img" aria-label="Marche : +126 puis +7 s/j, zone cible ±10 s/j">
+                <span class="zone" style="left: 46.7%; width: 6.6%"></span><span class="link" style="left: 52.3%; width: 39.7%"></span><span class="mk first" style="left: 92.0%"></span><span class="mk last ok" style="left: 52.3%"></span>
+              </div>
+              <div class="scale-axis"><span>−150</span><span>0</span><span>+150</span></div>
+              <div class="scale-verdict ok">Dans la zone (±10 s/j)</div>
+            </div>
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Beat error</span><span class="scale-change">2.9 → <strong>0.3</strong> ms</span></div>
+              <div class="scale-track" role="img" aria-label="Beat error : 2.9 puis 0.3 ms, zone cible ≤ 0.5 ms">
+                <span class="zone" style="left: 0.0%; width: 16.7%"></span><span class="link" style="left: 10.0%; width: 86.7%"></span><span class="mk first" style="left: 96.7%"></span><span class="mk last ok" style="left: 10.0%"></span>
+              </div>
+              <div class="scale-axis"><span>0</span><span>1.5</span><span>3 ms</span></div>
+              <div class="scale-verdict ok">Dans la zone (≤ 0.5 ms)</div>
+            </div>
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Amplitude</span><span class="scale-change">188 → <strong>262</strong> °</span></div>
+              <div class="scale-track" role="img" aria-label="Amplitude : 188 puis 262 °, zone cible 250–310°">
+                <span class="zone" style="left: 55.6%; width: 33.3%"></span><span class="link" style="left: 21.1%; width: 41.1%"></span><span class="mk first" style="left: 21.1%"></span><span class="mk last ok" style="left: 62.2%"></span>
+              </div>
+              <div class="scale-axis"><span>150°</span><span>240°</span><span>330°</span></div>
+              <div class="scale-verdict ok">Dans la zone (250–310°)</div>
+            </div>
           </div>
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Beat error (ms)</span><span class="chart-latest">0.3 ms</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Beat error (ms)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
-          </div>
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Amplitude (°)</span><span class="chart-latest">262°</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Amplitude (°)"><polyline points="10.0,34.0 290.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="34.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="6.0" r="4" fill="var(--accent)"></circle></svg>
-          </div>
+          <p class="perf-legend"><span class="mk-legend first"></span> première mesure · <span class="mk-legend last"></span> dernière mesure · bande = zone cible (repères indicatifs) · échelle de la marche ajustée aux valeurs</p>
         </div>
         <table class="measurements">
           <thead><tr><th>Date</th><th>Marche (s/j)</th><th>Beat error</th><th>Amplitude</th><th></th></tr></thead>
           <tbody>
-            <tr><td>2026-03-05</td><td>+31</td><td>1.8 ms</td><td>205°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-03-05"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
-            <tr><td>2026-03-20</td><td>+7</td><td>0.3 ms</td><td>262°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-03-20"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-03-20<span class="pos">Cadran haut</span></td><td>+7</td><td>0.3 ms</td><td>262°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-03-20"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-03-05<span class="pos">Cadran haut</span></td><td>+126</td><td>2.9 ms</td><td>188°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-03-05"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
           </tbody>
         </table>
       </div>
@@ -980,25 +1042,41 @@
         <div class="section-header">
           <h3 class="block-title" style="text-transform: none; letter-spacing: normal; font-size: 15px; color: var(--text)">Performances du mouvement</h3>
         </div>
-        <div class="chart-card">
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Marche (s/j)</span><span class="chart-latest">+4 s/j</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Marche (s/j)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
+        <div class="chart-card perf">
+          <div class="perf-context">Première → dernière mesure, position <strong>Cadran haut</strong></div>
+          <div class="scales">
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Marche</span><span class="scale-change">+12 → <strong>+4</strong> s/j</span></div>
+              <div class="scale-track" role="img" aria-label="Marche : +12 puis +4 s/j, zone cible ±10 s/j">
+                <span class="zone" style="left: 40.0%; width: 20.0%"></span><span class="link" style="left: 54.0%; width: 8.0%"></span><span class="mk first" style="left: 62.0%"></span><span class="mk last ok" style="left: 54.0%"></span>
+              </div>
+              <div class="scale-axis"><span>−50</span><span>0</span><span>+50</span></div>
+              <div class="scale-verdict ok">Dans la zone (±10 s/j)</div>
+            </div>
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Beat error</span><span class="scale-change">0.6 → <strong>0.2</strong> ms</span></div>
+              <div class="scale-track" role="img" aria-label="Beat error : 0.6 puis 0.2 ms, zone cible ≤ 0.5 ms">
+                <span class="zone" style="left: 0.0%; width: 16.7%"></span><span class="link" style="left: 6.7%; width: 13.3%"></span><span class="mk first" style="left: 20.0%"></span><span class="mk last ok" style="left: 6.7%"></span>
+              </div>
+              <div class="scale-axis"><span>0</span><span>1.5</span><span>3 ms</span></div>
+              <div class="scale-verdict ok">Dans la zone (≤ 0.5 ms)</div>
+            </div>
+            <div class="scale">
+              <div class="scale-head"><span class="scale-label">Amplitude</span><span class="scale-change">252 → <strong>274</strong> °</span></div>
+              <div class="scale-track" role="img" aria-label="Amplitude : 252 puis 274 °, zone cible 250–310°">
+                <span class="zone" style="left: 55.6%; width: 33.3%"></span><span class="link" style="left: 56.7%; width: 12.200000000000003%"></span><span class="mk first" style="left: 56.7%"></span><span class="mk last ok" style="left: 68.9%"></span>
+              </div>
+              <div class="scale-axis"><span>150°</span><span>240°</span><span>330°</span></div>
+              <div class="scale-verdict ok">Dans la zone (250–310°)</div>
+            </div>
           </div>
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Beat error (ms)</span><span class="chart-latest">0.2 ms</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Beat error (ms)"><polyline points="10.0,6.0 290.0,34.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="6.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="34.0" r="4" fill="var(--accent)"></circle></svg>
-          </div>
-        <div class="chart-row">
-            <div class="chart-head"><span class="chart-label">Amplitude (°)</span><span class="chart-latest">274°</span></div>
-            <svg width="100%" height="40" viewBox="0 0 300 40" preserveAspectRatio="none" role="img" aria-label="Évolution : Amplitude (°)"><polyline points="10.0,34.0 290.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"></polyline><circle cx="10.0" cy="34.0" r="3" fill="var(--accent)"></circle><circle cx="290.0" cy="6.0" r="4" fill="var(--accent)"></circle></svg>
-          </div>
+          <p class="perf-legend"><span class="mk-legend first"></span> première mesure · <span class="mk-legend last"></span> dernière mesure · bande = zone cible (repères indicatifs) · échelle de la marche ajustée aux valeurs</p>
         </div>
         <table class="measurements">
           <thead><tr><th>Date</th><th>Marche (s/j)</th><th>Beat error</th><th>Amplitude</th><th></th></tr></thead>
           <tbody>
-            <tr><td>2026-05-18</td><td>+12</td><td>0.6 ms</td><td>252°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-05-18"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
-            <tr><td>2026-05-24</td><td>+4</td><td>0.2 ms</td><td>274°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-05-24"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-05-24<span class="pos">Cadran haut</span></td><td>+4</td><td>0.2 ms</td><td>274°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-05-24"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
+            <tr><td>2026-05-18<span class="pos">Cadran haut</span></td><td>+12</td><td>0.6 ms</td><td>252°</td><td class="row-end"><button class="icon-btn" aria-label="Modifier ou supprimer la mesure du 2026-05-18"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4zM14 6l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></td></tr>
           </tbody>
         </table>
       </div>
@@ -1087,3 +1165,4 @@
     </div>
   </div>
 </div>
+</html>

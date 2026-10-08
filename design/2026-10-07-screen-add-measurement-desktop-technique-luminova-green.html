@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<!--
+  Écran desktop — Ajouter une mesure de performance (Technique / Luminova green). Créé le 2026-10-07.
+  Boîte de dialogue ouverte depuis « + Mesure » du bloc Performances ; équivalent desktop de la
+  feuille basse mobile. Position facultative en puces (aide de saisie, `watch_position` reste un
+  texte libre), contrôles RG-PER-02, RG-PER-03 et RG-GEN-01.
+
+  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
+  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
+  lang="fr", color-scheme, prefers-reduced-motion.
+-->
+<title>Écran desktop — Ajouter une mesure (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<style>
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5FB5B0;
+    --danger: #b8383f;
+    --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --sidebar-w: 236px;
+    --settings-max: 720px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: var(--page-bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  :focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent-secondary);
+  }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--danger-text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+
+  .btn-danger:hover {
+    border-color: var(--danger-text);
+  }
+
+
+/* ---------- Boîte de dialogue ---------- */
+
+  .dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(5, 7, 10, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+  }
+
+  .dialog-overlay.open {
+    display: flex;
+  }
+
+  .dialog {
+    width: 100%;
+    max-width: 460px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dialog-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .dialog-close {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .dialog-close:hover {
+    color: var(--text);
+    border-color: var(--accent-secondary);
+  }
+
+  .dialog-body {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .field-group label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .field-group .field-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .field-input {
+    width: 100%;
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+  }
+
+  .field-input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  
+  .dialog { max-width: 560px; }
+  .dialog-overlay { display: flex; position: static; min-height: 100vh; }
+  fieldset { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+  legend { padding: 0; margin: 0 0 var(--space-1); font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
+  .chip-group { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .chip-toggle { min-height: 34px; padding: 0 var(--space-3); border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-secondary); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .chip-toggle[aria-pressed="true"] { background: var(--accent); border-color: var(--accent-text); color: var(--accent-ink); }
+  .sheet-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+  <div class="dialog-overlay open">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <div class="dialog-header">
+        <h2 id="dlg-title">Ajouter une mesure</h2>
+        <button class="dialog-close" aria-label="Fermer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg></button>
+      </div>
+      <div class="dialog-body">
+            <div class="field-group">
+              <label for="m-date-d">Date de la mesure</label>
+              <input class="field-input" id="m-date-d" type="date" value="" max="2026-10-07" required />
+            </div>
+
+            <fieldset>
+              <legend class="field-legend">Position de la montre · facultative</legend>
+              <div class="chip-group">
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne à gauche</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne à droite</button>
+              </div>
+              <span class="field-hint">Les mesures sont comparées à position égale ; une position non précisée est comparée avec les autres mesures sans position.</span>
+            </fieldset>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <label for="m-rate-d">Marche (s/j)</label>
+                <input class="field-input" id="m-rate-d" type="number" inputmode="decimal" step="1" value="" placeholder="+12" required />
+              </div>
+              <div class="field-group">
+                <label for="m-beat-d">Beat error (ms)</label>
+                <input class="field-input" id="m-beat-d" type="number" inputmode="decimal" step="0.1" min="0" value="" placeholder="0.4" required />
+              </div>
+              <div class="field-group">
+                <label for="m-amp-d">Amplitude (°)</label>
+                <input class="field-input" id="m-amp-d" type="number" inputmode="numeric" step="1" min="0" value="" placeholder="260" required />
+              </div>
+            </div>
+            <p class="field-hint">Marche négative si la montre retarde (ex. −8). Beat error et amplitude ne peuvent pas être négatifs. Aucune date dans le futur.</p>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn-secondary">Annuler</button>
+        <button class="btn-primary">Enregistrer la mesure</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

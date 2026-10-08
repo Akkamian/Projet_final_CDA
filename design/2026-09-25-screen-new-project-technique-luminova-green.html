@@ -1,5 +1,8 @@
+<!doctype html>
+<html lang="fr">
 <title>Écran — Nouveau projet, « Nouvelle montre » par défaut (Technique / Luminova green)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   /*
     Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
@@ -67,9 +70,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -104,7 +111,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -145,7 +152,7 @@
 
   .caption {
     max-width: 390px;
-    color: #5b6472;
+    color: var(--text-secondary);
     font-size: 12px;
     text-align: center;
   }
@@ -156,7 +163,7 @@
     height: 780px;
     background: var(--bg);
     border-radius: 36px;
-    border: 1px solid #2a2f3a;
+    border: 1px solid var(--border);
     box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
     overflow: hidden;
     display: flex;
@@ -272,12 +279,12 @@
     border: none;
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 10px;
+    font-size: 12px;
     cursor: pointer;
   }
 
   .bottom-nav .nav-item.accent {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   /* --- Overlay + bottom sheet --- */
@@ -338,9 +345,9 @@
   }
 
   .step-indicator {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--accent-text);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
@@ -387,14 +394,14 @@
 
   .field-group label,
   .field-legend {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   .field-group .field-hint {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
   }
 
@@ -402,7 +409,7 @@
     width: 100%;
     min-height: var(--touch-min);
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 0 var(--space-3);
     color: var(--text);
@@ -445,7 +452,7 @@
   .segmented {
     display: flex;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 3px;
     gap: 3px;
@@ -485,7 +492,7 @@
   }
 
   .segmented-input:focus-visible + .segmented-label {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -503,7 +510,7 @@
   }
 
   .radio-row.selected {
-    border-color: var(--accent);
+    border-color: var(--accent-text);
   }
 
   .radio-input {
@@ -543,7 +550,7 @@
   }
 
   .recap-box .recap-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -567,7 +574,7 @@
     min-height: 36px;
     padding: 0 var(--space-3);
     border-radius: 999px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text-secondary);
     font-family: inherit;
@@ -578,7 +585,7 @@
 
   .chip-toggle[aria-pressed="true"] {
     background: var(--accent);
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     color: var(--accent-ink);
   }
 
@@ -627,15 +634,15 @@
 
   .step-tag {
     align-self: flex-start;
-    font-size: 9px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     padding: 1px var(--space-2);
     border-radius: 999px;
     background: var(--bg);
-    border: 1px solid var(--accent);
-    color: var(--accent);
+    border: 1px solid var(--accent-text);
+    color: var(--accent-text);
   }
 
   .step-actions {
@@ -665,7 +672,7 @@
   }
 
   .icon-btn.danger {
-    color: var(--danger);
+    color: var(--danger-text);
   }
 
   .add-step-row {
@@ -694,7 +701,7 @@
   .secondary-btn {
     flex: 1;
     min-height: var(--touch-min);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text);
@@ -725,6 +732,8 @@
     color: var(--accent-secondary);
   }
   .sheet-body > .field-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 
 <div class="page-header">
@@ -740,7 +749,12 @@
 </div>
 
 <div class="gallery">
-  <!-- 1. Étape 1 — Nouvelle montre (défaut) -->
+  <!-- 1. Étape 1 — Nouvelle montre (défaut) 
+
+  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
+  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
+  lang="fr", color-scheme, prefers-reduced-motion.
+-->
   <div class="gallery-item">
     <div class="phone">
       <div class="app-bar">
@@ -1382,3 +1396,4 @@
     </p>
   </div>
 </div>
+</html>

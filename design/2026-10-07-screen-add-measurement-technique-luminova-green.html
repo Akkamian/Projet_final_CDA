@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="fr">
+<!--
+  Écran — Ajouter / modifier une mesure de performance (Technique / Luminova green), mobile.
+  Créé le 2026-10-07. Réutilise les composants de la maquette « Nouveau projet » (feuille basse,
+  champs, puces).
+  - Position de la montre : liste de six positions usuelles en puces, facultative (RG-PER-02).
+    `watch_position` est un texte libre au MCD : les puces sont une aide de saisie, sans changement
+    de modèle. Les mesures sont comparées à position égale dans le bloc Performances.
+  - Contrôles : beat error et amplitude non négatifs, marche négative admise (RG-PER-03), date non
+    future (RG-GEN-01). Modification et suppression d'une mesure : S33, RG-PER-05.
+
+  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
+  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
+  lang="fr", color-scheme, prefers-reduced-motion.
+-->
+<title>Écran — Ajouter une mesure (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<style>
+  /*
+    Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
+    - Accent Luminova green #11E97E à la place du Luminova green.
+    - Marque et modèle sont deux champs (obligatoires, RG-MON-01) ; le calibre se
+      note dans le modèle (RG-MON-03).
+    - Prix et date d'achat facultatifs (RG-MON-06), date future refusée (RG-GEN-01),
+      champs courts limités à 255 caractères (RG-GEN-02).
+    - « Sur une montre déjà suivie ? » ne liste que les montres non vendues et sans
+      projet en cours (RG-PRJ-05, RG-PRJ-09, RG-AFF-04), y compris celles sans projet.
+    - Étapes proposées générées d'après le référentiel (db/seed_reference_data.sql) :
+      27 étapes pour un manuel avec chronographe, étiquette portant le nom de la
+      complication (RG-ETP-04, RG-ETP-05).
+
+    Maquette source : version du 2026-09-23 de cet écran (supprimée, remplacée par celle-ci)
+    (ne modifie pas le fichier source). Mêmes tokens CSS / composants de
+    base : phone, app-bar, sheet-overlay/sheet, field-group, segmented,
+    radio-row, chip-group, step-list, bottom-nav.
+
+    Ce qui change et pourquoi (voir « Création » de brief-ecran-unique.md
+    et la motivation 3 « Historique d'une même montre » de
+    docs/superpowers/specs/2026-09-23-mcd-montre-complications-design.md) :
+    - Usage principal du produit : acheter une montre puis la restaurer/
+      réviser puis la revendre. Ouvrir « + Nouveau projet » sur une montre
+      NEUVE est donc le cas courant, pas un choix à égalité avec « montre
+      existante ». L'Étape 1 s'ouvre désormais directement sur le
+      formulaire « Nouvelle montre » (plus de segmented control « Quelle
+      montre ? » à deux options équivalentes) : aucun clic de tri à faire
+      pour le cas fréquent, zéro friction.
+    - Rouvrir une révision sur une montre déjà suivie reste possible mais
+      est le cas rare (garder une montre, la réviser une seconde fois) :
+      il est accessible via un lien secondaire discret « Sur une montre
+      déjà suivie ? » sous le titre, plutôt que via un contrôle à égalité
+      visuelle avec le cas courant. Cliquer ce lien fait apparaître l'état
+      « montre déjà suivie » (écran 2 de cette galerie) : recherche, liste
+      des montres non vendues en radio, mention des montres vendues
+      exclues, et un lien de retour symétrique « Nouvelle montre
+      plutôt ? » pour revenir sans perdre le fil.
+    - Étape 2 « Étapes proposées » : inchangée (même contenu que la
+      maquette source), toujours générée à partir du mouvement et des
+      complications de la montre choisie (nouvelle ou déjà suivie).
+    - Galerie réordonnée pour suivre le parcours réel : 1) Nouvelle
+      montre (défaut), 2) Montre déjà suivie (après clic sur le lien),
+      3) Étapes proposées.
+
+    Éco-conception (RGESN) :
+    - Fichier HTML autonome, aucune dépendance externe (pas de webfont,
+      pas de librairie JS/CSS) ; icônes en SVG inline minimal.
+    - Aucun composant recréé : le lien discret réutilise la même échelle
+      de couleurs/typo que le reste de la galerie (quelques lignes de CSS
+      ajoutées), pas de nouveau design system parallèle.
+    - Retirer le segmented control « Quelle montre ? » du cas courant
+      simplifie aussi le DOM/CSS rendus par défaut pour l'usage le plus
+      fréquent (un fieldset et un jeu de radios en moins à l'écran 1).
+    - Liste de montres existantes toujours courte (5 lignes, non paginée),
+      pas d'image bitmap, pas d'animation coûteuse.
+  */
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5FB5B0;
+    --danger: #b8383f;
+    --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    --touch-min: 44px;
+
+    --font-sans: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+
+  .page-header {
+    max-width: 880px;
+    margin: 0 auto var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .page-header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .page-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    max-width: 64ch;
+  }
+
+  .gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .gallery-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .caption {
+    max-width: 390px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .phone {
+    position: relative;
+    width: 390px;
+    height: 780px;
+    background: var(--bg);
+    border-radius: 36px;
+    border: 1px solid var(--border);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-4) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    margin-left: calc(-1 * var(--space-3));
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .app-bar h1 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-5) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  h3.block-title {
+    margin: 0 0 var(--space-2);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* --- Liste de projets (écran de fond) --- */
+
+  .project-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+  }
+
+  .project-row .thumb {
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+  }
+
+  .project-row .info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .project-row .info .name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .project-row .info .status {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* --- Barre de navigation basse --- */
+
+  .bottom-nav {
+    flex: none;
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .bottom-nav .nav-item {
+    flex: 1;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .bottom-nav .nav-item.accent {
+    color: var(--accent-text);
+  }
+
+  /* --- Overlay + bottom sheet --- */
+
+  .sheet-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.72);
+    display: flex;
+    align-items: flex-end;
+    z-index: 10;
+  }
+
+  .sheet {
+    width: 100%;
+    max-height: 88%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -24px 50px -20px rgba(0, 0, 0, 0.65);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sheet.full-height {
+    max-height: 96%;
+  }
+
+  .sheet-handle {
+    flex: none;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    margin: var(--space-3) auto var(--space-2);
+  }
+
+  .sheet-header {
+    flex: none;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .sheet-header .titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sheet-header h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .step-indicator {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-text);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .sheet-close {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .sheet-footer {
+    flex: none;
+    padding: var(--space-4);
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .field-group label,
+  .field-legend {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .field-group .field-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .field-input {
+    width: 100%;
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-3);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+  }
+
+  .field-input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .sheet-row {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .sheet-row .field-group {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* --- fieldset reset --- */
+
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  legend {
+    padding: 0;
+    margin: 0 0 var(--space-1);
+  }
+
+  /* --- Segmented control accessible (radio natif) --- */
+
+  .segmented {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .segmented-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .segmented-label {
+    flex: 1;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    padding: 0 var(--space-2);
+  }
+
+  .segmented-input:checked + .segmented-label {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .segmented-input:focus-visible + .segmented-label {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+
+  /* --- Liste de montres existantes (radio natif) --- */
+
+  .radio-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .radio-row.selected {
+    border-color: var(--accent-text);
+  }
+
+  .radio-input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+  }
+
+  .radio-row-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .radio-row-label .name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .radio-row-label .meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .recap-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+  }
+
+  .recap-box .recap-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .recap-box .recap-value {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* --- Puces de complications (bouton aria-pressed) --- */
+
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip-toggle {
+    min-height: 36px;
+    padding: 0 var(--space-3);
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .chip-toggle[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent-text);
+    color: var(--accent-ink);
+  }
+
+  /* --- Liste d'étapes proposées --- */
+
+  .step-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  }
+
+  .step-order {
+    flex: none;
+    width: 18px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .step-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .step-label {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .step-tag {
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px var(--space-2);
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--accent-text);
+    color: var(--accent-text);
+  }
+
+  .step-actions {
+    flex: none;
+    display: flex;
+    gap: 3px;
+  }
+
+  .icon-btn {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .icon-btn.danger {
+    color: var(--danger-text);
+  }
+
+  .add-step-row {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .add-step-row .field-input {
+    flex: 1;
+  }
+
+  .primary-btn {
+    width: 100%;
+    min-height: var(--touch-min);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .secondary-btn {
+    flex: 1;
+    min-height: var(--touch-min);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* --- Lien secondaire discret (bascule nouvelle montre / montre déjà suivie) --- */
+
+  .link-discreet {
+    align-self: flex-start;
+    margin: calc(-1 * var(--space-2)) 0 0;
+    padding: var(--space-1) 0;
+    min-height: 0;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .link-discreet:hover {
+    color: var(--accent-secondary);
+  }
+  .sheet-body > .field-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
+  .sheet-body > .field-hint, fieldset > .field-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
+  .btn-danger-link { background: none; border: none; color: var(--danger-text); font-family: inherit; font-size: 14px; font-weight: 600; min-height: var(--touch-min); cursor: pointer; }
+  .sheet-row .field-input { padding: 0 var(--space-2); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+
+<div class="page-header">
+  <h1>Performances — ajouter ou modifier une mesure</h1>
+  <p>Saisie d'une mesure relevée au timegrapher, avec la position de la montre. Le formulaire s'ouvre depuis « + Mesure » du bloc Performances.</p>
+</div>
+
+<div class="gallery">
+  <div class="gallery-item">
+    <div class="phone">
+      <div class="app-bar">
+        <h1>Seiko 6119-8100</h1>
+      </div>
+      <div class="content">
+        <div class="project-row">
+          <div class="info">
+            <span class="name">Performances du mouvement</span>
+            <span class="status">4 mesures</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay">
+        <div class="sheet full-height">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="sheet-header">
+            <div class="titles">
+              <h2>Ajouter une mesure</h2>
+            </div>
+            <button class="sheet-close" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <div class="field-group">
+              <label for="m-date-1">Date de la mesure</label>
+              <input class="field-input" id="m-date-1" type="date" value="" max="2026-10-07" required />
+            </div>
+
+            <fieldset>
+              <legend class="field-legend">Position de la montre · facultative</legend>
+              <div class="chip-group">
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne à gauche</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne à droite</button>
+              </div>
+              <span class="field-hint">Les mesures sont comparées à position égale ; une position non précisée est comparée avec les autres mesures sans position.</span>
+            </fieldset>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <label for="m-rate-1">Marche (s/j)</label>
+                <input class="field-input" id="m-rate-1" type="number" inputmode="decimal" step="1" value="" placeholder="+12" required />
+              </div>
+              <div class="field-group">
+                <label for="m-beat-1">Beat error (ms)</label>
+                <input class="field-input" id="m-beat-1" type="number" inputmode="decimal" step="0.1" min="0" value="" placeholder="0.4" required />
+              </div>
+              <div class="field-group">
+                <label for="m-amp-1">Amplitude (°)</label>
+                <input class="field-input" id="m-amp-1" type="number" inputmode="numeric" step="1" min="0" value="" placeholder="260" required />
+              </div>
+            </div>
+            <p class="field-hint">Marche négative si la montre retarde (ex. −8). Beat error et amplitude ne peuvent pas être négatifs. Aucune date dans le futur.</p>
+          </div>
+          <div class="sheet-footer">
+            <button class="primary-btn">Enregistrer la mesure</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">1. Ajouter une mesure — date, position (puces, facultative), marche, beat error, amplitude</p>
+  </div>
+  <div class="gallery-item">
+    <div class="phone">
+      <div class="app-bar">
+        <h1>Seiko 6119-8100</h1>
+      </div>
+      <div class="content">
+        <div class="project-row">
+          <div class="info">
+            <span class="name">Performances du mouvement</span>
+            <span class="status">4 mesures</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay">
+        <div class="sheet full-height">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="sheet-header">
+            <div class="titles">
+              <h2>Modifier la mesure</h2>
+            </div>
+            <button class="sheet-close" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path></svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <div class="field-group">
+              <label for="m-date-2">Date de la mesure</label>
+              <input class="field-input" id="m-date-2" type="date" value="2026-08-18" max="2026-10-07" required />
+            </div>
+
+            <fieldset>
+              <legend class="field-legend">Position de la montre · facultative</legend>
+              <div class="chip-group">
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Cadran bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en haut</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne en bas</button>
+                <button type="button" class="chip-toggle" aria-pressed="true">Couronne à gauche</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Couronne à droite</button>
+              </div>
+              <span class="field-hint">Les mesures sont comparées à position égale ; une position non précisée est comparée avec les autres mesures sans position.</span>
+            </fieldset>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <label for="m-rate-2">Marche (s/j)</label>
+                <input class="field-input" id="m-rate-2" type="number" inputmode="decimal" step="1" value="+35" placeholder="+12" required />
+              </div>
+              <div class="field-group">
+                <label for="m-beat-2">Beat error (ms)</label>
+                <input class="field-input" id="m-beat-2" type="number" inputmode="decimal" step="0.1" min="0" value="1.4" placeholder="0.4" required />
+              </div>
+              <div class="field-group">
+                <label for="m-amp-2">Amplitude (°)</label>
+                <input class="field-input" id="m-amp-2" type="number" inputmode="numeric" step="1" min="0" value="214" placeholder="260" required />
+              </div>
+            </div>
+            <p class="field-hint">Marche négative si la montre retarde (ex. −8). Beat error et amplitude ne peuvent pas être négatifs. Aucune date dans le futur.</p>
+          </div>
+          <div class="sheet-footer">
+            <div class="footer-actions"><button class="secondary-btn">Annuler</button><button class="primary-btn" style="flex: 2">Enregistrer</button></div>
+            <button class="btn-danger-link" style="width: 100%; margin-top: var(--space-2)">Supprimer cette mesure</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">2. Modifier ou supprimer une mesure (S33) — mêmes contrôles qu'à la saisie</p>
+  </div>
+</div>
+</html>

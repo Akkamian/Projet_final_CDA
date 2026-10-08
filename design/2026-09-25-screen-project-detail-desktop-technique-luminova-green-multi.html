@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <title>Écran desktop — Détail montre/projet, ≥ 2 projets (Technique / Luminova green)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   /*
     Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
@@ -75,9 +76,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -114,7 +119,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -154,7 +159,7 @@
     border-radius: var(--radius-sm);
     background: var(--surface);
     border: 1px solid var(--border);
-    color: var(--accent);
+    color: var(--accent-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -267,7 +272,7 @@
   }
 
   .breadcrumb a:hover {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   .breadcrumb .sep {
@@ -316,7 +321,7 @@
     gap: var(--space-2);
     height: 36px;
     padding: 0 var(--space-4);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--text);
@@ -336,7 +341,7 @@
     gap: var(--space-1);
     background: transparent;
     border: none;
-    color: var(--accent);
+    color: var(--accent-text);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -404,7 +409,7 @@
 
   .menu-panel .menu-note {
     padding: var(--space-1) var(--space-3) var(--space-2);
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     max-width: 220px;
   }
@@ -484,7 +489,7 @@
 
   .badge.sm {
     padding: 2px var(--space-2);
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .header-facts {
@@ -501,7 +506,7 @@
   }
 
   .fact .fact-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -563,7 +568,7 @@
   }
 
   .tab.active {
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     color: var(--text);
     background: var(--bg);
     font-weight: 600;
@@ -694,7 +699,7 @@
 
   .step-row.done .box {
     background: var(--accent);
-    border-color: var(--accent);
+    border-color: var(--accent-text);
   }
 
   .step-row .index {
@@ -791,7 +796,7 @@
   }
 
   .total-row .total-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -829,7 +834,7 @@
   /* ---------- Rail : coûts regroupés par projet ---------- */
 
   .section-label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -849,7 +854,7 @@
   }
 
   .cost-group.selected {
-    border-color: var(--accent);
+    border-color: var(--accent-text);
     background: rgba(17, 233, 126, 0.06);
   }
 
@@ -918,14 +923,14 @@
     color: var(--text-secondary);
     flex-direction: column;
     gap: var(--space-1);
-    font-size: 11px;
+    font-size: 12px;
     text-align: center;
     padding: var(--space-2);
     cursor: pointer;
   }
 
   .before-after figcaption {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-align: center;
   }
@@ -976,14 +981,16 @@
   .row-end { display: inline-flex; align-items: center; gap: var(--space-2); }
   .row-actions { width: 44px; text-align: right; }
   table.data td.row-actions { padding-left: 0; }
-  .menu-panel .menu-item.danger { color: var(--danger); }
+  .menu-panel .menu-item.danger { color: var(--danger-text); }
   .menu-panel .menu-item:disabled { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; }
   .menu-panel .menu-item:disabled:hover { background: transparent; }
   .charts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
   .charts .chart-legend { flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: var(--space-2); }
   .photo-actions { display: flex; justify-content: center; gap: var(--space-3); }
-  .ghost-btn.danger { color: var(--danger); }
+  .ghost-btn.danger { color: var(--danger-text); }
   @media (max-width: 640px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 </head>
 <body>
@@ -1048,7 +1055,12 @@
         <!-- Menu "⋯" : le projet sélectionné par défaut (2026-09-15) est en
              cours, donc "Nouvelle révision sur cette montre" reste discrète
              ici, comme dans le cas à 1 projet. Panneau ouvert pour la
-             démonstration. -->
+             démonstration. 
+
+  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
+  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
+  lang="fr", color-scheme, prefers-reduced-motion.
+-->
         <div class="menu">
           <button class="menu-btn" aria-haspopup="true" aria-expanded="true" aria-label="Autres actions">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

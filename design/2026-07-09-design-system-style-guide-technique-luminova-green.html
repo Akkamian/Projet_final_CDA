@@ -1,13 +1,18 @@
+<!doctype html>
+<html lang="fr">
 <title>Design System — Variante Technique / Green Luminova (a retenir)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   /*
     Variante "Technique" avec accent primaire Luminova green (#11E97E) :
     vert lumineux saturé, inspiré de la peinture luminescente des cadrans.
-    Fond/surface/bordure/texte inchangés (base Technique validée). Le succès
-    (#5B9279, sauge) reste dans la même famille de teinte mais nettement
-    moins saturé et lumineux : à surveiller là où accent et succès cohabitent
-    (badge « Vendue », marge positive).
+    Fond/surface/bordure/texte inchangés (base Technique validée).
+    Mise à jour du 2026-10-08 : le succès passe de la sauge #5B9279 au bleu-vert
+    #5FB5B0 pour se distinguer nettement de l'accent (badge « Vendue », marge
+    positive). Nouveaux jetons : --accent-text (accent en texte, trait ou focus),
+    --danger-text (#E0686E, >= 4,5:1 sur la surface), --danger-ink (texte sur
+    aplat danger), --border-strong (contrôles de formulaire, >= 3:1).
     Mise à jour du 2026-10-07 : vocabulaire aligné sur le MCD (marque et modèle
     séparés, « Vendue », « Sans projet », libellés d'étapes du référentiel).
   */
@@ -20,9 +25,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -67,7 +76,7 @@
   }
 
   a {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   h1,
@@ -136,7 +145,7 @@
 
   nav.toc a:hover,
   nav.toc a:focus-visible {
-    color: var(--accent);
+    color: var(--accent-text);
   }
 
   section {
@@ -179,7 +188,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
@@ -321,12 +330,12 @@
   .btn-secondary {
     background: transparent;
     color: var(--text);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
   }
 
   .btn-danger {
     background: var(--danger);
-    color: var(--text);
+    color: var(--danger-ink);
   }
 
   /* Champs de formulaire */
@@ -347,7 +356,7 @@
     width: 100%;
     min-height: var(--touch-min);
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
     color: var(--text);
     font-family: inherit;
@@ -465,7 +474,7 @@
     height: 20px;
     flex: none;
     border-radius: 5px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-strong);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -474,7 +483,7 @@
 
   .checklist-item.done .box {
     background: var(--accent);
-    border-color: var(--accent);
+    border-color: var(--accent-text);
   }
 
   .checklist-item.done .label {
@@ -531,7 +540,7 @@
   }
 
   .stat.negative .stat-value {
-    color: var(--danger);
+    color: var(--danger-text);
   }
 
   /* En-tête de section (dans l'app) */
@@ -551,7 +560,7 @@
   .ghost-btn {
     background: transparent;
     border: none;
-    color: var(--accent);
+    color: var(--accent-text);
     font-family: inherit;
     font-size: 13px;
     font-weight: 600;
@@ -576,7 +585,7 @@
   }
 
   .icon-sample svg {
-    stroke: var(--accent);
+    stroke: var(--accent-text);
   }
 
   footer {
@@ -595,6 +604,7 @@
       padding: var(--space-3) var(--space-4);
     }
   }
+  :root { color-scheme: dark; }
 </style>
 
 <div class="shell">
@@ -606,9 +616,9 @@
       Accent primaire Luminova green (#11E97E) — un vert lumineux saturé, inspiré de la peinture luminescente des cadrans.
     </p>
     <p class="note">
-      Note : le succès (#5B9279, sauge désaturé) est dans la même famille de
-      teinte que cet accent mais nettement moins saturé/lumineux — à
-      confirmer visuellement que les deux restent bien distincts.
+      Note : le succès est un bleu-vert (#5FB5B0), volontairement éloigné de la
+      teinte de l'accent pour que « Vendue » et la marge positive ne se
+      confondent pas avec une action.
     </p>
   </header>
 
@@ -676,17 +686,24 @@
           </div>
         </div>
         <div class="swatch">
-          <div class="swatch-color" style="background: #5b9279"></div>
+          <div class="swatch-color" style="background: #5FB5B0"></div>
           <div class="swatch-label">
             <div class="swatch-role">Succès</div>
-            <div class="swatch-hex">#5B9279</div>
+            <div class="swatch-hex">#5FB5B0</div>
           </div>
         </div>
         <div class="swatch">
-          <div class="swatch-color" style="background: #c1494f"></div>
+          <div class="swatch-color" style="background: #b8383f"></div>
           <div class="swatch-label">
-            <div class="swatch-role">Danger</div>
-            <div class="swatch-hex">#C1494F</div>
+            <div class="swatch-role">Danger (aplat, texte blanc)</div>
+            <div class="swatch-hex">#B8383F</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #e0686e"></div>
+          <div class="swatch-label">
+            <div class="swatch-role">Danger (texte)</div>
+            <div class="swatch-hex">#E0686E</div>
           </div>
         </div>
         <div class="swatch">
@@ -694,6 +711,13 @@
           <div class="swatch-label">
             <div class="swatch-role">Avertissement</div>
             <div class="swatch-hex">#C99A3E</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #68737f"></div>
+          <div class="swatch-label">
+            <div class="swatch-role">Bordure de contrôle</div>
+            <div class="swatch-hex">#68737F</div>
           </div>
         </div>
       </div>
@@ -1077,3 +1101,4 @@
     Variante d'accent primaire retenue pour la direction « Technique » (#11E97E).
   </footer>
 </div>
+</html>

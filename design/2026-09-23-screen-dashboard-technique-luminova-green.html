@@ -1,5 +1,8 @@
+<!doctype html>
+<html lang="fr">
 <title>Écran — Tableau de bord (Technique / Luminova green)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <style>
   /*
     Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
@@ -40,9 +43,13 @@
     --accent: #11E97E;
     --accent-ink: #12151a;
     --accent-secondary: #b8c4ce;
-    --success: #5b9279;
-    --danger: #c1494f;
+    --success: #5FB5B0;
+    --danger: #b8383f;
     --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -80,14 +87,14 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 
   .caption {
     max-width: 390px;
     margin: 0 auto var(--space-4);
-    color: #5b6472;
+    color: var(--text-secondary);
     font-size: 12px;
     text-align: center;
   }
@@ -103,7 +110,7 @@
     height: 780px;
     background: var(--bg);
     border-radius: 36px;
-    border: 1px solid #2a2f3a;
+    border: 1px solid var(--border);
     box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
     overflow: hidden;
     position: relative;
@@ -233,7 +240,7 @@
   }
 
   .margin.negative {
-    color: var(--danger);
+    color: var(--danger-text);
   }
 
   .fab {
@@ -257,6 +264,8 @@
   }
   .project-card .thumb.empty { border-style: dashed; }
   .badge.status-none .dot { background: var(--text-secondary); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 
 <div class="wrap">
@@ -361,3 +370,4 @@
     </button>
   </div>
 </div>
+</html>
