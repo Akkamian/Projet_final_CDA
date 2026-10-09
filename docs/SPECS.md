@@ -158,6 +158,8 @@ L'application doit permettre à un horloger amateur de :
 **And** cette action n'est plus proposée si la montre est vendue
 **And** elle est refusée tant qu'un projet est en cours sur la montre : une montre n'a qu'un projet en cours à la fois
 **And** elle est aussi proposée sur une montre non vendue qui n'a plus aucun projet
+**And** depuis « Nouveau projet », je peux aussi choisir la montre dans la liste « Montre existante », qui ne contient que les montres non vendues et sans projet en cours ; cette liste est désactivée s'il n'y en a aucune
+**And** la montre choisie s'affiche en lecture seule : ses informations ne se modifient pas à cet endroit (voir scénario 10)
 
 ---
 

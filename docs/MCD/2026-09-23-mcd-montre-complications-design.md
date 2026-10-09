@@ -202,7 +202,7 @@ Chaque type de mouvement possède sa liste de base complète (la liste « automa
 **Vocabulaire :** l'interface parle toujours de « projet » (terme des maquettes, compris de l'utilisateur). « Intervention » est le terme de conception qui désigne ce qu'est un `RESTORATION_PROJECT` dans le MCD : une intervention sur une montre.
 
 - **Nouveau projet** (point d'entrée unique, bouton « + Nouveau projet ») — formulaire en deux temps :
-  1. **Nouvelle montre** par défaut (cas courant) : marque/modèle, type de mouvement, complications, prix + date d'achat. Un lien secondaire « Sur une montre déjà suivie ? » bascule vers la liste filtrable des montres non vendues et sans projet en cours.
+  1. **Nouvelle montre** par défaut (cas courant) : marque/modèle, type de mouvement, complications, prix + date d'achat. Une liste « Montre existante » en tête du formulaire (liste native) propose les montres non vendues et sans projet en cours ; la montre choisie s'affiche en lecture seule à la place du formulaire (mise à jour du 2026-10-09, remplace le lien « Sur une montre déjà suivie ? »).
   2. **Étapes proposées** — aperçu généré (mouvement + complications, les étapes issues d'une complication portent son nom), ajustable (ajout, suppression, réordonnancement), puis « Créer le projet ».
 
   Nouvelle montre → `POST /watches` : la montre, ses complications, son premier projet et ses étapes sont créés **dans une seule écriture** (atomique). Montre existante → `POST /watches/:id/projects` : rien n'est ressaisi. Aucune route supplémentaire.

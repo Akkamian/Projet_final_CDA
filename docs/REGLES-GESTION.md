@@ -73,7 +73,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-PRJ-01 | Un projet est toujours rattaché à une montre. | §5.3 | BDD : `watch_id NOT NULL`, clé étrangère | à écrire |
 | RG-PRJ-02 | Un projet est « en cours » (par défaut) ou « terminé ». Il n'y a pas de type d'intervention en v1. | S5, S11, §5.3, Q8 | BDD : `chk_restoration_projects_status`, valeur par défaut `in_progress` | à écrire |
 | RG-PRJ-03 | La création d'une montre, de ses complications, de son premier projet et de ses étapes est atomique : si une partie échoue, rien n'est enregistré. | S5, critères d'acceptation | Service (écriture imbriquée unique) | Transaction de création (design MCD) |
-| RG-PRJ-04 | Un nouveau projet peut être ouvert sur une montre déjà suivie sans en ressaisir les informations. | S9 | Service ; Interface | à écrire |
+| RG-PRJ-04 | Un nouveau projet peut être ouvert sur une montre déjà suivie, choisie depuis « Nouveau projet » ou depuis sa fiche, sans en ressaisir les informations. Ses informations s'affichent en lecture seule : elles se modifient depuis sa fiche (S10). | S9 | Service ; Interface | à écrire |
 | RG-PRJ-05 | Aucun projet ne peut être ouvert sur une montre vendue. | S9, S22, §5.3 | Service | à écrire |
 | RG-PRJ-06 | Un projet « en cours » peut être marqué « terminé » : son statut change et sa date de fin est renseignée. Un projet déjà terminé ne peut pas l'être une seconde fois. | S11, Q19 | Service | à écrire |
 | RG-PRJ-07 | Un projet peut avoir une photo d'état initial et une photo d'état final, distinctes des photos d'étape. | S18, §5.3 | BDD : `photo_before`, `photo_after` nullables | à écrire |
@@ -157,7 +157,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-AFF-01 | Le tableau de bord affiche une carte par montre : miniature (photo finale du projet le plus récent, sinon sa photo initiale), marque et modèle, mouvement et complications. | S25 | Interface | à écrire |
 | RG-AFF-02 | La carte indique le statut du projet le plus récent (« En cours » ou « Terminé »), ou « Vendue » si la montre est vendue, et la marge si elle est vendue et calculable. | S25, §5.3 | Interface | à écrire |
 | RG-AFF-03 | Le sélecteur de projet n'apparaît que si la montre a deux projets ou plus ; la checklist, les performances et l'avant / après suivent le projet sélectionné. | S26, Q17 | Interface | à écrire |
-| RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
+| RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée, ni la montre listée dans « Montre existante », si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
 | RG-AFF-05 | Une montre sans projet s'affiche sur le tableau de bord sans miniature, avec le statut « Sans projet », et reste consultable ; un nouveau projet peut y être ouvert si elle n'est pas vendue. | S25, S9 ; arbitrage C3 | Interface | à écrire |
 | RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le compteur du tableau de bord suit le filtre ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
 
@@ -202,7 +202,7 @@ Ces points découlent de C3 sans avoir été posés tels quels.
 
 ### Documents à aligner (non modifiés à ce stade)
 
-- **Design du MCD** (`docs/MCD/2026-09-23-mcd-montre-complications-design.md`) : le parcours dit que « Nouvelle révision » reste proposée, de façon discrète, tant qu'un projet est en cours, et que « Sur une montre déjà suivie ? » liste les montres non vendues. Avec A4, l'action est indisponible tant qu'un projet est en cours, et la liste doit exclure ces montres.
+- **Design du MCD** (`docs/MCD/2026-09-23-mcd-montre-complications-design.md`) : le parcours dit que « Nouvelle révision » reste proposée, de façon discrète, tant qu'un projet est en cours, et que le lien « Sur une montre déjà suivie ? » (devenu la liste « Montre existante » le 2026-10-09) liste les montres non vendues. Avec A4, l'action est indisponible tant qu'un projet est en cours, et la liste doit exclure ces montres.
 - **`docs/UML.md`** : les cas d'utilisation correspondant à S28 à S38 sont à ajouter.
 - **Plans de l'ancien dépôt** : plusieurs règles ne sont plus d'actualité (longueur 200, pas de suppression, pas de réouverture).
 
