@@ -13,6 +13,11 @@
     positive). Nouveaux jetons : --accent-text (accent en texte, trait ou focus),
     --danger-text (#E0686E, >= 4,5:1 sur la surface), --danger-ink (texte sur
     aplat danger), --border-strong (contrôles de formulaire, >= 3:1).
+    Mise à jour du 2026-10-09 : --accent-warm (#C97C4C) et --accent-warm-text (#D98A5A,
+    petit texte), accent chaud réservé aux liens secondaires ou légaux et à l'information ;
+    jamais pour un statut (trop proche de l'avertissement #C99A3E). Nouveaux composants :
+    barre de navigation basse (Accueil, Recherche, Nouveau projet) et bouton compte
+    (initiale de l'adresse email, dans l'en-tête de l'accueil).
     Mise à jour du 2026-10-07 : vocabulaire aligné sur le MCD (marque et modèle
     séparés, « Vendue », « Sans projet », libellés d'étapes du référentiel).
   */
@@ -32,6 +37,8 @@
     --border-strong: #68737f;
     --danger-text: #e0686e;
     --danger-ink: #ffffff;
+    --accent-warm: #C97C4C;
+    --accent-warm-text: #D98A5A;
 
     --radius: 8px;
     --radius-sm: 6px;
@@ -604,6 +611,95 @@
       padding: var(--space-3) var(--space-4);
     }
   }
+  /* Barre de navigation basse */
+  .phone-demo {
+    width: 390px;
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .bottom-nav {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .bottom-nav .nav-item {
+    flex: 1;
+    position: relative;
+    min-height: 60px;
+    padding: var(--space-2) 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .bottom-nav .nav-item[aria-current="page"] {
+    color: var(--text);
+  }
+
+  .bottom-nav .nav-item[aria-current="page"]::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 30%;
+    right: 30%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--accent);
+  }
+
+  .bottom-nav .nav-item > svg {
+    margin: 3px 0;
+  }
+
+  .bottom-nav .nav-add {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Bouton compte (initiale de l'adresse email) */
+  .account-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .link-warm {
+    color: var(--accent-warm-text);
+    text-decoration: underline;
+  }
+
   :root { color-scheme: dark; }
 </style>
 
@@ -634,6 +730,8 @@
       <h2>Couleurs</h2>
       <p class="section-intro">
         Neutres identiques à la variante Technique. Accent primaire : vert Luminova.
+        L'accent chaud (orange) sert aux liens secondaires ou légaux (CGV, confidentialité),
+        toujours soulignés ; jamais pour un statut, car il est proche de l'avertissement.
       </p>
       <div class="swatch-grid">
         <div class="swatch">
@@ -718,6 +816,20 @@
           <div class="swatch-label">
             <div class="swatch-role">Bordure de contrôle</div>
             <div class="swatch-hex">#68737F</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #C97C4C"></div>
+          <div class="swatch-label">
+            <div class="swatch-role">Accent chaud (liens secondaires, légal)</div>
+            <div class="swatch-hex">#C97C4C · 5,0:1 sur surface</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #D98A5A"></div>
+          <div class="swatch-label">
+            <div class="swatch-role">Accent chaud (petit texte)</div>
+            <div class="swatch-hex">#D98A5A · 6,0:1 sur surface</div>
           </div>
         </div>
       </div>
@@ -1026,6 +1138,43 @@
           <h4>Performances du mouvement</h4>
           <button class="ghost-btn">+ Ajouter une mesure</button>
         </div>
+      </div>
+
+      <h3 class="component-title">Barre de navigation basse (mobile)</h3>
+      <div class="demo">
+        <div class="phone-demo">
+          <nav class="bottom-nav" aria-label="Navigation principale">
+            <a class="nav-item" href="#" aria-current="page">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+              Accueil
+            </a>
+            <a class="nav-item" href="#">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle><path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+              Recherche
+            </a>
+            <a class="nav-item" href="#">
+              <span class="nav-add" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg></span>
+              Nouveau projet
+            </a>
+          </nav>
+        </div>
+        <p class="note" style="margin-top: var(--space-3)">
+          Trois entrées fixes, avec libellé. Page courante : texte clair et filet d'accent (aria-current) ;
+          une fiche garde « Accueil » actif. « Nouveau projet » reste une action : pastille d'accent.
+          Masquée sur les écrans de connexion et pendant la saisie en tiroir. Le compte n'est pas dans la barre.
+        </p>
+      </div>
+
+      <h3 class="component-title">Bouton compte (en-tête de l'accueil)</h3>
+      <div class="demo row">
+        <button class="account-btn" aria-label="Mon compte (amateur@example.com)">a</button>
+        <span class="note">Initiale de l'adresse email, en majuscule. Aucune image. Placé en haut à droite de l'accueil mobile.</span>
+      </div>
+
+      <h3 class="component-title">Lien secondaire (accent chaud)</h3>
+      <div class="demo">
+        J'ai lu et j'accepte les <a class="link-warm" href="#">Conditions Générales de Vente</a> et la
+        <a class="link-warm" href="#">Politique de Confidentialité</a>.
       </div>
 
       <h3 class="component-title">Icônes (trait fin)</h3>

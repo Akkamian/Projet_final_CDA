@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="fr">
+<!--
+  Écrans d'authentification mobile : connexion (et ses états d'erreur), création de compte, vérification d'adresse, mot de passe oublié.
+  Source des scénarios : docs/SPECS.md (S1, S2, S3, S39) et docs/REGLES-GESTION.md (RG-CPT-01 à 17).
+  Écarts avec les maquettes Figma (antérieures au MCD) : libellés visibles au lieu de placeholders seuls,
+  liens soulignés, texte d'aide lisible (>= 4,5:1), case à cocher native à l'accent, police système.
+  Éco-conception : fond uni, aucune webfont, aucune image (logo et illustration en SVG inline), pas d'animation.
+-->
+<title>Écran — Connexion et création de compte, mobile (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<style>
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5FB5B0;
+    --danger: #b8383f;
+    --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
+    --accent-warm: #C97C4C;
+    --accent-warm-text: #D98A5A;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    --touch-min: 44px;
+
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+
+  h1, h2 { margin: 0; text-wrap: balance; font-weight: 600; }
+
+  .caption {
+    margin: 0 0 var(--space-3);
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .brand { display: flex; align-items: center; gap: var(--space-3); }
+  .brand svg { flex: none; }
+  .brand-name { font-size: 14px; font-weight: 600; line-height: 1.25; }
+
+  .auth-title { font-size: 24px; margin-bottom: var(--space-2); }
+  .auth-lead { margin: 0 0 var(--space-5); color: var(--text-secondary); font-size: 14px; }
+
+  form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  .field label { display: block; margin-bottom: var(--space-2); font-size: 13px; color: var(--text-secondary); }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap input {
+    width: 100%;
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    padding: 0 var(--space-3);
+  }
+
+  .input-wrap input::placeholder { color: var(--text-secondary); }
+  .input-wrap input[aria-invalid="true"] { border-color: var(--danger-text); }
+  .input-wrap.has-reveal input { padding-right: 48px; }
+
+  .reveal {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .field-hint, .field-msg { margin: var(--space-2) 0 0; font-size: 12px; color: var(--text-secondary); }
+  .field-msg { display: flex; align-items: flex-start; gap: var(--space-2); color: var(--danger-text); }
+  .field-msg svg { flex: none; margin-top: 1px; }
+
+  .check { display: flex; align-items: flex-start; gap: var(--space-3); font-size: 13px; }
+  .check input { width: 20px; height: 20px; flex: none; margin: 1px 0 0; accent-color: var(--accent); }
+
+  .row-end { display: flex; justify-content: flex-end; }
+
+  a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+  a.link-warm { color: var(--accent-warm-text); }
+
+  .btn {
+    appearance: none;
+    width: 100%;
+    min-height: var(--touch-min);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-secondary { background: transparent; color: var(--text); border-color: var(--border-strong); }
+
+  .banner {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--danger-text);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--danger-text) 12%, transparent);
+    font-size: 14px;
+  }
+  .banner svg { flex: none; margin-top: 2px; color: var(--danger-text); }
+  .banner.warn { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+  .banner.warn svg { color: var(--warning); }
+  .banner p { margin: 0; }
+  .banner .banner-sub { margin-top: var(--space-1); color: var(--text-secondary); font-size: 13px; }
+
+  .auth-foot {
+    margin: var(--space-5) 0 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .confirm-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    border: 1px solid var(--accent-text);
+    color: var(--accent-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stack { display: flex; flex-direction: column; gap: var(--space-3); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+  .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-6) var(--space-5); padding: var(--space-6) var(--space-4); }
+  .gallery-item { width: 390px; max-width: 100%; }
+  .phone {
+    min-height: 780px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 36px;
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+    padding: var(--space-7) var(--space-4) var(--space-6);
+  }
+  .phone .brand { margin-bottom: var(--space-6); }
+  .phone .auth-main { margin-top: auto; }
+
+</style>
+
+<div class="gallery">
+  <div class="gallery-item">
+    <p class="caption">1. Connexion</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Bienvenue</h1>
+      <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="m1-email">Email</label>
+        <div class="input-wrap">
+          <input id="m1-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m1-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m1-password" name="password" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="row-end"><a href="#">Mot de passe oublié ?</a></div>
+        <button class="btn btn-primary" type="submit">Connexion</button>
+      </form>
+      <p class="auth-foot">Pas encore de compte ? <a href="#">Créer un compte</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">2. Connexion · identifiants invalides (RG-CPT-07 : même message pour email inconnu et mauvais mot de passe)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Bienvenue</h1>
+      <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
+      <form novalidate>
+      <div class="banner" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"></circle><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        <div>
+          <p>Adresse email ou mot de passe incorrect.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="m2-email">Email</label>
+        <div class="input-wrap">
+          <input id="m2-email" name="email" type="email" value="romain@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m2-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m2-password" name="password" type="password" value="motdepasse" autocomplete="current-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="row-end"><a href="#">Mot de passe oublié ?</a></div>
+        <button class="btn btn-primary" type="submit">Connexion</button>
+      </form>
+      <p class="auth-foot">Pas encore de compte ? <a href="#">Créer un compte</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">3. Connexion · adresse non vérifiée (S2, RG-CPT-06 : message distinct) avec renvoi du lien (S39)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Bienvenue</h1>
+      <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
+      <form novalidate>
+      <div class="banner warn" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"></circle><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        <div>
+          <p>Votre adresse n'est pas encore vérifiée.</p>
+          <p class="banner-sub">Ouvrez le lien reçu par email pour vous connecter. Il est valable 24 h.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="m3-email">Email</label>
+        <div class="input-wrap">
+          <input id="m3-email" name="email" type="email" value="romain@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m3-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m3-password" name="password" type="password" value="motdepasse" autocomplete="current-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <button class="btn btn-primary" type="submit">Connexion</button>
+        <button class="btn btn-secondary" type="button">Renvoyer le lien de vérification</button>
+      </form>
+      <p class="auth-foot">Pas encore de compte ? <a href="#">Créer un compte</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">4. Création de compte (S1)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Création de compte</h1>
+      <p class="auth-lead">Un email de vérification vous sera envoyé.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="m4-email">Email</label>
+        <div class="input-wrap">
+          <input id="m4-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m4-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m4-password" name="password" type="password" autocomplete="new-password" aria-describedby="m4-password-msg">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+        <p class="field-hint" id="m4-password-msg">8 caractères minimum.</p>
+      </div>
+      <div class="field">
+        <label for="m4-confirm">Confirmation du mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m4-confirm" name="confirm" type="password" autocomplete="new-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="check">
+          <input id="m4-cgv" name="cgv" type="checkbox">
+          <label for="m4-cgv">J'ai lu et j'accepte les <a class="link-warm" href="#">Conditions Générales de Vente</a> et la <a class="link-warm" href="#">Politique de Confidentialité</a>.</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Créer mon compte</button>
+      </form>
+      <p class="auth-foot">Vous avez déjà un compte ? <a href="#">Connexion</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">5. Création de compte · adresse déjà utilisée (RG-CPT-01) et mot de passe trop court (RG-CPT-03)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Création de compte</h1>
+      <p class="auth-lead">Un email de vérification vous sera envoyé.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="m5-email">Email</label>
+        <div class="input-wrap">
+          <input id="m5-email" name="email" type="email" value="romain@exemple.fr" autocomplete="username" aria-invalid="true" aria-describedby="m5-email-msg">
+        </div>
+        <p class="field-msg" id="m5-email-msg" role="alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"></circle><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span>Cette adresse est déjà utilisée par un compte.</span></p>
+      </div>
+      <div class="field">
+        <label for="m5-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m5-password" name="password" type="password" value="abc123" autocomplete="new-password" aria-invalid="true" aria-describedby="m5-password-msg">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+        <p class="field-msg" id="m5-password-msg" role="alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"></circle><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg><span>8 caractères minimum.</span></p>
+      </div>
+      <div class="field">
+        <label for="m5-confirm">Confirmation du mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="m5-confirm" name="confirm" type="password" value="abc123" autocomplete="new-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="check">
+          <input id="m5-cgv" name="cgv" type="checkbox">
+          <label for="m5-cgv">J'ai lu et j'accepte les <a class="link-warm" href="#">Conditions Générales de Vente</a> et la <a class="link-warm" href="#">Politique de Confidentialité</a>.</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Créer mon compte</button>
+      </form>
+      <p class="auth-foot">Vous avez déjà un compte ? <a href="#">Connexion</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">6. Compte créé · vérifiez votre boîte mail (RG-CPT-05 : aucune session ouverte)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <div class="confirm-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect><path d="M3.5 7l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <h1 class="auth-title">Vérifiez votre boîte mail</h1>
+      <p class="auth-lead">Nous avons envoyé un lien de vérification à <strong style="color: var(--text)">romain@exemple.fr</strong>. Il est valable 24 h.</p>
+      <div class="stack">
+        <button class="btn btn-secondary" type="button">Renvoyer le lien</button>
+      </div>
+      <p class="auth-foot"><a href="#">Retour à la connexion</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">7. Mot de passe oublié (S3)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <h1 class="auth-title">Mot de passe oublié ?</h1>
+      <p class="auth-lead">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="m7-email">Email</label>
+        <div class="input-wrap">
+          <input id="m7-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+        <button class="btn btn-primary" type="submit">Envoyer</button>
+      </form>
+      <p class="auth-foot">Vous vous souvenez de votre mot de passe ? <a href="#">Connexion</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-item">
+    <p class="caption">8. Lien envoyé (RG-CPT-10 : même réponse que l'adresse corresponde ou non à un compte)</p>
+    <div class="phone">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+        <span class="brand-name">Watch Restoration<br>Tracker</span>
+      </div>
+      <div class="auth-main">
+      <div class="confirm-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect><path d="M3.5 7l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <h1 class="auth-title">Email envoyé</h1>
+      <p class="auth-lead">Si un compte correspond à cette adresse, un email contenant un lien de réinitialisation vient d'être envoyé. Le lien est valable 1 h.</p>
+      <p class="auth-foot"><a href="#">Retour à la connexion</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+</html>

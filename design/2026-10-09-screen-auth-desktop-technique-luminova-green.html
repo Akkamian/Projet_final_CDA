@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="fr">
+<!--
+  Écrans d'authentification desktop, mise en page asymétrique : panneau de marque à gauche (logo et illustration), formulaire à droite. Sous 900 px, le panneau disparaît et on retrouve la colonne du mobile.
+  Source des scénarios : docs/SPECS.md (S1, S2, S3, S39) et docs/REGLES-GESTION.md (RG-CPT-01 à 17).
+  Écarts avec les maquettes Figma (antérieures au MCD) : libellés visibles au lieu de placeholders seuls,
+  liens soulignés, texte d'aide lisible (>= 4,5:1), case à cocher native à l'accent, police système.
+  Éco-conception : fond uni, aucune webfont, aucune image (logo et illustration en SVG inline), pas d'animation.
+-->
+<title>Écran — Connexion et création de compte, desktop (Technique / Luminova green)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<style>
+  :root {
+    --page-bg: #05070a;
+    --bg: #12151a;
+    --surface: #1c2128;
+    --border: #2e353f;
+    --text: #e8edf2;
+    --text-secondary: #8b96a3;
+    --accent: #11E97E;
+    --accent-ink: #12151a;
+    --accent-secondary: #b8c4ce;
+    --success: #5FB5B0;
+    --danger: #b8383f;
+    --warning: #c99a3e;
+    --accent-text: #11E97E;
+    --border-strong: #68737f;
+    --danger-text: #e0686e;
+    --danger-ink: #ffffff;
+    --accent-warm: #C97C4C;
+    --accent-warm-text: #D98A5A;
+
+    --radius: 8px;
+    --radius-sm: 6px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    --touch-min: 44px;
+
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+
+  h1, h2 { margin: 0; text-wrap: balance; font-weight: 600; }
+
+  .caption {
+    margin: 0 0 var(--space-3);
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .brand { display: flex; align-items: center; gap: var(--space-3); }
+  .brand svg { flex: none; }
+  .brand-name { font-size: 14px; font-weight: 600; line-height: 1.25; }
+
+  .auth-title { font-size: 24px; margin-bottom: var(--space-2); }
+  .auth-lead { margin: 0 0 var(--space-5); color: var(--text-secondary); font-size: 14px; }
+
+  form { display: flex; flex-direction: column; gap: var(--space-4); }
+
+  .field label { display: block; margin-bottom: var(--space-2); font-size: 13px; color: var(--text-secondary); }
+
+  .input-wrap { position: relative; }
+
+  .input-wrap input {
+    width: 100%;
+    min-height: var(--touch-min);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    padding: 0 var(--space-3);
+  }
+
+  .input-wrap input::placeholder { color: var(--text-secondary); }
+  .input-wrap input[aria-invalid="true"] { border-color: var(--danger-text); }
+  .input-wrap.has-reveal input { padding-right: 48px; }
+
+  .reveal {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--touch-min);
+    height: var(--touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .field-hint, .field-msg { margin: var(--space-2) 0 0; font-size: 12px; color: var(--text-secondary); }
+  .field-msg { display: flex; align-items: flex-start; gap: var(--space-2); color: var(--danger-text); }
+  .field-msg svg { flex: none; margin-top: 1px; }
+
+  .check { display: flex; align-items: flex-start; gap: var(--space-3); font-size: 13px; }
+  .check input { width: 20px; height: 20px; flex: none; margin: 1px 0 0; accent-color: var(--accent); }
+
+  .row-end { display: flex; justify-content: flex-end; }
+
+  a { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; }
+  a.link-warm { color: var(--accent-warm-text); }
+
+  .btn {
+    appearance: none;
+    width: 100%;
+    min-height: var(--touch-min);
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-secondary { background: transparent; color: var(--text); border-color: var(--border-strong); }
+
+  .banner {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--danger-text);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--danger-text) 12%, transparent);
+    font-size: 14px;
+  }
+  .banner svg { flex: none; margin-top: 2px; color: var(--danger-text); }
+  .banner.warn { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+  .banner.warn svg { color: var(--warning); }
+  .banner p { margin: 0; }
+  .banner .banner-sub { margin-top: var(--space-1); color: var(--text-secondary); font-size: 13px; }
+
+  .auth-foot {
+    margin: var(--space-5) 0 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .confirm-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    border: 1px solid var(--accent-text);
+    color: var(--accent-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stack { display: flex; flex-direction: column; gap: var(--space-3); }
+  :root { color-scheme: dark; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+  .frames { display: flex; flex-direction: column; gap: var(--space-7); padding: var(--space-6) var(--space-5) var(--space-7); max-width: 1320px; margin: 0 auto; }
+  .frame {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+  }
+  .split { display: grid; grid-template-columns: 1.15fr 1fr; min-height: 720px; }
+
+  .brand-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-7);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .brand-panel .brand-name { font-size: 16px; }
+  .brand-panel .dial { width: min(320px, 100%); height: auto; align-self: center; margin: var(--space-6) 0; }
+  .brand-panel .tagline { margin: 0 0 var(--space-3); font-size: 28px; font-weight: 600; line-height: 1.2; max-width: 18ch; text-wrap: balance; }
+  .brand-panel .points { margin: 0; padding: 0; list-style: none; color: var(--text-secondary); font-size: 14px; display: flex; flex-direction: column; gap: var(--space-1); }
+
+  .form-panel { display: flex; align-items: center; justify-content: center; padding: var(--space-7) var(--space-6); }
+  .form-col { width: 100%; max-width: 380px; }
+
+  @media (max-width: 900px) {
+    .split { grid-template-columns: 1fr; min-height: 0; }
+    .brand-panel { display: none; }
+    .form-panel { padding: var(--space-6) var(--space-4); }
+  }
+
+</style>
+
+<div class="frames">
+  <section aria-label="Connexion">
+    <p class="caption">1. Connexion</p>
+    <div class="frame">
+      <div class="split">
+        <aside class="brand-panel">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+            <span class="brand-name">Watch Restoration Tracker</span>
+          </div>
+          <svg class="dial" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <circle cx="160" cy="160" r="150" stroke="var(--border-strong)" stroke-width="2"></circle>
+          <circle cx="160" cy="160" r="138" stroke="var(--border)" stroke-width="1"></circle>
+          <line x1="160.0" y1="48.0" x2="160.0" y2="28.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="220.0" y1="56.1" x2="226.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="263.9" y1="100.0" x2="274.3" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="272.0" y1="160.0" x2="292.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="263.9" y1="220.0" x2="274.3" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="220.0" y1="263.9" x2="226.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160.0" y1="272.0" x2="160.0" y2="292.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="100.0" y1="263.9" x2="94.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="56.1" y1="220.0" x2="45.7" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="48.0" y1="160.0" x2="28.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="56.1" y1="100.0" x2="45.7" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="100.0" y1="56.1" x2="94.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="102.7" y2="119.8" stroke="var(--text)" stroke-width="7" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="250.1" y2="108.0" stroke="var(--text)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)"></circle>
+        </svg>
+          <div>
+            <p class="tagline">Le journal de vos restaurations horlogères.</p>
+            <ul class="points">
+              <li>Étapes de démontage et de remontage guidées</li>
+              <li>Photos avant / après et mesures de marche</li>
+              <li>Coûts, revente et marge par montre</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="form-panel">
+          <div class="form-col">
+      <h1 class="auth-title">Bienvenue</h1>
+      <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="d1-email">Email</label>
+        <div class="input-wrap">
+          <input id="d1-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="d1-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="d1-password" name="password" type="password" placeholder="Votre mot de passe" autocomplete="current-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="row-end"><a href="#">Mot de passe oublié ?</a></div>
+        <button class="btn btn-primary" type="submit">Connexion</button>
+      </form>
+      <p class="auth-foot">Pas encore de compte ? <a href="#">Créer un compte</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section aria-label="Connexion · adresse non vérifiée (S2, RG-CPT-06 : message distinct) avec renvoi du lien (S39)">
+    <p class="caption">2. Connexion · adresse non vérifiée (S2, RG-CPT-06 : message distinct) avec renvoi du lien (S39)</p>
+    <div class="frame">
+      <div class="split">
+        <aside class="brand-panel">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+            <span class="brand-name">Watch Restoration Tracker</span>
+          </div>
+          <svg class="dial" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <circle cx="160" cy="160" r="150" stroke="var(--border-strong)" stroke-width="2"></circle>
+          <circle cx="160" cy="160" r="138" stroke="var(--border)" stroke-width="1"></circle>
+          <line x1="160.0" y1="48.0" x2="160.0" y2="28.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="220.0" y1="56.1" x2="226.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="263.9" y1="100.0" x2="274.3" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="272.0" y1="160.0" x2="292.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="263.9" y1="220.0" x2="274.3" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="220.0" y1="263.9" x2="226.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160.0" y1="272.0" x2="160.0" y2="292.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="100.0" y1="263.9" x2="94.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="56.1" y1="220.0" x2="45.7" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="48.0" y1="160.0" x2="28.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="56.1" y1="100.0" x2="45.7" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="100.0" y1="56.1" x2="94.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="102.7" y2="119.8" stroke="var(--text)" stroke-width="7" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="250.1" y2="108.0" stroke="var(--text)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)"></circle>
+        </svg>
+          <div>
+            <p class="tagline">Le journal de vos restaurations horlogères.</p>
+            <ul class="points">
+              <li>Étapes de démontage et de remontage guidées</li>
+              <li>Photos avant / après et mesures de marche</li>
+              <li>Coûts, revente et marge par montre</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="form-panel">
+          <div class="form-col">
+      <h1 class="auth-title">Bienvenue</h1>
+      <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
+      <form novalidate>
+      <div class="banner warn" role="alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"></circle><path d="M12 7.5v5.5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+        <div>
+          <p>Votre adresse n'est pas encore vérifiée.</p>
+          <p class="banner-sub">Ouvrez le lien reçu par email pour vous connecter. Il est valable 24 h.</p>
+        </div>
+      </div>
+      <div class="field">
+        <label for="d2-email">Email</label>
+        <div class="input-wrap">
+          <input id="d2-email" name="email" type="email" value="romain@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="d2-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="d2-password" name="password" type="password" value="motdepasse" autocomplete="current-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <button class="btn btn-primary" type="submit">Connexion</button>
+        <button class="btn btn-secondary" type="button">Renvoyer le lien de vérification</button>
+      </form>
+      <p class="auth-foot">Pas encore de compte ? <a href="#">Créer un compte</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section aria-label="Création de compte (S1)">
+    <p class="caption">3. Création de compte (S1)</p>
+    <div class="frame">
+      <div class="split">
+        <aside class="brand-panel">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+            <span class="brand-name">Watch Restoration Tracker</span>
+          </div>
+          <svg class="dial" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <circle cx="160" cy="160" r="150" stroke="var(--border-strong)" stroke-width="2"></circle>
+          <circle cx="160" cy="160" r="138" stroke="var(--border)" stroke-width="1"></circle>
+          <line x1="160.0" y1="48.0" x2="160.0" y2="28.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="220.0" y1="56.1" x2="226.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="263.9" y1="100.0" x2="274.3" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="272.0" y1="160.0" x2="292.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="263.9" y1="220.0" x2="274.3" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="220.0" y1="263.9" x2="226.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160.0" y1="272.0" x2="160.0" y2="292.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="100.0" y1="263.9" x2="94.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="56.1" y1="220.0" x2="45.7" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="48.0" y1="160.0" x2="28.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="56.1" y1="100.0" x2="45.7" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="100.0" y1="56.1" x2="94.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="102.7" y2="119.8" stroke="var(--text)" stroke-width="7" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="250.1" y2="108.0" stroke="var(--text)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)"></circle>
+        </svg>
+          <div>
+            <p class="tagline">Le journal de vos restaurations horlogères.</p>
+            <ul class="points">
+              <li>Étapes de démontage et de remontage guidées</li>
+              <li>Photos avant / après et mesures de marche</li>
+              <li>Coûts, revente et marge par montre</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="form-panel">
+          <div class="form-col">
+      <h1 class="auth-title">Création de compte</h1>
+      <p class="auth-lead">Un email de vérification vous sera envoyé.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="d3-email">Email</label>
+        <div class="input-wrap">
+          <input id="d3-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+      <div class="field">
+        <label for="d3-password">Mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="d3-password" name="password" type="password" autocomplete="new-password" aria-describedby="d3-password-msg">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+        <p class="field-hint" id="d3-password-msg">8 caractères minimum.</p>
+      </div>
+      <div class="field">
+        <label for="d3-confirm">Confirmation du mot de passe</label>
+        <div class="input-wrap has-reveal">
+          <input id="d3-confirm" name="confirm" type="password" autocomplete="new-password">
+          <button type="button" class="reveal" aria-label="Afficher le mot de passe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"></circle></svg></button>
+        </div>
+      </div>
+        <div class="check">
+          <input id="d3-cgv" name="cgv" type="checkbox">
+          <label for="d3-cgv">J'ai lu et j'accepte les <a class="link-warm" href="#">Conditions Générales de Vente</a> et la <a class="link-warm" href="#">Politique de Confidentialité</a>.</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Créer mon compte</button>
+      </form>
+      <p class="auth-foot">Vous avez déjà un compte ? <a href="#">Connexion</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section aria-label="Mot de passe oublié (S3)">
+    <p class="caption">4. Mot de passe oublié (S3)</p>
+    <div class="frame">
+      <div class="split">
+        <aside class="brand-panel">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+            <span class="brand-name">Watch Restoration Tracker</span>
+          </div>
+          <svg class="dial" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <circle cx="160" cy="160" r="150" stroke="var(--border-strong)" stroke-width="2"></circle>
+          <circle cx="160" cy="160" r="138" stroke="var(--border)" stroke-width="1"></circle>
+          <line x1="160.0" y1="48.0" x2="160.0" y2="28.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="220.0" y1="56.1" x2="226.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="263.9" y1="100.0" x2="274.3" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="272.0" y1="160.0" x2="292.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="263.9" y1="220.0" x2="274.3" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="220.0" y1="263.9" x2="226.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160.0" y1="272.0" x2="160.0" y2="292.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="100.0" y1="263.9" x2="94.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="56.1" y1="220.0" x2="45.7" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="48.0" y1="160.0" x2="28.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="56.1" y1="100.0" x2="45.7" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="100.0" y1="56.1" x2="94.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="102.7" y2="119.8" stroke="var(--text)" stroke-width="7" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="250.1" y2="108.0" stroke="var(--text)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)"></circle>
+        </svg>
+          <div>
+            <p class="tagline">Le journal de vos restaurations horlogères.</p>
+            <ul class="points">
+              <li>Étapes de démontage et de remontage guidées</li>
+              <li>Photos avant / après et mesures de marche</li>
+              <li>Coûts, revente et marge par montre</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="form-panel">
+          <div class="form-col">
+      <h1 class="auth-title">Mot de passe oublié ?</h1>
+      <p class="auth-lead">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      <form novalidate>
+      <div class="field">
+        <label for="d4-email">Email</label>
+        <div class="input-wrap">
+          <input id="d4-email" name="email" type="email" placeholder="prenom@exemple.fr" autocomplete="username">
+        </div>
+      </div>
+        <button class="btn btn-primary" type="submit">Envoyer</button>
+      </form>
+      <p class="auth-foot">Vous vous souvenez de votre mot de passe ? <a href="#">Connexion</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section aria-label="Lien envoyé (RG-CPT-10 : même réponse que l'adresse corresponde ou non à un compte)">
+    <p class="caption">5. Lien envoyé (RG-CPT-10 : même réponse que l'adresse corresponde ou non à un compte)</p>
+    <div class="frame">
+      <div class="split">
+        <aside class="brand-panel">
+          <div class="brand">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" stroke="var(--accent-secondary)" stroke-width="1.5"></circle>
+        <path d="M12 6.5V12l3.5 2" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+            <span class="brand-name">Watch Restoration Tracker</span>
+          </div>
+          <svg class="dial" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+          <circle cx="160" cy="160" r="150" stroke="var(--border-strong)" stroke-width="2"></circle>
+          <circle cx="160" cy="160" r="138" stroke="var(--border)" stroke-width="1"></circle>
+          <line x1="160.0" y1="48.0" x2="160.0" y2="28.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="220.0" y1="56.1" x2="226.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="263.9" y1="100.0" x2="274.3" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="272.0" y1="160.0" x2="292.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="263.9" y1="220.0" x2="274.3" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="220.0" y1="263.9" x2="226.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160.0" y1="272.0" x2="160.0" y2="292.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="100.0" y1="263.9" x2="94.0" y2="274.3" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="56.1" y1="220.0" x2="45.7" y2="226.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="48.0" y1="160.0" x2="28.0" y2="160.0" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"></line>
+          <line x1="56.1" y1="100.0" x2="45.7" y2="94.0" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="100.0" y1="56.1" x2="94.0" y2="45.7" stroke="var(--accent-secondary)" stroke-width="3" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="102.7" y2="119.8" stroke="var(--text)" stroke-width="7" stroke-linecap="round"></line>
+          <line x1="160" y1="160" x2="250.1" y2="108.0" stroke="var(--text)" stroke-width="5" stroke-linecap="round"></line>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)"></circle>
+        </svg>
+          <div>
+            <p class="tagline">Le journal de vos restaurations horlogères.</p>
+            <ul class="points">
+              <li>Étapes de démontage et de remontage guidées</li>
+              <li>Photos avant / après et mesures de marche</li>
+              <li>Coûts, revente et marge par montre</li>
+            </ul>
+          </div>
+        </aside>
+        <div class="form-panel">
+          <div class="form-col">
+      <div class="confirm-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5"></rect><path d="M3.5 7l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <h1 class="auth-title">Email envoyé</h1>
+      <p class="auth-lead">Si un compte correspond à cette adresse, un email contenant un lien de réinitialisation vient d'être envoyé. Le lien est valable 1 h.</p>
+      <p class="auth-foot"><a href="#">Retour à la connexion</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</html>
