@@ -20,7 +20,7 @@ node "« device » — Serveur applicatif Node.js" as app {
 }
 
 database "« database » — PostgreSQL 16" as pg {
-    artifact "Schéma Watch Restoration Tracker\n(script_db.sql + seed_processes.sql)" as schema
+    artifact "Schéma Watch Restoration Tracker\n(script_db.sql + seed_reference_data.sql)" as schema
 }
 
 node "« node » — Stockage objet (S3-compatible)" as store {

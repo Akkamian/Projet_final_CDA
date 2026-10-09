@@ -27,7 +27,7 @@ La stack est actée dans la présentation orale (slide 5) : **Vue 3** côté cli
 |---|---|---|
 | Client | Vue 3 (SPA, TypeScript) | Compilé en **build statique** (JS/CSS/HTML) |
 | API | NestJS (Node.js) + Prisma ORM | Processus Node.js côté serveur ; Prisma s'exécute **dans Node.js**, jamais dans le navigateur |
-| Données | PostgreSQL 16 | Schéma fourni par `db/script_db.sql` + `db/seed_processes.sql` |
+| Données | PostgreSQL 16 | Schéma fourni par `db/script_db.sql` + `db/seed_reference_data.sql` |
 | Photos | Stockage objet (URLs en BDD) | Le MPD ne persiste que des URLs (`step_pics.url`, `photo_before`, `photo_after`) → les fichiers binaires vivent dans un **bucket** |
 
 ---
@@ -51,7 +51,7 @@ flowchart TB
     end
 
     subgraph DB["« database » — Service PostgreSQL 16"]
-        SCHEMA["« artefact » Schéma Watch Restoration Tracker<br/>(script_db.sql + seed_processes.sql)"]
+        SCHEMA["« artefact » Schéma Watch Restoration Tracker<br/>(script_db.sql + seed_reference_data.sql)"]
     end
 
     subgraph STORE["« node » — Stockage objet (S3-compatible)"]
