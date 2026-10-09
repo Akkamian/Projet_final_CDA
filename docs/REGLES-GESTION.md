@@ -11,7 +11,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 
 | Source | Contenu | Référence dans ce document |
 |---|---|---|
-| `docs/SPECS.md` | scénarios Gherkin S1 à S39, critères d'acceptation (§4), ancien §5 des règles métier (§5.1 à §5.6, désormais remplacé par un renvoi vers ce document) | « S5 », « S23 », « §4 », « §5.2 »… |
+| `docs/SPECS.md` | scénarios Gherkin S1 à S40, critères d'acceptation (§4), ancien §5 des règles métier (§5.1 à §5.6, désormais remplacé par un renvoi vers ce document) | « S5 », « S23 », « §4 », « §5.2 »… |
 | `docs/MCD/2026-09-23-mcd-montre-complications-design.md` | décisions et contraintes du MCD, règle de génération des étapes, tests prévus | « MCD » |
 | `docs/MCD/2026-09-23-journal-decisions-mcd.md` | raisonnement derrière chaque décision | « Q6 », « Q21 »… |
 | `db/script_db.sql` | modèle physique, référence des contraintes en base | « BDD » |
@@ -159,6 +159,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-AFF-03 | Le sélecteur de projet n'apparaît que si la montre a deux projets ou plus ; la checklist, les performances et l'avant / après suivent le projet sélectionné. | S26, Q17 | Interface | à écrire |
 | RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
 | RG-AFF-05 | Une montre sans projet s'affiche sur le tableau de bord sans miniature, avec le statut « Sans projet », et reste consultable ; un nouveau projet peut y être ouvert si elle n'est pas vendue. | S25, S9 ; arbitrage C3 | Interface | à écrire |
+| RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le compteur du tableau de bord suit le filtre ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
 
 ## 10. Arbitrages du 2026-10-07
 
@@ -188,6 +189,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | C3 | La suppression d'un projet et celle d'une montre sont incluses en v1. | RG-PRJ-11, RG-MON-11, RG-GEN-03, RG-AFF-05 | `SPECS.md` S37, S38, S9, S25. Cascade déjà en base, vérifiée sur PostgreSQL. Effacement des fichiers à ajouter au service. |
 | C4 | Les règles reprises des plans de l'ancien dépôt sont conservées : mot de passe de 8 caractères minimum, hachage bcrypt, liens de 24 h et 1 h, session de 15 min et 7 jours, réponse 404 pour la donnée d'un autre, authentification obligatoire. | RG-CPT-03, 04, 07, 08, 09, 12 ; RG-SEC-02, 03 | Aucun. |
 | C5 | À l'inscription (2026-10-09), le formulaire demande la confirmation du mot de passe et l'acceptation des CGV et de la Politique de Confidentialité, comme dans les maquettes Figma. L'acceptation n'est pas conservée en base à ce stade. | RG-CPT-16, RG-CPT-17 | `SPECS.md` S1. Maquettes `design/…-screen-auth-…`. Pages CGV et confidentialité à rédiger ; conservation de la date d'acceptation à décider (hypothèse ci-dessous). |
+| C6 | Le filtre par statut du tableau de bord est inclus en v1 (2026-10-09), à parité entre mobile et desktop. Le tri du tableau de bord est reporté après la v1. | RG-AFF-06 | `SPECS.md` S40. Maquettes : pastilles de statut sur mobile, liste de statut sur desktop. La maquette desktop garde sa flèche indicative sur la colonne Achat, hors périmètre. |
 
 ### Hypothèses restant à confirmer
 
@@ -249,6 +251,7 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S37 — Supprimer un projet | RG-PRJ-11 ; RG-GEN-03 ; RG-FIN-08 ; RG-AFF-05 |
 | S38 — Supprimer une montre | RG-MON-11 ; RG-GEN-03 ; RG-SEC-05 |
 | S39 — Renvoyer le lien de vérification | RG-CPT-08 ; RG-CPT-10 ; RG-CPT-14 |
+| S40 — Filtrer le tableau de bord par statut | RG-AFF-02, 05, 06 |
 
 ## 12. Matrice de couverture des contraintes SQL
 

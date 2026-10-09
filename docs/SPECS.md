@@ -392,6 +392,21 @@ L'application doit permettre à un horloger amateur de :
 
 ---
 
+#### Scénario 40 — Filtrer le tableau de bord par statut
+**En tant que** horloger amateur,
+**je veux** filtrer mes montres par statut,
+**afin de** retrouver rapidement celles qui m'intéressent quand elles deviennent nombreuses.
+
+**Given** j'ai enregistré plusieurs montres de statuts différents
+**When** je choisis un statut dans le filtre (« Toutes », « En cours », « Terminé », « Vendue » ou « Sans projet »)
+**Then** seules les montres de ce statut sont affichées et le compteur du tableau de bord indique le nombre de montres affichées
+
+**And** « Toutes » est sélectionné par défaut
+**And** chaque statut indique le nombre de montres qui lui correspondent
+**And** si aucune montre ne correspond au statut choisi, un message l'indique
+
+---
+
 ### H. Confidentialité
 
 #### Scénario 27 — Refuser l'accès aux données d'un autre utilisateur
@@ -588,6 +603,7 @@ L'application doit permettre à un horloger amateur de :
 - L'adresse email est enregistrée en minuscules ; la date de revente ne précède pas la date d'achat ; aucune date saisie n'est dans le futur.
 - Un projet ou une montre peut être supprimé, après confirmation, avec toutes les données qui en dépendent.
 - Un utilisateur peut supprimer son compte avec toutes ses données.
+- Le tableau de bord se filtre par statut (« Toutes », « En cours », « Terminé », « Vendue », « Sans projet »).
 - Les tentatives répétées de connexion, de réinitialisation et de renvoi de lien sont limitées.
 
 ## 5. Règles de gestion
