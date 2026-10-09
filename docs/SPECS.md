@@ -35,7 +35,7 @@ L'application doit permettre à un horloger amateur de :
 **afin de** disposer d'un espace personnel et privé.
 
 **Given** je suis sur la page d'inscription
-**When** je saisis une adresse email valide et un mot de passe
+**When** je saisis une adresse email valide, un mot de passe et sa confirmation, et que j'accepte les Conditions Générales de Vente et la Politique de Confidentialité
 **Then** mon compte est créé, aucune session n'est ouverte et un email de vérification m'est envoyé
 
 **And** lorsque j'ouvre le lien reçu
@@ -43,6 +43,8 @@ L'application doit permettre à un horloger amateur de :
 
 **And** l'adresse est enregistrée en minuscules, sans espace superflu
 **And** si l'adresse est déjà utilisée par un compte, l'inscription est refusée avec un message explicite
+**And** si la confirmation diffère du mot de passe, l'inscription est refusée avec un message explicite
+**And** si les Conditions Générales de Vente et la Politique de Confidentialité ne sont pas acceptées, l'inscription est refusée
 
 ---
 

@@ -47,6 +47,8 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-CPT-13 | L'adresse email est enregistrée en minuscules, sans espace superflu, avant tout enregistrement ou toute recherche. | S1 ; arbitrage A9 | DTO / Service (normalisation) | à écrire |
 | RG-CPT-14 | Les tentatives répétées sur la connexion, la demande de réinitialisation et le renvoi du lien de vérification sont limitées par adresse IP ; au-delà du plafond, les requêtes sont refusées temporairement. | S36, S39 ; arbitrage A8 | Service (limitation de débit ; plafond fixé en configuration) | à écrire |
 | RG-CPT-15 | L'utilisateur peut supprimer son compte après confirmation de son mot de passe : toutes ses données sont supprimées, y compris les fichiers photos du stockage, et sa session est fermée. | S35 ; arbitrage A7 | Service ; BDD : `ON DELETE CASCADE` | à écrire |
+| RG-CPT-16 | À l'inscription, la confirmation du mot de passe doit être identique au mot de passe saisi ; sinon l'inscription est refusée avec un message explicite. | S1 ; arbitrage C5 | Interface (comparaison à la saisie) | à écrire |
+| RG-CPT-17 | L'inscription exige l'acceptation des Conditions Générales de Vente et de la Politique de Confidentialité ; sans cette acceptation, le compte n'est pas créé. | S1 ; arbitrage C5 | Interface ; DTO (acceptation obligatoire) | à écrire |
 
 ## 3. Montre (`RG-MON`)
 
@@ -185,6 +187,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | C2 | « Modifier une photo » signifie « remplacer ou retirer » ; une photo d'étape se supprime et se rajoute. | RG-PHO-06, 07 | Aucun. |
 | C3 | La suppression d'un projet et celle d'une montre sont incluses en v1. | RG-PRJ-11, RG-MON-11, RG-GEN-03, RG-AFF-05 | `SPECS.md` S37, S38, S9, S25. Cascade déjà en base, vérifiée sur PostgreSQL. Effacement des fichiers à ajouter au service. |
 | C4 | Les règles reprises des plans de l'ancien dépôt sont conservées : mot de passe de 8 caractères minimum, hachage bcrypt, liens de 24 h et 1 h, session de 15 min et 7 jours, réponse 404 pour la donnée d'un autre, authentification obligatoire. | RG-CPT-03, 04, 07, 08, 09, 12 ; RG-SEC-02, 03 | Aucun. |
+| C5 | À l'inscription (2026-10-09), le formulaire demande la confirmation du mot de passe et l'acceptation des CGV et de la Politique de Confidentialité, comme dans les maquettes Figma. L'acceptation n'est pas conservée en base à ce stade. | RG-CPT-16, RG-CPT-17 | `SPECS.md` S1. Maquettes `design/…-screen-auth-…`. Pages CGV et confidentialité à rédiger ; conservation de la date d'acceptation à décider (hypothèse ci-dessous). |
 
 ### Hypothèses restant à confirmer
 
@@ -193,6 +196,7 @@ Ces points découlent de C3 sans avoir été posés tels quels.
 - **Confirmation avant suppression** : la suppression d'un projet ou d'une montre exige une confirmation explicite et est définitive (RG-GEN-03), par analogie avec la suppression de compte, qui demande le mot de passe.
 - **Montre sans projet** : après suppression de son dernier projet, une montre reste visible avec le statut « Sans projet » (RG-AFF-05, repris de l'ancien frontend). Les spécifications ne prévoyaient pas ce cas.
 - **Montre vendue** : supprimer un de ses projets est autorisé, ce qui modifie la marge calculée. Aucun blocage n'est prévu.
+- **Preuve d'acceptation des CGV** (C5) : pour pouvoir démontrer le consentement, il faudrait conserver la date d'acceptation (par exemple une colonne `terms_accepted_at` sur `users`). Non retenu pour l'instant, car le script SQL et le MCD ne changent pas.
 
 ### Documents à aligner (non modifiés à ce stade)
 
@@ -206,7 +210,7 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 
 | Scénario | Règles |
 |---|---|
-| S1 — S'inscrire et vérifier son adresse | RG-CPT-01, 02, 03, 04, 05, 08, 13 |
+| S1 — S'inscrire et vérifier son adresse | RG-CPT-01, 02, 03, 04, 05, 08, 13, 16, 17 |
 | S2 — Être refusé si l'adresse n'est pas vérifiée | RG-CPT-06, 07 |
 | S3 — Réinitialiser un mot de passe | RG-CPT-03, 09, 10 |
 | S4 — Changer son mot de passe | RG-CPT-03, 11 |
