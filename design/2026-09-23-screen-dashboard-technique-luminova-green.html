@@ -12,6 +12,10 @@
     - Un clic sur une carte ouvre le détail de la montre (S25) ; le projet le plus
       récent n'est que la sélection par défaut.
 
+    Mise à jour du 2026-10-09 : filtre par statut (pastilles défilantes avec compteurs) sous
+    l'en-tête, spécifié par S40 (RG-AFF-06). Le tri est reporté.
+    Le compteur de l'en-tête suit le filtre (aria-live). Second écran : filtre « Vendue » actif.
+
     Écran "Tableau de bord" du wireframe composé avec les tokens de la
     variante Technique / Luminova green (#11E97E, vert Luminova). Même structure que la version Lume bleu, seul l'accent change.
 
@@ -83,6 +87,8 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--space-6);
     padding: var(--space-6) var(--space-4);
   }
 
@@ -323,21 +329,80 @@
     align-items: center;
     justify-content: center;
   }
+  /* --- Filtre par statut (pastilles défilantes) --- */
+  .toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filters {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-chip {
+    flex: none;
+    min-height: 32px;
+    padding: 0 var(--space-3);
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .filter-chip span {
+    margin-left: var(--space-1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .filter-chip[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent-text);
+    color: var(--accent-ink);
+  }
+
   :root { color-scheme: dark; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
 </style>
 
 <div class="wrap">
   <p class="caption">
-    Écran — Tableau de bord · compte dans l'en-tête, barre basse à 3 entrées
+    Écran — Tableau de bord · filtre par statut
   </p>
   <div class="phone">
     <div class="app-bar">
       <div>
         <h1>Tableau de bord</h1>
-        <p>5 montres</p>
+        <p aria-live="polite">5 montres</p>
       </div>
       <button class="account-btn" aria-label="Mon compte (amateur@example.com)">a</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="Filtrer par statut" tabindex="0">
+        <button class="filter-chip" aria-pressed="true">Toutes <span>5</span></button>
+        <button class="filter-chip" aria-pressed="false">En cours <span>1</span></button>
+        <button class="filter-chip" aria-pressed="false">Terminé <span>1</span></button>
+        <button class="filter-chip" aria-pressed="false">Vendue <span>2</span></button>
+        <button class="filter-chip" aria-pressed="false">Sans projet <span>1</span></button>
+      </div>
     </div>
 
     <div class="project-list">
@@ -449,4 +514,99 @@
     </nav>
   </div>
 </div>
+</html>
+<div class="wrap">
+  <p class="caption">
+    Écran — Tableau de bord · filtre « Vendue » actif
+  </p>
+  <div class="phone">
+    <div class="app-bar">
+      <div>
+        <h1>Tableau de bord</h1>
+        <p aria-live="polite">2 montres · Vendue</p>
+      </div>
+      <button class="account-btn" aria-label="Mon compte (amateur@example.com)">a</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" role="group" aria-label="Filtrer par statut" tabindex="0">
+        <button class="filter-chip" aria-pressed="false">Toutes <span>5</span></button>
+        <button class="filter-chip" aria-pressed="false">En cours <span>1</span></button>
+        <button class="filter-chip" aria-pressed="false">Terminé <span>1</span></button>
+        <button class="filter-chip" aria-pressed="true">Vendue <span>2</span></button>
+        <button class="filter-chip" aria-pressed="false">Sans projet <span>1</span></button>
+      </div>
+    </div>
+
+    <div class="project-list">
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Oris Diver Sixty-Five</span>
+          <span class="subtitle">Automatique · Date</span>
+          <div class="meta-row">
+            <span class="badge status-sold"><span class="dot"></span>Vendue</span>
+            <span class="margin positive">+185 €</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="project-card" href="#" title="Ouvre le détail de la montre">
+        <div class="thumb" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            <path d="M9 3h6M9 21h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </div>
+        <div class="body">
+          <span class="title">Omega Seamaster</span>
+          <span class="subtitle">Automatique · Date</span>
+          <div class="meta-row">
+            <span class="badge status-sold"><span class="dot"></span>Vendue</span>
+            <span class="margin negative">−25 €</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Navigation principale">
+      <a class="nav-item" href="#" aria-current="page">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+        </svg>
+        Accueil
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+          <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+        </svg>
+        Recherche
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-add" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+          </svg>
+        </span>
+        Nouveau projet
+      </a>
+    </nav>
+  </div>
+</div>
+<script>
+  /* Démonstration : la pastille active défile dans la zone visible. */
+  document.querySelectorAll(".filters").forEach(function (g) {
+    var on = g.querySelector('[aria-pressed="true"]');
+    if (on) { g.scrollLeft += on.getBoundingClientRect().left - g.getBoundingClientRect().left; }
+  });
+</script>
 </html>
