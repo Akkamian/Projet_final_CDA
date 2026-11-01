@@ -33,3 +33,6 @@ temp/
 docs/archives_projet_formation
 # Essais de design system (non versionnés)
 design/comparatif-design-system/
+
+# Photos envoyées en local (driver disque)
+uploads/
