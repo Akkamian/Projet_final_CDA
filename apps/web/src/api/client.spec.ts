@@ -92,6 +92,18 @@ describe('apiFetch', () => {
     expect(error).toMatchObject({ status: 409, code: 'EMAIL_ALREADY_USED', message: 'Adresse déjà utilisée' })
   })
 
+  it('assemble les messages de validation (tableau Nest) en un seul texte', async () => {
+    stubFetch(() => ({
+      status: 400,
+      body: { statusCode: 400, message: ['La marque est obligatoire', 'Le modèle est obligatoire'], error: 'Bad Request' },
+    }))
+
+    await expect(apiFetch('/watches', { method: 'POST', body: '{}' })).rejects.toMatchObject({
+      status: 400,
+      message: 'La marque est obligatoire ; Le modèle est obligatoire',
+    })
+  })
+
   it('lève une ApiError même si le corps de l’erreur n’est pas du JSON', async () => {
     vi.stubGlobal(
       'fetch',

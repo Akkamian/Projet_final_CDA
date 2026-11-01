@@ -10,6 +10,11 @@ export const routes: RouteRecordRaw[] = [
     name: 'step-preview',
     component: () => import('../views/StepPreviewView.vue'),
   },
+  {
+    path: '/watches/new',
+    name: 'new-watch',
+    component: () => import('../views/NewWatchView.vue'),
+  },
   // Pages d'authentification : seules routes accessibles sans session.
   {
     path: '/login',

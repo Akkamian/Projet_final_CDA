@@ -13,6 +13,7 @@ async function logout() {
 
 <template>
   <h1>Watch Restoration Tracker</h1>
+  <p><RouterLink to="/watches/new">Créer une montre et son projet de restauration</RouterLink></p>
   <p><RouterLink to="/apercu-etapes">Aperçu des étapes d’une restauration</RouterLink></p>
   <p v-if="auth.isAuthenticated"><button type="button" @click="logout">Se déconnecter</button></p>
 </template>

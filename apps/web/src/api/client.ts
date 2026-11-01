@@ -65,8 +65,10 @@ function send(path: string, init: RequestInit): Promise<Response> {
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
-  const body = (await response.json().catch(() => ({}))) as { code?: string; message?: string }
-  return new ApiError(response.status, body.message ?? `Erreur API ${response.status}`, body.code)
+  const body = (await response.json().catch(() => ({}))) as { code?: string; message?: string | string[] }
+  // La validation Nest renvoie un tableau de messages.
+  const message = Array.isArray(body.message) ? body.message.join(' ; ') : body.message
+  return new ApiError(response.status, message ?? `Erreur API ${response.status}`, body.code)
 }
 
 // Sur ces routes un 401 signifie « identifiants refusés » ou « renouvellement refusé » : rien à renouveler.
