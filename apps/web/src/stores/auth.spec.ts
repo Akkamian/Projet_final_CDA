@@ -1,0 +1,105 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { setAccessToken } from '../api/client'
+import { calls, sentBody, stubFetch } from '../test/helpers'
+import { useAuthStore } from './auth'
+
+describe('auth store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it('bootstrap ouvre la session si le cookie est valide', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { accessToken: 'tok' } }))
+    const auth = useAuthStore()
+
+    await auth.bootstrap()
+
+    expect(calls(fetchMock)).toEqual(['POST /auth/refresh'])
+    expect(auth.isAuthenticated).toBe(true)
+    expect(auth.accessToken).toBe('tok')
+  })
+
+  it('bootstrap laisse l’utilisateur déconnecté sans cookie valide', async () => {
+    stubFetch(() => ({ status: 401, body: { code: 'INVALID_SESSION' } }))
+    const auth = useAuthStore()
+
+    await auth.bootstrap()
+
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('bootstrap ne demande la session qu’une fois', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { accessToken: 'tok' } }))
+    const auth = useAuthStore()
+
+    await Promise.all([auth.bootstrap(), auth.bootstrap()])
+    await auth.bootstrap()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('S2 login ouvre la session avec le jeton d’accès reçu', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { accessToken: 'tok' } }))
+    const auth = useAuthStore()
+
+    await auth.login('foo@bar.fr', 'password123')
+
+    expect(calls(fetchMock)).toEqual(['POST /auth/login'])
+    expect(sentBody(fetchMock, 0)).toEqual({ email: 'foo@bar.fr', password: 'password123' })
+    expect(auth.isAuthenticated).toBe(true)
+  })
+
+  it('login propage l’erreur de l’API et reste déconnecté', async () => {
+    stubFetch(() => ({ status: 403, body: { code: 'EMAIL_NOT_VERIFIED', message: 'Adresse non vérifiée' } }))
+    const auth = useAuthStore()
+
+    await expect(auth.login('foo@bar.fr', 'password123')).rejects.toMatchObject({ code: 'EMAIL_NOT_VERIFIED' })
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('logout prévient l’API puis efface la session', async () => {
+    const fetchMock = stubFetch((url) =>
+      url.pathname === '/auth/login' ? { status: 200, body: { accessToken: 'tok' } } : { status: 204 },
+    )
+    const auth = useAuthStore()
+    await auth.login('foo@bar.fr', 'password123')
+
+    await auth.logout()
+
+    expect(calls(fetchMock)).toEqual(['POST /auth/login', 'POST /auth/logout'])
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('logout efface la session même si l’API est injoignable', async () => {
+    const auth = useAuthStore()
+    stubFetch(() => ({ status: 200, body: { accessToken: 'tok' } }))
+    await auth.login('foo@bar.fr', 'password123')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('réseau coupé')
+      }),
+    )
+
+    await auth.logout()
+
+    expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('la session se ferme quand le renouvellement échoue en cours d’usage', async () => {
+    const auth = useAuthStore()
+    stubFetch((url) =>
+      url.pathname === '/auth/login' ? { status: 200, body: { accessToken: 'tok' } } : { status: 401, body: {} },
+    )
+    await auth.login('foo@bar.fr', 'password123')
+    expect(auth.isAuthenticated).toBe(true)
+
+    const { apiFetch } = await import('../api/client')
+    await apiFetch('/complications').catch(() => undefined)
+
+    expect(auth.isAuthenticated).toBe(false)
+  })
+})

@@ -24,14 +24,11 @@ describe('CORS (D5 : l’API est servie sur un autre domaine que le front)', () 
     expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
   });
 
-  it('sans WEB_ORIGIN, n’autorise aucune origine (jamais « * »)', async () => {
+  it('sans WEB_ORIGIN, l’application refuse de démarrer (jamais « * » par défaut)', async () => {
     vi.stubEnv('WEB_ORIGIN', undefined);
-    const { app: withoutOrigin } = await createTestApp();
     try {
-      const res = await request(withoutOrigin.getHttpServer()).get('/health').set('Origin', 'http://localhost:5173');
-      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+      await expect(createTestApp()).rejects.toThrow(/WEB_ORIGIN/);
     } finally {
-      await withoutOrigin.close();
       vi.unstubAllEnvs();
     }
   });

@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import type { Prisma } from '../../src/generated/prisma/client.js';
 import type { PrismaService } from '../../src/prisma/prisma.service.js';
 
@@ -18,8 +19,8 @@ export async function createUser(
   const user = await prisma.users.create({
     data: {
       email,
-      // Valeur de remplacement : le hachage bcrypt arrive avec l'inscription (tâche 8 du plan).
-      password_hash: `test-hash:${password}`,
+      // 4 tours : le minimum de bcrypt, suffisant en test et bien plus rapide que les 10 de la production.
+      password_hash: await bcrypt.hash(password, 4),
       email_verified_at: opts.verified === false ? null : new Date(),
     },
   });

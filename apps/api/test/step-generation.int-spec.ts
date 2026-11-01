@@ -2,27 +2,37 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { StepGenerationService } from '../src/step-generation/step-generation.service.js';
 import type { GeneratedStep } from '../src/step-generation/order-steps.js';
+import { TokensService } from '../src/auth/tokens.service.js';
+import { createUser, resetUserData } from './helpers/factories.js';
 import { createTestApp } from './helpers/test-app.js';
 
 describe('référentiel et aperçu des étapes', () => {
   let app: INestApplication;
   let prisma: Awaited<ReturnType<typeof createTestApp>>['prisma'];
 
+  let authorization: string;
+
   beforeAll(async () => {
     ({ app, prisma } = await createTestApp());
+    // Toutes ces routes exigent une session (RG-SEC-03).
+    await resetUserData(prisma);
+    const user = await createUser(prisma);
+    authorization = `Bearer ${app.get(TokensService).signSession('access', user.id)}`;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
+  const get = (url: string) =>
+    request(app.getHttpServer()).get(url).set('Authorization', authorization);
   const preview = (movementCode: string, complicationCodes = '') =>
-    request(app.getHttpServer()).get('/step-previews').query({ movementCode, complicationCodes });
+    get('/step-previews').query({ movementCode, complicationCodes });
   const labels = (steps: GeneratedStep[]) => steps.map((s) => s.label);
 
   describe('GET /movement-types et /complications', () => {
     it('S5 liste les deux types de mouvement', async () => {
-      const res = await request(app.getHttpServer()).get('/movement-types');
+      const res = await get('/movement-types');
       expect(res.status).toBe(200);
       expect(res.body).toEqual(
         expect.arrayContaining([
@@ -34,9 +44,13 @@ describe('référentiel et aperçu des étapes', () => {
     });
 
     it('S5 liste les cinq complications', async () => {
-      const res = await request(app.getHttpServer()).get('/complications');
+      const res = await get('/complications');
       expect(res.status).toBe(200);
-      expect(res.body.map((c: { complicationCode: string }) => c.complicationCode).sort()).toEqual([
+      expect(
+        res.body
+          .map((c: { complicationCode: string }) => c.complicationCode)
+          .sort(),
+      ).toEqual([
         'chronograph',
         'date',
         'day_date',
@@ -46,7 +60,10 @@ describe('référentiel et aperçu des étapes', () => {
     });
 
     it('RG-ETP-03 aucune route d’écriture sur le référentiel', async () => {
-      const res = await request(app.getHttpServer()).post('/complications').send({ label: 'Intrus' });
+      const res = await request(app.getHttpServer())
+        .post('/complications')
+        .set('Authorization', authorization)
+        .send({ label: 'Intrus' });
       expect(res.status).toBe(404);
     });
   });
@@ -92,14 +109,21 @@ describe('référentiel et aperçu des étapes', () => {
 
     it('RG-ETP-05 les étapes de complication portent le nom de la complication, celles de base null', async () => {
       const res = await preview('manual', 'chronograph');
-      const chrono = res.body.find((s: GeneratedStep) => s.label === 'Déposer les aiguilles chrono');
+      const chrono = res.body.find(
+        (s: GeneratedStep) => s.label === 'Déposer les aiguilles chrono',
+      );
       expect(chrono).toMatchObject({
         stepOrder: 350,
         complicationCode: 'chronograph',
         complicationLabel: 'Chronographe',
       });
-      const base = res.body.find((s: GeneratedStep) => s.label === 'Déposer les aiguilles');
-      expect(base).toMatchObject({ complicationCode: null, complicationLabel: null });
+      const base = res.body.find(
+        (s: GeneratedStep) => s.label === 'Déposer les aiguilles',
+      );
+      expect(base).toMatchObject({
+        complicationCode: null,
+        complicationLabel: null,
+      });
     });
 
     it('RG-ETP-04 à rang égal entre date et jour/date, « date » passe avant « day_date »', async () => {
@@ -112,10 +136,14 @@ describe('référentiel et aperçu des étapes', () => {
 
     it('RG-ETP-05 une complication donne les mêmes étapes pour manuel et automatique', async () => {
       const onlyComplication = (steps: GeneratedStep[]) =>
-        steps.filter((s) => s.complicationCode === 'chronograph').map((s) => [s.label, s.stepOrder]);
+        steps
+          .filter((s) => s.complicationCode === 'chronograph')
+          .map((s) => [s.label, s.stepOrder]);
       const manual = await preview('manual', 'chronograph');
       const automatic = await preview('automatic', 'chronograph');
-      expect(onlyComplication(automatic.body)).toEqual(onlyComplication(manual.body));
+      expect(onlyComplication(automatic.body)).toEqual(
+        onlyComplication(manual.body),
+      );
       expect(onlyComplication(manual.body)).toHaveLength(5);
     });
 
@@ -127,23 +155,31 @@ describe('référentiel et aperçu des étapes', () => {
     });
 
     it('S8 l’aperçu ne persiste rien', async () => {
-      const before = [await prisma.restoration_steps.count(), await prisma.restoration_projects.count()];
+      const before = [
+        await prisma.restoration_steps.count(),
+        await prisma.restoration_projects.count(),
+      ];
       await preview('manual', 'chronograph');
-      const after = [await prisma.restoration_steps.count(), await prisma.restoration_projects.count()];
+      const after = [
+        await prisma.restoration_steps.count(),
+        await prisma.restoration_projects.count(),
+      ];
       expect(after).toEqual(before);
     });
 
     it('refuse un type de mouvement inconnu ou absent (400)', async () => {
       expect((await preview('quartz')).status).toBe(400);
-      expect((await request(app.getHttpServer()).get('/step-previews')).status).toBe(400);
+      expect((await get('/step-previews')).status).toBe(400);
     });
 
     it('refuse une complication inconnue (400)', async () => {
-      expect((await preview('manual', 'chronograph,tourbillon')).status).toBe(400);
+      expect((await preview('manual', 'chronograph,tourbillon')).status).toBe(
+        400,
+      );
     });
 
     it('S7 refuse un paramètre répété (400, jamais 500)', async () => {
-      const repeated = await request(app.getHttpServer()).get(
+      const repeated = await get(
         '/step-previews?movementCode=manual&complicationCodes=date&complicationCodes=chronograph',
       );
       expect(repeated.status).toBe(400);
