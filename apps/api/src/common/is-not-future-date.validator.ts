@@ -17,6 +17,8 @@ export function IsNotFutureDate(options?: ValidationOptions): PropertyDecorator 
           if (Number.isNaN(time)) return false;
           // V8 décale « 2025-02-30 » au 2 mars au lieu de le refuser : on exige que le jour existe vraiment.
           const day = value.slice(0, 10);
+          // PostgreSQL refuse l'année 0 ; avant l'an 1000 ce n'est de toute façon pas une date d'achat.
+          if (Number(day.slice(0, 4)) < 1000) return false;
           if (new Date(Date.parse(day)).toISOString().slice(0, 10) !== day) return false;
           // Une date seule vaut minuit UTC : « aujourd'hui » reste donc ≤ maintenant.
           return time <= Date.now();

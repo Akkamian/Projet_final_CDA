@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { apiError } from '../common/api-error.js';
 import { APP_CONFIG } from '../config/config.module.js';
@@ -20,6 +20,8 @@ export interface SessionTokens {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokens: TokensService,
@@ -96,7 +98,12 @@ export class AuthService {
   async resendVerification(email: string): Promise<void> {
     const user = await this.prisma.users.findUnique({ where: { email } });
     if (user && user.email_verified_at === null) {
-      await this.sendVerificationLink(user.id, user.email);
+      try {
+        await this.sendVerificationLink(user.id, user.email);
+      } catch (error) {
+        // Une panne d'envoi ne doit pas distinguer une adresse connue d'une inconnue : on journalise et on répond pareil.
+        this.logger.error(`Renvoi du lien de vérification impossible : ${String(error)}`);
+      }
     }
   }
 

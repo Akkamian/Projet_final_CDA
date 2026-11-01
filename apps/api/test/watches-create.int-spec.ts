@@ -175,6 +175,41 @@ describe('POST /watches : créer une montre et son premier projet', () => {
     expect(await counts()).toEqual(nothing);
   });
 
+  it('RG-MON-07 refuse un prix minuscule (1e-7) avec 400 au lieu de planter en 500', async () => {
+    for (const purchasePrice of [0.0000001, 1e-10, '0.0000001']) {
+      const res = await post(valid({ purchasePrice }));
+      expect(res.status, String(purchasePrice)).toBe(400);
+    }
+    expect(await counts()).toEqual(nothing);
+  });
+
+  it('RG-GEN-01 refuse l’année 0 et les dates avant l’an 1000 (400, jamais 500)', async () => {
+    for (const purchaseDate of ['0000-01-01', '0001-01-01', '0999-12-31']) {
+      expect((await post(valid({ purchaseDate }))).status, purchaseDate).toBe(400);
+    }
+  });
+
+  it('refuse le caractère NUL (que PostgreSQL ne sait pas stocker) dans les textes (400, jamais 500)', async () => {
+    for (const overrides of [
+      { brand: 'a\u0000b' },
+      { model: '61\u000019' },
+      { steps: [{ label: 'Déposer\u0000' }] },
+      { complicationCodes: ['da\u0000te'] },
+    ]) {
+      expect((await post(valid(overrides))).status, JSON.stringify(overrides)).toBe(400);
+    }
+    expect(await counts()).toEqual(nothing);
+  });
+
+  it('RG-GEN-02 les messages de longueur sont en français', async () => {
+    const res = await post(valid({ brand: 'a'.repeat(256), model: 'b'.repeat(256), steps: [{ label: 'c'.repeat(256) }] }));
+    expect(res.status).toBe(400);
+    const messages = (res.body.message as string[]).join(' ');
+    expect(messages).toContain('marque');
+    expect(messages).toContain('modèle');
+    expect(messages).not.toMatch(/must be|should not/);
+  });
+
   it('RG-MON-01 refuse sans marque, sans modèle ou sans type de mouvement', async () => {
     for (const overrides of [
       { brand: undefined },

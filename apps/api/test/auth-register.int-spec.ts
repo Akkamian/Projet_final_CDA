@@ -168,6 +168,20 @@ describe('Inscription, vérification d’adresse et renvoi du lien', () => {
       expect(mail.sent).toHaveLength(1);
     });
 
+    it('S39 RG-CPT-10 si l’envoi échoue (SMTP en panne), répond 204 comme pour une adresse inconnue', async () => {
+      await createUser(prisma, { email: 'foo@bar.fr', verified: false });
+      mail.fail = true;
+      try {
+        const known = await post('/auth/resend-verification', { email: 'foo@bar.fr' });
+        const unknown = await post('/auth/resend-verification', { email: 'inconnu@bar.fr' });
+        expect(known.status).toBe(204);
+        expect(known.status).toBe(unknown.status);
+        expect(known.body).toEqual(unknown.body);
+      } finally {
+        mail.fail = false;
+      }
+    });
+
     it('renvoi avec " FOO@bar.fr " retrouve le compte', async () => {
       await createUser(prisma, { email: 'foo@bar.fr', verified: false });
       const res = await post('/auth/resend-verification', { email: ' FOO@bar.fr ' });

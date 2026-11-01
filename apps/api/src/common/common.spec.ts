@@ -3,6 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { configuration } from '../config/configuration.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { HasMaxTwoDecimals } from './has-max-two-decimals.validator.js';
 import { IsNotFutureDate } from './is-not-future-date.validator.js';
 import { NormalizedEmail } from './normalized-email.decorator.js';
 import { PrismaExceptionFilter } from './prisma-exception.filter.js';
@@ -37,9 +38,36 @@ describe('RG-GEN-01 date non future', () => {
     expect(await validate(plainToInstance(DateDto, { date: '2025-03-01T00:30:00+02:00' }))).toHaveLength(0);
   });
 
+  it('RG-GEN-01 refuse l’année 0 (PostgreSQL la rejette) et les dates avant l’an 1000', async () => {
+    expect(await validate(plainToInstance(DateDto, { date: '0000-01-01' }))).toHaveLength(1);
+    expect(await validate(plainToInstance(DateDto, { date: '0999-12-31' }))).toHaveLength(1);
+    expect(await validate(plainToInstance(DateDto, { date: '1000-01-01' }))).toHaveLength(0);
+  });
+
   it("RG-GEN-01 refuse un texte qui n'est pas une date", async () => {
     expect(await validate(plainToInstance(DateDto, { date: 'hier' }))).toHaveLength(1);
     expect(await validate(plainToInstance(DateDto, { date: 20260101 }))).toHaveLength(1);
+  });
+});
+
+class DecimalDto {
+  @HasMaxTwoDecimals()
+  value: unknown;
+}
+
+describe('HasMaxTwoDecimals', () => {
+  const ok = async (value: unknown) => (await validate(plainToInstance(DecimalDto, { value }))).length === 0;
+
+  it('RG-MON-07 accepte jusqu’à deux décimales', async () => {
+    for (const value of [0, 1, 80.5, 12.35, 0.01, 99999999.99]) expect(await ok(value), String(value)).toBe(true);
+  });
+
+  it('RG-MON-07 refuse trois décimales ou plus, y compris en notation exponentielle (jamais d’exception)', async () => {
+    for (const value of [12.345, 0.001, 0.0000001, 1e-10, 5e-324]) expect(await ok(value), String(value)).toBe(false);
+  });
+
+  it('refuse ce qui n’est pas un nombre fini', async () => {
+    for (const value of ['80', NaN, Infinity, null, undefined, {}]) expect(await ok(value), typeof value).toBe(false);
   });
 });
 

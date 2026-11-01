@@ -10,11 +10,14 @@ import { PrismaService } from '../../src/prisma/prisma.service.js';
 export class FakeMail {
   readonly sent: { to: string; subject: string; text: string }[] = [];
   readonly transport: Transporter;
+  /** Simule un serveur SMTP en panne : l'envoi lève une erreur. */
+  fail = false;
 
   constructor() {
     const transport = createTransport({ jsonTransport: true });
     const send = transport.sendMail.bind(transport) as (options: unknown) => Promise<{ message: string }>;
     transport.sendMail = (async (options: unknown) => {
+      if (this.fail) throw new Error('SMTP indisponible');
       const info = await send(options);
       const message = JSON.parse(info.message) as { to: { address: string }[]; subject: string; text: string };
       this.sent.push({ to: message.to[0].address, subject: message.subject, text: message.text });

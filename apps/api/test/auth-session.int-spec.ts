@@ -214,6 +214,23 @@ describe('Connexion, renouvellement, déconnexion et garde globale', () => {
       expect((await http().get('/movement-types').set('Authorization', `Bearer ${link}`)).status).toBe(401);
     });
 
+    it('RG-SEC-03 le jeton d’accès d’un compte supprimé est refusé (401) tout de suite', async () => {
+      const user = await createUser(prisma);
+      const access = tokens.signSession('access', user.id);
+      expect((await http().get('/movement-types').set('Authorization', `Bearer ${access}`)).status).toBe(200);
+
+      await prisma.users.delete({ where: { id: user.id } });
+
+      const res = await http().get('/movement-types').set('Authorization', `Bearer ${access}`);
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe('UNAUTHENTICATED');
+      const create = await http()
+        .post('/watches')
+        .set('Authorization', `Bearer ${access}`)
+        .send({ brand: 'Seiko', model: '6119', movementCode: 'manual', steps: [{ label: 'Déposer' }] });
+      expect(create.status).toBe(401);
+    });
+
     it('GET /health reste public', async () => {
       expect((await http().get('/health')).status).toBe(200);
     });
