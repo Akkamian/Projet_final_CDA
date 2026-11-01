@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { apiGet } from '../api/client'
+import { apiFetch } from '../api/client'
 
 export interface MovementType {
   movementCode: string
@@ -38,10 +38,11 @@ export const useStepPreviewStore = defineStore('stepPreview', () => {
     const request = ++latestRequest
     loading.value = true
     try {
-      const result = await apiGet<GeneratedStep[]>('/step-previews', {
+      const query = new URLSearchParams({
         movementCode: movementCode.value,
         complicationCodes: complicationCodes.value.join(','),
       })
+      const result = await apiFetch<GeneratedStep[]>(`/step-previews?${query}`)
       if (request !== latestRequest) return
       steps.value = result
       error.value = null
@@ -57,8 +58,8 @@ export const useStepPreviewStore = defineStore('stepPreview', () => {
   async function loadReferenceData(): Promise<void> {
     try {
       const [types, comps] = await Promise.all([
-        apiGet<MovementType[]>('/movement-types'),
-        apiGet<Complication[]>('/complications'),
+        apiFetch<MovementType[]>('/movement-types'),
+        apiFetch<Complication[]>('/complications'),
       ])
       movementTypes.value = types
       complications.value = comps
