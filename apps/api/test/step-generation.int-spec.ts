@@ -142,7 +142,14 @@ describe('référentiel et aperçu des étapes', () => {
       expect((await preview('manual', 'chronograph,tourbillon')).status).toBe(400);
     });
 
-    it('ignore les doublons de complication', async () => {
+    it('S7 refuse un paramètre répété (400, jamais 500)', async () => {
+      const repeated = await request(app.getHttpServer()).get(
+        '/step-previews?movementCode=manual&complicationCodes=date&complicationCodes=chronograph',
+      );
+      expect(repeated.status).toBe(400);
+    });
+
+    it('S7 ignore les doublons de complication', async () => {
       const res = await preview('manual', 'date,date');
       expect(res.body).toHaveLength(25);
     });

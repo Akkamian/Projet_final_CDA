@@ -19,8 +19,20 @@ describe('CORS (D5 : l’API est servie sur un autre domaine que le front)', () 
     expect(res.headers['access-control-allow-credentials']).toBe('true');
   });
 
-  it('ne renvoie jamais une origine étrangère (le navigateur bloquera la réponse)', async () => {
+  it('ne répond jamais qu’avec l’origine du front : ni origine étrangère ni « * »', async () => {
     const res = await request(app.getHttpServer()).get('/health').set('Origin', 'http://evil.example');
-    expect(res.headers['access-control-allow-origin']).not.toBe('http://evil.example');
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+  });
+
+  it('sans WEB_ORIGIN, n’autorise aucune origine (jamais « * »)', async () => {
+    vi.stubEnv('WEB_ORIGIN', undefined);
+    const { app: withoutOrigin } = await createTestApp();
+    try {
+      const res = await request(withoutOrigin.getHttpServer()).get('/health').set('Origin', 'http://localhost:5173');
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    } finally {
+      await withoutOrigin.close();
+      vi.unstubAllEnvs();
+    }
   });
 });
