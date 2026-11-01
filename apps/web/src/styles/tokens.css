@@ -1,0 +1,38 @@
+/* Variables du design system « Luminova green »
+   (design/2026-07-09-design-system-style-guide-technique-luminova-green.html). */
+:root {
+  --bg: #12151a;
+  --surface: #1c2128;
+  --border: #2e353f;
+  --text: #e8edf2;
+  --text-secondary: #8b96a3;
+  --accent: #11e97e;
+  --accent-ink: #12151a;
+  --accent-secondary: #b8c4ce;
+  --success: #5fb5b0;
+  --danger: #b8383f;
+  --warning: #c99a3e;
+  --accent-text: #11e97e;
+  --border-strong: #68737f;
+  --danger-text: #e0686e;
+  --danger-ink: #ffffff;
+  --accent-warm: #c97c4c;
+  --accent-warm-text: #d98a5a;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --touch-min: 44px;
+
+  /* Polices système : aucune police web à télécharger. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
