@@ -1,0 +1,154 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model complications {
+  complication_code String           @id @db.VarChar(50)
+  label             String           @db.VarChar(50)
+  comporte          comporte[]
+  template_steps    template_steps[]
+}
+
+model comporte {
+  watch_id          Int
+  complication_code String        @db.VarChar(50)
+  complications     complications @relation(fields: [complication_code], references: [complication_code], onDelete: NoAction, onUpdate: NoAction, map: "fk_comporte_complication")
+  watches           watches       @relation(fields: [watch_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_comporte_watch")
+
+  @@id([watch_id, complication_code])
+  @@index([complication_code], map: "idx_comporte_complication_code")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model expenses {
+  id                   Int                  @id @default(autoincrement())
+  project_id           Int
+  label                String               @db.VarChar(255)
+  amount               Decimal              @db.Decimal(10, 2)
+  expense_date         DateTime             @db.Date
+  restoration_projects restoration_projects @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_expenses_project")
+
+  @@index([project_id], map: "idx_expenses_project_id")
+}
+
+model movement_types {
+  movement_code  movement_code_enum @id
+  label          String             @db.VarChar(50)
+  template_steps template_steps[]
+  watches        watches[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model performance_measurements {
+  id                   Int                  @id @default(autoincrement())
+  project_id           Int
+  measured_at          DateTime             @default(now()) @db.Timestamptz(6)
+  rate_seconds_per_day Decimal              @db.Decimal(5, 2)
+  beat_error_ms        Decimal              @db.Decimal(5, 2)
+  amplitude_degrees    Decimal              @db.Decimal(5, 2)
+  watch_position       String?              @db.VarChar(50)
+  restoration_projects restoration_projects @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_performance_measurements_project")
+
+  @@index([project_id], map: "idx_measurements_project_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model restoration_projects {
+  id                       Int                        @id @default(autoincrement())
+  watch_id                 Int                        @unique(map: "uq_restoration_projects_one_in_progress", where: raw("((status)::text = 'in_progress'::text)"))
+  status                   String                     @default("in_progress") @db.VarChar(50)
+  created_at               DateTime                   @default(now()) @db.Timestamptz(6)
+  completed_at             DateTime?                  @db.Timestamptz(6)
+  photo_before             String?                    @db.VarChar(255)
+  photo_after              String?                    @db.VarChar(255)
+  expenses                 expenses[]
+  performance_measurements performance_measurements[]
+  watches                  watches                    @relation(fields: [watch_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_restoration_projects_watch")
+  restoration_steps        restoration_steps[]
+
+  @@index([watch_id], map: "idx_restoration_projects_watch_id")
+}
+
+model restoration_steps {
+  id                   Int                  @id @default(autoincrement())
+  project_id           Int
+  step_order           Int                  @db.SmallInt
+  label                String               @db.VarChar(255)
+  notes                String?
+  is_completed         Boolean              @default(false)
+  completed_at         DateTime?            @db.Timestamptz(6)
+  restoration_projects restoration_projects @relation(fields: [project_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_restoration_steps_project")
+  step_pics            step_pics[]
+
+  @@index([project_id], map: "idx_restoration_steps_project_id")
+}
+
+model step_pics {
+  id                  Int               @id @default(autoincrement())
+  restoration_step_id Int
+  url                 String            @db.VarChar(255)
+  uploaded_at         DateTime          @default(now()) @db.Timestamptz(6)
+  restoration_steps   restoration_steps @relation(fields: [restoration_step_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_step_pics_restoration_step")
+
+  @@index([restoration_step_id], map: "idx_step_pics_restoration_step_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model template_steps {
+  id                Int                 @id @default(autoincrement())
+  label             String              @db.VarChar(255)
+  step_order        Int                 @db.SmallInt
+  step_description  String?
+  movement_code     movement_code_enum?
+  complication_code String?             @db.VarChar(50)
+  complications     complications?      @relation(fields: [complication_code], references: [complication_code], onDelete: NoAction, onUpdate: NoAction, map: "fk_template_steps_complication")
+  movement_types    movement_types?     @relation(fields: [movement_code], references: [movement_code], onDelete: NoAction, onUpdate: NoAction, map: "fk_template_steps_movement_type")
+
+  @@unique([complication_code, label], map: "uq_template_steps_complication_label")
+  @@unique([complication_code, step_order], map: "uq_template_steps_complication_order")
+  @@unique([movement_code, label], map: "uq_template_steps_movement_label")
+  @@unique([movement_code, step_order], map: "uq_template_steps_movement_order")
+}
+
+model users {
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique @db.VarChar(255)
+  password_hash       String    @db.VarChar(255)
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  email_verified_at   DateTime? @db.Timestamptz(6)
+  password_changed_at DateTime? @db.Timestamptz(6)
+  watches             watches[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model watches {
+  id                   Int                   @id @default(autoincrement())
+  user_id              Int
+  movement_code        movement_code_enum
+  brand                String                @db.VarChar(255)
+  model                String                @db.VarChar(255)
+  purchase_price       Decimal?              @db.Decimal(10, 2)
+  purchase_date        DateTime?             @db.Date
+  resale_price         Decimal?              @db.Decimal(10, 2)
+  resale_date          DateTime?             @db.Date
+  created_at           DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime              @default(now()) @db.Timestamptz(6)
+  comporte             comporte[]
+  restoration_projects restoration_projects?
+  movement_types       movement_types        @relation(fields: [movement_code], references: [movement_code], onDelete: NoAction, onUpdate: NoAction, map: "fk_watches_movement_type")
+  users                users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_watches_user")
+
+  @@index([movement_code], map: "idx_watches_movement_code")
+  @@index([user_id], map: "idx_watches_user_id")
+}
+
+enum movement_code_enum {
+  manual
+  automatic
+}

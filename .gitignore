@@ -36,3 +36,7 @@ design/comparatif-design-system/
 
 # Photos envoyées en local (driver disque)
 uploads/
+
+# Client Prisma généré (prisma generate)
+apps/api/src/generated/
+*.tsbuildinfo
