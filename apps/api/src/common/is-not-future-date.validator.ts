@@ -14,8 +14,12 @@ export function IsNotFutureDate(options?: ValidationOptions): PropertyDecorator 
         validate(value: unknown): boolean {
           if (typeof value !== 'string' || !ISO_DATE.test(value)) return false;
           const time = Date.parse(value);
+          if (Number.isNaN(time)) return false;
+          // V8 décale « 2025-02-30 » au 2 mars au lieu de le refuser : on exige que le jour existe vraiment.
+          const day = value.slice(0, 10);
+          if (new Date(Date.parse(day)).toISOString().slice(0, 10) !== day) return false;
           // Une date seule vaut minuit UTC : « aujourd'hui » reste donc ≤ maintenant.
-          return !Number.isNaN(time) && time <= Date.now();
+          return time <= Date.now();
         },
       },
     });

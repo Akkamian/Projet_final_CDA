@@ -8,9 +8,10 @@ import { HealthController } from './health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ReferenceDataModule } from './reference-data/reference-data.module.js';
 import { StepGenerationModule } from './step-generation/step-generation.module.js';
+import { WatchesModule } from './watches/watches.module.js';
 
 @Module({
-  imports: [ConfigModule, AuthModule, PrismaModule, ReferenceDataModule, StepGenerationModule],
+  imports: [ConfigModule, AuthModule, PrismaModule, ReferenceDataModule, StepGenerationModule, WatchesModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },

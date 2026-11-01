@@ -29,6 +29,14 @@ describe('RG-GEN-01 date non future', () => {
     expect(await validate(plainToInstance(DateDto, { date: isoDay(1) }))).toHaveLength(1);
   });
 
+  it('RG-GEN-01 refuse un jour qui n’existe pas au lieu de le décaler (30 février)', async () => {
+    expect(await validate(plainToInstance(DateDto, { date: '2025-02-30' }))).toHaveLength(1);
+    expect(await validate(plainToInstance(DateDto, { date: '2025-02-30T10:00:00Z' }))).toHaveLength(1);
+    expect(await validate(plainToInstance(DateDto, { date: '2024-02-29' }))).toHaveLength(0);
+    // Un décalage horaire ne doit pas faire passer un jour valide pour inexistant.
+    expect(await validate(plainToInstance(DateDto, { date: '2025-03-01T00:30:00+02:00' }))).toHaveLength(0);
+  });
+
   it("RG-GEN-01 refuse un texte qui n'est pas une date", async () => {
     expect(await validate(plainToInstance(DateDto, { date: 'hier' }))).toHaveLength(1);
     expect(await validate(plainToInstance(DateDto, { date: 20260101 }))).toHaveLength(1);
