@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module.js';
+import { JwtAuthGuard } from './auth/jwt-auth.guard.js';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import { HealthController } from './health.controller.js';
@@ -11,6 +12,9 @@ import { StepGenerationModule } from './step-generation/step-generation.module.j
 @Module({
   imports: [ConfigModule, AuthModule, PrismaModule, ReferenceDataModule, StepGenerationModule],
   controllers: [HealthController],
-  providers: [{ provide: APP_FILTER, useClass: PrismaExceptionFilter }],
+  providers: [
+    { provide: APP_FILTER, useClass: PrismaExceptionFilter },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

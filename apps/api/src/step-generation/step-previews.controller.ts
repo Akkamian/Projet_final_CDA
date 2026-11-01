@@ -6,7 +6,6 @@ import { StepGenerationService } from './step-generation.service.js';
 export class StepPreviewsController {
   constructor(private readonly generation: StepGenerationService) {}
 
-  // Route publique tant que la garde d'authentification n'existe pas (tâche 9 du plan).
   @Get()
   preview(
     @Query('movementCode') movementCode?: unknown,

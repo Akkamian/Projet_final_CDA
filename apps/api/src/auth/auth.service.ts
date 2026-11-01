@@ -6,10 +6,17 @@ import type { AppConfig } from '../config/configuration.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
-import { TokensService } from './tokens.service.js';
+import { TokensService, type TokenPayload } from './tokens.service.js';
 
 const BCRYPT_ROUNDS = 10;
+const dummyHash = bcrypt.hash('mot-de-passe-factice', BCRYPT_ROUNDS);
+
+export interface SessionTokens {
+  accessToken: string;
+  refreshToken: string;
+}
 
 @Injectable()
 export class AuthService {
@@ -54,6 +61,37 @@ export class AuthService {
     if (count === 0) throw invalidLink();
   }
 
+  /** Le mot de passe est contrôlé avant l'état de vérification : EMAIL_NOT_VERIFIED ne révèle rien à qui ne le connaît pas. */
+  async login(dto: LoginDto): Promise<SessionTokens> {
+    const user = await this.prisma.users.findUnique({ where: { email: dto.email } });
+    // Compare aussi quand l'email est inconnu : même durée de réponse, RG-CPT-07.
+    const passwordMatches = await bcrypt.compare(dto.password, user?.password_hash ?? (await dummyHash));
+    if (!user || !passwordMatches) {
+      throw apiError(401, 'INVALID_CREDENTIALS', 'Email ou mot de passe incorrect');
+    }
+    if (user.email_verified_at === null) {
+      throw apiError(403, 'EMAIL_NOT_VERIFIED', "Votre adresse email n'est pas encore vérifiée");
+    }
+    return this.issueSession(user.id);
+  }
+
+  /** Refuse un jeton émis avant le dernier changement de mot de passe (secondes entières, comme `iat`). */
+  async refresh(refreshToken: string | undefined): Promise<SessionTokens> {
+    let payload: TokenPayload;
+    try {
+      if (!refreshToken) throw new Error('cookie absent');
+      payload = this.tokens.verifySession('refresh', refreshToken);
+    } catch {
+      throw invalidSession();
+    }
+    const user = await this.prisma.users.findUnique({ where: { id: payload.sub } });
+    const changedAt = user?.password_changed_at;
+    if (!user || (changedAt && payload.iat < Math.floor(changedAt.getTime() / 1000))) {
+      throw invalidSession();
+    }
+    return this.issueSession(user.id);
+  }
+
   /** Répond pareil que le compte existe ou non (RG-CPT-10). */
   async resendVerification(email: string): Promise<void> {
     const user = await this.prisma.users.findUnique({ where: { email } });
@@ -62,10 +100,21 @@ export class AuthService {
     }
   }
 
+  private issueSession(userId: number): SessionTokens {
+    return {
+      accessToken: this.tokens.signSession('access', userId),
+      refreshToken: this.tokens.signSession('refresh', userId),
+    };
+  }
+
   private sendVerificationLink(userId: number, email: string): Promise<void> {
     const token = this.tokens.signLink('verify', userId);
     return this.mail.sendVerificationEmail(email, `${this.config.webOrigin}/verify-email?token=${token}`);
   }
+}
+
+function invalidSession() {
+  return apiError(401, 'INVALID_SESSION', 'Session invalide ou expirée');
 }
 
 function invalidLink() {
