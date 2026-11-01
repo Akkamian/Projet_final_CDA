@@ -12,7 +12,10 @@ export default defineConfig({
     include: ['test/**/*.int-spec.ts'],
     fileParallelism: false,
     globalSetup: ['./test/global-setup.ts'],
-    env: { DATABASE_URL: process.env.TEST_DATABASE_URL ?? '' },
+    env: {
+      DATABASE_URL: process.env.TEST_DATABASE_URL ?? '',
+      WEB_ORIGIN: 'http://localhost:5173',
+    },
     testTimeout: 30_000,
     hookTimeout: 120_000,
   },
