@@ -87,8 +87,8 @@ export class WatchesService {
    */
   async update(userId: number, watchId: number, dto: UpdateWatchDto): Promise<WatchDetail> {
     // @IsOptional laisse passer null ; ces colonnes sont obligatoires (RG-MON-01), la base répondrait 500.
-    for (const [field, value] of [['marque', dto.brand], ['modèle', dto.model], ['type de mouvement', dto.movementCode]] as const) {
-      if (value === null) throw apiError(400, 'REQUIRED_FIELD', `Le champ « ${field} » ne peut pas être vide`);
+    for (const [field, value] of [['marque', dto.brand], ['modèle', dto.model], ['type de mouvement', dto.movementCode], ['complications', dto.complicationCodes]] as const) {
+      if (value === null) throw apiError(400, 'REQUIRED_FIELD', `Le champ « ${field} » ne peut pas être null`);
     }
     const current = await this.ownership.findOwnedWatch(userId, watchId);
 

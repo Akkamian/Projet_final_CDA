@@ -121,23 +121,23 @@ describe('PATCH /watches/:id : modifier une montre', () => {
     ]);
   });
 
-  it('RG-MON-08 le prochain aperçu utilise les complications modifiées', async () => {
+  it('RG-MON-08 la fiche relue renvoie les complications modifiées, que le front passera au prochain aperçu', async () => {
+    // L'aperçu (GET /step-previews) ne garde aucun état : il reçoit les codes dans la requête. La garantie « seules les
+    // nouvelles révisions utilisent les complications modifiées » se vérifie ici sur les étapes existantes (test
+    // précédent) et sera complétée par la tâche du nouveau projet sur une montre existante.
     const watch = await withComplications(['chronograph']);
-    const preview = async (codes: string[]) =>
-      (
-        await request(app.getHttpServer())
-          .get('/step-previews')
-          .set('Authorization', authorization)
-          .query({ movementCode: 'manual', complicationCodes: codes.join(',') })
-      ).body as { label: string }[];
+    await patch(watch.id, { complicationCodes: ['date'] });
 
-    const res = await patch(watch.id, { complicationCodes: ['date'] });
-    const codes = res.body.complications.map((c: { code: string }) => c.code);
-    const labels = (await preview(codes)).map((s) => s.label);
+    const detail = await request(app.getHttpServer()).get(`/watches/${watch.id}`).set('Authorization', authorization);
 
-    expect(codes).toEqual(['date']);
-    expect(labels).toEqual((await preview(['date'])).map((s) => s.label));
-    expect(labels).not.toEqual((await preview(['chronograph'])).map((s) => s.label));
+    expect(detail.body.complications.map((c: { code: string }) => c.code)).toEqual(['date']);
+  });
+
+  it('RG-MON-04 complicationCodes à null répond 400 et ne retire rien (une liste vide sert à tout retirer)', async () => {
+    const watch = await withComplications(['chronograph']);
+
+    expect((await patch(watch.id, { complicationCodes: null })).status).toBe(400);
+    expect(await codesOf(watch.id)).toEqual(['chronograph']);
   });
 
   it('RG-SEC-01 la montre d’un autre utilisateur répond 404 et reste intacte', async () => {
