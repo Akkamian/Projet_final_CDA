@@ -1,4 +1,21 @@
 import type { Prisma } from '../generated/prisma/client.js';
+import { computeMargin } from './margin.js';
+
+export interface MeasurementDetail {
+  id: number;
+  measuredAt: string;
+  rateSecondsPerDay: string;
+  beatErrorMs: string;
+  amplitudeDegrees: string;
+  watchPosition: string | null;
+}
+
+export interface ExpenseDetail {
+  id: number;
+  label: string;
+  amount: string;
+  expenseDate: string;
+}
 
 export interface StepDetail {
   id: number;
@@ -18,8 +35,8 @@ export interface ProjectDetail {
   photoBefore: string | null;
   photoAfter: string | null;
   steps: StepDetail[];
-  measurements: never[];
-  expenses: never[];
+  measurements: MeasurementDetail[];
+  expenses: ExpenseDetail[];
 }
 
 export interface WatchDetail {
@@ -38,7 +55,13 @@ export interface WatchDetail {
 
 export const WATCH_DETAIL_INCLUDE = {
   comporte: { include: { complications: true } },
-  restoration_projects: { include: { restoration_steps: { orderBy: { step_order: 'asc' } } } },
+  restoration_projects: {
+    include: {
+      restoration_steps: { orderBy: { step_order: 'asc' }, include: { step_pics: { orderBy: { id: 'asc' } } } },
+      performance_measurements: { orderBy: [{ measured_at: 'asc' }, { id: 'asc' }] },
+      expenses: { orderBy: [{ expense_date: 'asc' }, { id: 'asc' }] },
+    },
+  },
 } satisfies Prisma.watchesInclude;
 
 export type WatchWithDetail = Prisma.watchesGetPayload<{ include: typeof WATCH_DETAIL_INCLUDE }>;
@@ -46,11 +69,7 @@ export type WatchWithDetail = Prisma.watchesGetPayload<{ include: typeof WATCH_D
 const day = (date: Date | null): string | null => (date ? date.toISOString().slice(0, 10) : null);
 const money = (amount: Prisma.Decimal | null): string | null => (amount ? amount.toFixed(2) : null);
 
-/**
- * Forme renvoyée par l'API pour une montre.
- * Tâche 14 : seule la création l'utilise, sur une montre neuve. Mesures, coûts et photos y sont donc vides par
- * construction et la marge est nulle (jamais vendue, S24). La tâche 15 charge ces données et calcule la marge.
- */
+/** Forme renvoyée par l'API pour une montre ; la marge est calculée ici, à la lecture, jamais stockée (RG-FIN-06). */
 export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
   return {
     id: watch.id,
@@ -64,7 +83,13 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
     purchaseDate: day(watch.purchase_date),
     resalePrice: money(watch.resale_price),
     resaleDate: day(watch.resale_date),
-    margin: null,
+    margin: money(
+      computeMargin({
+        resalePrice: watch.resale_price,
+        purchasePrice: watch.purchase_price,
+        expenses: watch.restoration_projects.flatMap((project) => project.expenses.map((e) => e.amount)),
+      }),
+    ),
     // Du plus récent au plus ancien (RG-PRJ-08, S26).
     projects: [...watch.restoration_projects]
       .sort((a, b) => b.created_at.getTime() - a.created_at.getTime() || b.id - a.id)
@@ -82,10 +107,22 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
           notes: step.notes,
           isCompleted: step.is_completed,
           completedAt: step.completed_at?.toISOString() ?? null,
-          photos: [],
+          photos: step.step_pics.map((pic) => ({ id: pic.id, url: pic.url })),
         })),
-        measurements: [],
-        expenses: [],
+        measurements: project.performance_measurements.map((m) => ({
+          id: m.id,
+          measuredAt: m.measured_at.toISOString(),
+          rateSecondsPerDay: m.rate_seconds_per_day.toFixed(2),
+          beatErrorMs: m.beat_error_ms.toFixed(2),
+          amplitudeDegrees: m.amplitude_degrees.toFixed(2),
+          watchPosition: m.watch_position,
+        })),
+        expenses: project.expenses.map((e) => ({
+          id: e.id,
+          label: e.label,
+          amount: e.amount.toFixed(2),
+          expenseDate: day(e.expense_date) as string,
+        })),
       })),
   };
 }

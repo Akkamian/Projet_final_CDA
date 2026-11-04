@@ -1,13 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { OwnershipService } from '../common/ownership.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateWatchDto } from './dto/create-watch.dto.js';
 import { toWatchDetail, WATCH_DETAIL_INCLUDE, type WatchDetail } from './watch-detail.js';
 
 @Injectable()
 export class WatchesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ownership: OwnershipService,
+  ) {}
+
+  /** Détail d'une montre avec tous ses projets (RG-PRJ-08) ; 404 si elle n'est pas à cet utilisateur (RG-SEC-01). */
+  async findOne(userId: number, watchId: number): Promise<WatchDetail> {
+    await this.ownership.findOwnedWatch(userId, watchId);
+    const watch = await this.prisma.watches.findFirstOrThrow({
+      where: { id: watchId, user_id: userId },
+      include: WATCH_DETAIL_INCLUDE,
+    });
+    return toWatchDetail(watch);
+  }
 
   /**
    * Crée la montre, ses complications, son premier projet et ses étapes en une seule écriture imbriquée :
