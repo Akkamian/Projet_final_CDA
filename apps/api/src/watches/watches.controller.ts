@@ -1,8 +1,10 @@
-import { Body, Controller, Get, NotFoundException, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Query } from '@nestjs/common';
+import { apiError } from '../common/api-error.js';
+import { DASHBOARD_STATUSES, type DashboardStatus } from './status.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/current-user.decorator.js';
 import { CreateWatchDto } from './dto/create-watch.dto.js';
 import type { WatchDetail } from './watch-detail.js';
-import { WatchesService } from './watches.service.js';
+import { WatchesService, type WatchList } from './watches.service.js';
 
 @Controller('watches')
 export class WatchesController {
@@ -11,6 +13,15 @@ export class WatchesController {
   @Post()
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateWatchDto): Promise<WatchDetail> {
     return this.watches.create(user.id, dto);
+  }
+
+  @Get()
+  list(@CurrentUser() user: AuthenticatedUser, @Query('status') status?: unknown): Promise<WatchList> {
+    // Validation manuelle (comme le ruling de la tâche 6) : le ValidationPipe ignore les paramètres typés `unknown`.
+    if (status !== undefined && !DASHBOARD_STATUSES.includes(status as DashboardStatus)) {
+      throw apiError(400, 'INVALID_STATUS', `Statut inconnu : attendu ${DASHBOARD_STATUSES.join(', ')}`);
+    }
+    return this.watches.list(user.id, status as DashboardStatus | undefined);
   }
 
   @Get(':id')
