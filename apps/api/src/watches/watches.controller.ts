@@ -1,10 +1,17 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { DASHBOARD_STATUSES, type DashboardStatus } from './status.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/current-user.decorator.js';
 import { CreateWatchDto } from './dto/create-watch.dto.js';
+import { UpdateWatchDto } from './dto/update-watch.dto.js';
 import type { WatchDetail } from './watch-detail.js';
 import { WatchesService, type WatchList } from './watches.service.js';
+
+/** Un identifiant qui n'est pas un entier positif ne peut désigner aucune montre : 404, pas 400 (RG-SEC-04). */
+function parseWatchId(id: string): number {
+  if (!/^[1-9]\d{0,9}$/.test(id) || Number(id) > 2147483647) throw new NotFoundException();
+  return Number(id);
+}
 
 @Controller('watches')
 export class WatchesController {
@@ -26,8 +33,11 @@ export class WatchesController {
 
   @Get(':id')
   findOne(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<WatchDetail> {
-    // Un identifiant qui n'est pas un entier positif ne peut désigner aucune montre : 404, pas 400 (RG-SEC-04).
-    if (!/^[1-9]\d{0,9}$/.test(id) || Number(id) > 2147483647) throw new NotFoundException();
-    return this.watches.findOne(user.id, Number(id));
+    return this.watches.findOne(user.id, parseWatchId(id));
+  }
+
+  @Patch(':id')
+  update(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateWatchDto): Promise<WatchDetail> {
+    return this.watches.update(user.id, parseWatchId(id), dto);
   }
 }

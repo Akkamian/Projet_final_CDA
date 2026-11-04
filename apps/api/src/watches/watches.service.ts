@@ -4,6 +4,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { OwnershipService } from '../common/ownership.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateWatchDto } from './dto/create-watch.dto.js';
+import type { UpdateWatchDto } from './dto/update-watch.dto.js';
 import { computeMargin } from './margin.js';
 import { computeStatus, type DashboardStatus, type ProjectStatus } from './status.js';
 import { toWatchDetail, WATCH_DETAIL_INCLUDE, type WatchDetail } from './watch-detail.js';
@@ -77,6 +78,47 @@ export class WatchesService {
       if (status === undefined || card.status === status) items.push(card);
     }
     return { items, counts };
+  }
+
+  /**
+   * Modifie la montre et, si `complicationCodes` est envoyé, remplace ses complications, dans une transaction.
+   * Les étapes des projets existants ne sont jamais touchées (RG-MON-08) : seules les nouvelles révisions
+   * utiliseront les complications modifiées.
+   */
+  async update(userId: number, watchId: number, dto: UpdateWatchDto): Promise<WatchDetail> {
+    // @IsOptional laisse passer null ; ces colonnes sont obligatoires (RG-MON-01), la base répondrait 500.
+    for (const [field, value] of [['marque', dto.brand], ['modèle', dto.model], ['type de mouvement', dto.movementCode]] as const) {
+      if (value === null) throw apiError(400, 'REQUIRED_FIELD', `Le champ « ${field} » ne peut pas être vide`);
+    }
+    const current = await this.ownership.findOwnedWatch(userId, watchId);
+
+    // RG-FIN-10 : la base la refuserait aussi (chk_watches_resale_after_purchase), mais en erreur 500.
+    const purchaseDate = dto.purchaseDate === undefined ? current.purchase_date : dto.purchaseDate ? new Date(dto.purchaseDate) : null;
+    if (purchaseDate && current.resale_date && purchaseDate > current.resale_date) {
+      throw apiError(400, 'PURCHASE_AFTER_RESALE', 'La date d’achat ne peut pas être postérieure à la date de revente');
+    }
+
+    const codes = dto.complicationCodes === undefined ? undefined : [...new Set(dto.complicationCodes)];
+    if (codes) await this.assertKnownComplications(codes);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.watches.update({
+        where: { id: watchId },
+        data: {
+          brand: dto.brand,
+          model: dto.model,
+          movement_code: dto.movementCode,
+          purchase_price: dto.purchasePrice === undefined ? undefined : dto.purchasePrice === null ? null : new Prisma.Decimal(dto.purchasePrice),
+          purchase_date: dto.purchaseDate === undefined ? undefined : purchaseDate,
+          updated_at: new Date(),
+        },
+      });
+      if (codes) {
+        await tx.comporte.deleteMany({ where: { watch_id: watchId } });
+        await tx.comporte.createMany({ data: codes.map((complication_code) => ({ watch_id: watchId, complication_code })) });
+      }
+    });
+    return this.findOne(userId, watchId);
   }
 
   /** Détail d'une montre avec tous ses projets (RG-PRJ-08) ; 404 si elle n'est pas à cet utilisateur (RG-SEC-01). */
