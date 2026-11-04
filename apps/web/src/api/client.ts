@@ -48,7 +48,7 @@ async function doRefresh(): Promise<string | null> {
       setAccessToken(body.accessToken)
       return body.accessToken
     }
-  } catch {
+} catch {
     // réseau coupé : on traite comme une session perdue
   }
   setAccessToken(null)

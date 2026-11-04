@@ -52,7 +52,6 @@ const money = (amount: Prisma.Decimal | null): string | null => (amount ? amount
  * construction et la marge est nulle (jamais vendue, S24). La tâche 15 charge ces données et calcule la marge.
  */
 export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
-  const project = watch.restoration_projects;
   return {
     id: watch.id,
     brand: watch.brand,
@@ -66,28 +65,27 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
     resalePrice: money(watch.resale_price),
     resaleDate: day(watch.resale_date),
     margin: null,
-    projects: project
-      ? [
-          {
-            id: project.id,
-            status: project.status as 'in_progress' | 'completed',
-            createdAt: project.created_at.toISOString(),
-            completedAt: project.completed_at?.toISOString() ?? null,
-            photoBefore: project.photo_before,
-            photoAfter: project.photo_after,
-            steps: project.restoration_steps.map((step) => ({
-              id: step.id,
-              stepOrder: step.step_order,
-              label: step.label,
-              notes: step.notes,
-              isCompleted: step.is_completed,
-              completedAt: step.completed_at?.toISOString() ?? null,
-              photos: [],
-            })),
-            measurements: [],
-            expenses: [],
-          },
-        ]
-      : [],
+    // Du plus récent au plus ancien (RG-PRJ-08, S26).
+    projects: [...watch.restoration_projects]
+      .sort((a, b) => b.created_at.getTime() - a.created_at.getTime() || b.id - a.id)
+      .map((project) => ({
+        id: project.id,
+        status: project.status as 'in_progress' | 'completed',
+        createdAt: project.created_at.toISOString(),
+        completedAt: project.completed_at?.toISOString() ?? null,
+        photoBefore: project.photo_before,
+        photoAfter: project.photo_after,
+        steps: project.restoration_steps.map((step) => ({
+          id: step.id,
+          stepOrder: step.step_order,
+          label: step.label,
+          notes: step.notes,
+          isCompleted: step.is_completed,
+          completedAt: step.completed_at?.toISOString() ?? null,
+          photos: [],
+        })),
+        measurements: [],
+        expenses: [],
+      })),
   };
 }

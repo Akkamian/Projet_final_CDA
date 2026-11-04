@@ -61,7 +61,9 @@ model performance_measurements {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model restoration_projects {
   id                       Int                        @id @default(autoincrement())
-  watch_id                 Int                        @unique(map: "uq_restoration_projects_one_in_progress", where: raw("((status)::text = 'in_progress'::text)"))
+  // Pas de @unique ici : l'index partiel uq_restoration_projects_one_in_progress (un seul projet en cours, RG-PRJ-09)
+  // vit dans la migration SQL. `prisma db pull` le réécrit en @unique, ce qui casse la relation : voir db-constraints.int-spec.
+  watch_id                 Int
   status                   String                     @default("in_progress") @db.VarChar(50)
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
   completed_at             DateTime?                  @db.Timestamptz(6)
@@ -140,7 +142,7 @@ model watches {
   created_at           DateTime              @default(now()) @db.Timestamptz(6)
   updated_at           DateTime              @default(now()) @db.Timestamptz(6)
   comporte             comporte[]
-  restoration_projects restoration_projects?
+  restoration_projects restoration_projects[]
   movement_types       movement_types        @relation(fields: [movement_code], references: [movement_code], onDelete: NoAction, onUpdate: NoAction, map: "fk_watches_movement_type")
   users                users                 @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_watches_user")
 

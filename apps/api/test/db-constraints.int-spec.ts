@@ -142,4 +142,21 @@ describe('contraintes de la base', () => {
       expect(await prisma.watches.count({ where: { id: watch.id } })).toBe(1);
     });
   });
+
+  // Garde-fou : `prisma db pull` lit l'index partiel RG-PRJ-09 comme un @unique complet sur watch_id et
+  // transforme la relation en 1-1. Si ce test casse après un db pull, retirer ce @unique de schema.prisma.
+  it('RG-MON-10 une montre a plusieurs projets : la relation Prisma est une liste', async () => {
+    const user = await createUser(prisma);
+    const watch = await createWatch(prisma, user.id);
+    await createProject(prisma, watch.id, { status: 'completed' });
+    await createProject(prisma, watch.id, { status: 'in_progress' });
+
+    const loaded = await prisma.watches.findUniqueOrThrow({
+      where: { id: watch.id },
+      include: { restoration_projects: true },
+    });
+
+    expect(Array.isArray(loaded.restoration_projects)).toBe(true);
+    expect(loaded.restoration_projects).toHaveLength(2);
+  });
 });
