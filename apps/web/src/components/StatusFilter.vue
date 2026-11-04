@@ -9,6 +9,7 @@ const statuses = Object.keys(STATUS_LABELS) as DashboardStatus[]
 </script>
 
 <template>
+  <!-- Une seule ligne de pastilles qui défile horizontalement (maquette « filtre par statut »). -->
   <div class="filter" data-test="status-filter" role="group" aria-label="Filtrer par statut">
     <button type="button" :aria-pressed="selected === null" @click="$emit('select', null)">
       Toutes <span class="count">{{ counts.all }}</span>
@@ -28,18 +29,26 @@ const statuses = Object.keys(STATUS_LABELS) as DashboardStatus[]
 <style scoped>
 .filter {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-2);
+  padding-bottom: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.filter::-webkit-scrollbar {
+  display: none;
 }
 
 button {
+  flex: none;
   min-height: var(--touch-min);
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-4);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-secondary);
   font: inherit;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -47,6 +56,7 @@ button[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-ink);
+  font-weight: 600;
 }
 
 .count {

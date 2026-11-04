@@ -58,8 +58,40 @@ describe('DashboardView', () => {
     expect(cards(wrapper)[0]!.text()).toContain('En cours')
     expect(cards(wrapper)[1]!.text()).toContain('Terminé')
     expect(cards(wrapper)[2]!.text()).toContain('Vendue')
-    expect(cards(wrapper)[2]!.text()).toContain('80,00 €')
+    expect(cards(wrapper)[2]!.text()).toContain('+80,00 €')
     expect(cards(wrapper)[0]!.text()).not.toContain('Marge')
+  })
+
+  it('S25 le titre est « Tableau de bord » et le sous-titre donne le nombre de montres', async () => {
+    api()
+    const wrapper = await mountView()
+    expect(wrapper.find('h1').text()).toBe('Tableau de bord')
+    expect(wrapper.find('[data-test="shown-count"]').text()).toBe('3 montres')
+  })
+
+  it('S40 le sous-titre rappelle le filtre actif (« 1 montre · Vendue »)', async () => {
+    api()
+    const wrapper = await mountView()
+    await filter(wrapper, 'Vendue').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-test="shown-count"]').text()).toBe('1 montre · Vendue')
+  })
+
+  it('S23 la marge est signée et colorée : +80,00 € en positif, −25,00 € en négatif', async () => {
+    api(() => ({
+      status: 200,
+      body: { items: [card(1, 'gain', 'sold', '80.00'), card(2, 'perte', 'sold', '-25.00'), card(3, 'nulle', 'sold', '0.00')], counts },
+    }))
+    const wrapper = await mountView()
+    const margin = (i: number) => cards(wrapper)[i]!.find('[data-test="margin"]')
+
+    expect(margin(0).text()).toBe('+80,00 €')
+    expect(margin(0).classes()).toContain('margin-positive')
+    expect(margin(1).text()).toBe('−25,00 €')
+    expect(margin(1).classes()).toContain('margin-negative')
+    expect(margin(2).text()).toBe('0,00 €')
+    expect(margin(2).classes()).not.toContain('margin-positive')
+    expect(margin(2).classes()).not.toContain('margin-negative')
   })
 
   it('S25 chaque carte mène à la fiche de la montre', async () => {

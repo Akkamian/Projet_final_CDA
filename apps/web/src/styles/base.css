@@ -12,6 +12,10 @@ body {
   line-height: 1.5;
 }
 
+a {
+  color: var(--accent-text);
+}
+
 .app {
   max-width: 720px;
   margin: 0 auto;

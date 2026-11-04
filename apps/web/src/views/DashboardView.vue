@@ -4,6 +4,7 @@ import { RouterLink, useRouter } from 'vue-router'
 import StatusFilter from '../components/StatusFilter.vue'
 import WatchCard from '../components/WatchCard.vue'
 import { useAuthStore } from '../stores/auth'
+import { STATUS_LABELS } from '../format'
 import { useWatchesStore, type DashboardStatus } from '../stores/watches'
 
 const watches = useWatchesStore()
@@ -27,17 +28,24 @@ async function logout() {
 <template>
   <section class="dashboard">
     <header class="top">
-      <h1>Mes montres</h1>
-      <RouterLink class="btn" to="/watches/new">Nouvelle montre</RouterLink>
+      <div>
+        <h1>Tableau de bord</h1>
+        <p
+          v-if="!(watches.loading && watches.items.length === 0) && !watches.error"
+          class="hint"
+          data-test="shown-count"
+          aria-live="polite"
+        >
+          {{ watches.items.length }} {{ watches.items.length > 1 ? 'montres' : 'montre' }}<template v-if="selected"> · {{ STATUS_LABELS[selected] }}</template>
+        </p>
+      </div>
+      <RouterLink class="btn btn-compact" to="/watches/new">Nouvelle montre</RouterLink>
     </header>
 
     <StatusFilter :counts="watches.counts" :selected="selected" @select="select" />
 
     <p v-if="watches.error" class="alert" role="alert">{{ watches.error }}</p>
     <template v-else>
-      <p v-if="!(watches.loading && watches.items.length === 0)" class="hint" data-test="shown-count" aria-live="polite">
-        {{ watches.items.length }} {{ watches.items.length > 1 ? 'montres' : 'montre' }}
-      </p>
       <ul v-if="watches.items.length > 0" class="cards">
         <WatchCard v-for="watch in watches.items" :key="watch.id" :watch="watch" />
       </ul>
@@ -70,6 +78,26 @@ async function logout() {
 h1,
 p {
   margin: 0;
+}
+
+.btn-compact {
+  width: auto;
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+}
+
+h1 {
+  font-size: 1.375rem;
+}
+
+.logout button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .cards {

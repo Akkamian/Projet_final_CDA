@@ -1,11 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { formatDate, formatMoney } from './format'
+import { formatDate, formatMargin, formatMoney } from './format'
 
 describe('formatMoney', () => {
   it('S23 met la virgule française et garde le signe, y compris pour zéro', () => {
     expect(formatMoney('80.00')).toBe('80,00 €')
     expect(formatMoney('-20.00')).toBe('-20,00 €')
     expect(formatMoney('0.00')).toBe('0,00 €')
+  })
+})
+
+describe('formatMargin', () => {
+  it('S23 un gain prend « + », une perte le vrai signe moins, zéro reste sans signe', () => {
+    expect(formatMargin('185.00')).toBe('+185,00 €')
+    expect(formatMargin('-25.00')).toBe('−25,00 €')
+    expect(formatMargin('0.00')).toBe('0,00 €')
   })
 })
 

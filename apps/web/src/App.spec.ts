@@ -17,6 +17,6 @@ describe('App', () => {
     await flushPromises()
 
     expect(wrapper.find('.app').exists()).toBe(true)
-    expect(wrapper.find('h1').text()).toBe('Mes montres')
+    expect(wrapper.find('h1').text()).toBe('Tableau de bord')
   })
 })

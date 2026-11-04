@@ -8,13 +8,20 @@ export const STATUS_LABELS: Record<DashboardStatus, string> = {
 }
 
 export const MOVEMENT_LABELS: Record<string, string> = {
-  manual: 'Remontage manuel',
+  manual: 'Manuel',
   automatic: 'Automatique',
 }
 
 /** « 80.00 » (chaîne de l'API) → « 80,00 € » ; une marge négative garde son signe. */
 export function formatMoney(amount: string): string {
   return `${amount.replace('.', ',')} €`
+}
+
+/** Marge des cartes : « +185,00 € » pour un gain, « −25,00 € » (vrai signe moins) pour une perte, « 0,00 € » sinon. */
+export function formatMargin(amount: string): string {
+  if (amount.startsWith('-')) return `−${formatMoney(amount.slice(1))}`
+  const positive = Number(amount) > 0
+  return `${positive ? '+' : ''}${formatMoney(amount)}`
 }
 
 /**
