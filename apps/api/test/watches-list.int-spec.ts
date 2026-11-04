@@ -63,7 +63,8 @@ describe('GET /watches : tableau de bord', () => {
         status: 'no_project',
       }),
     ]);
-    expect(body.items[0].complicationLabels).toHaveLength(2);
+    // Les libellés du référentiel, pas les codes.
+    expect(body.items[0].complicationLabels).toEqual(['Chronographe', 'Date']);
   });
 
   it('RG-AFF-02 une montre vendue affiche « sold » même si son dernier projet est terminé', async () => {
@@ -161,6 +162,47 @@ describe('GET /watches : tableau de bord', () => {
     expect(byModel(body, 'sold')?.margin).toBe('80.00');
     expect(byModel(body, 'unsold')?.margin).toBeNull();
     expect(byModel(body, 'no-purchase')?.margin).toBeNull();
+  });
+
+  it('RG-FIN-08 la marge de la liste additionne les coûts de tous les projets, pas du seul dernier', async () => {
+    const watch = await createWatch(prisma, userId, {
+      model: 'multi',
+      purchase_price: '80',
+      resale_price: '200',
+      resale_date: new Date('2025-06-01'),
+    });
+    const old = await prisma.restoration_projects.create({
+      data: { watch_id: watch.id, status: 'completed', created_at: new Date('2024-01-01') },
+    });
+    const recent = await prisma.restoration_projects.create({
+      data: { watch_id: watch.id, status: 'completed', created_at: new Date('2025-01-01') },
+    });
+    await prisma.expenses.create({ data: { project_id: old.id, label: 'Joint', amount: '25', expense_date: new Date('2024-02-01') } });
+    await prisma.expenses.create({ data: { project_id: recent.id, label: 'Verre', amount: '15', expense_date: new Date('2025-02-01') } });
+
+    expect(byModel((await list()).body, 'multi')?.margin).toBe('80.00');
+  });
+
+  it('RG-FIN-06 une montre vendue sans projet a une marge, et une marge négative est signée', async () => {
+    await createWatch(prisma, userId, {
+      model: 'no-project',
+      purchase_price: '80',
+      resale_price: '200',
+      resale_date: new Date('2025-06-01'),
+    });
+    const loss = await createWatch(prisma, userId, {
+      model: 'loss',
+      purchase_price: '80',
+      resale_price: '70',
+      resale_date: new Date('2025-06-01'),
+    });
+    const project = await createProject(prisma, loss.id, { status: 'completed' });
+    await prisma.expenses.create({ data: { project_id: project.id, label: 'Joint', amount: '10', expense_date: new Date('2025-02-01') } });
+
+    const { body } = await list();
+
+    expect(byModel(body, 'no-project')).toMatchObject({ status: 'sold', margin: '120.00' });
+    expect(byModel(body, 'loss')?.margin).toBe('-20.00');
   });
 
   it('S25 une liste vide donne items vide et des compteurs à zéro', async () => {
