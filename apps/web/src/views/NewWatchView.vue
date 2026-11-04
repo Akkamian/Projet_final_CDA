@@ -11,6 +11,7 @@ interface EditableStep {
 }
 
 interface CreatedWatch {
+  id: number
   brand: string
   model: string
   projects: { steps: unknown[] }[]
@@ -29,7 +30,7 @@ const newStep = ref('')
 const error = ref<string | null>(null)
 const sessionExpired = ref(false)
 const busy = ref(false)
-const created = ref<{ brand: string; model: string; stepCount: number } | null>(null)
+const created = ref<{ id: number; brand: string; model: string; stepCount: number } | null>(null)
 
 // Sélection (mouvement + complications) d'après laquelle `steps` a été construit : revenir en arrière sans
 // la changer garde les ajustements de l'utilisateur, la changer régénère la liste proposée.
@@ -128,7 +129,7 @@ async function create() {
         steps: steps.value.map((s) => ({ label: s.label })),
       }),
     })
-    created.value = { brand: watch.brand, model: watch.model, stepCount: watch.projects[0]?.steps.length ?? 0 }
+    created.value = { id: watch.id, brand: watch.brand, model: watch.model, stepCount: watch.projects[0]?.steps.length ?? 0 }
     stage.value = 'done'
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) sessionExpired.value = true
@@ -158,8 +159,9 @@ function startOver() {
       <p class="notice" role="status">
         {{ created.brand }} {{ created.model }} · projet en cours · {{ created.stepCount }} étapes
       </p>
-      <p><button class="btn" type="button" @click="startOver">Créer une autre montre</button></p>
-      <p class="switch"><RouterLink to="/">Retour à l’accueil</RouterLink></p>
+      <p><RouterLink class="btn" :to="`/watches/${created.id}`">Voir la fiche de la montre</RouterLink></p>
+      <p><button class="btn btn-secondary" type="button" @click="startOver">Créer une autre montre</button></p>
+      <p class="switch"><RouterLink to="/">Retour à mes montres</RouterLink></p>
     </template>
 
     <template v-else>

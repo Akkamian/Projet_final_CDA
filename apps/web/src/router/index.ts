@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import DashboardView from '../views/DashboardView.vue'
 import { authGuard } from './guards'
 
 export const routes: RouteRecordRaw[] = [
-  { path: '/', name: 'home', component: HomeView },
+  { path: '/', name: 'home', component: DashboardView },
   // Chargée à la demande : son code n'est téléchargé qu'à la première visite de la page.
   {
     path: '/apercu-etapes',
@@ -14,6 +14,11 @@ export const routes: RouteRecordRaw[] = [
     path: '/watches/new',
     name: 'new-watch',
     component: () => import('../views/NewWatchView.vue'),
+  },
+  {
+    path: '/watches/:id',
+    name: 'watch-detail',
+    component: () => import('../views/WatchDetailView.vue'),
   },
   // Pages d'authentification : seules routes accessibles sans session.
   {
