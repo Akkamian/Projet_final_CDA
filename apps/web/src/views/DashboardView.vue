@@ -35,7 +35,7 @@ async function logout() {
 
     <p v-if="watches.error" class="alert" role="alert">{{ watches.error }}</p>
     <template v-else>
-      <p class="hint" data-test="shown-count">
+      <p v-if="!(watches.loading && watches.items.length === 0)" class="hint" data-test="shown-count" aria-live="polite">
         {{ watches.items.length }} {{ watches.items.length > 1 ? 'montres' : 'montre' }}
       </p>
       <ul v-if="watches.items.length > 0" class="cards">

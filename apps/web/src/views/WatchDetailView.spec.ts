@@ -98,7 +98,8 @@ describe('WatchDetailView', () => {
     await wrapper.find('[data-test="project-selector"] select').setValue('1')
 
     expect(wrapper.findAll('[data-test="step"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
-    expect(wrapper.text()).toContain('Terminé')
+    // Le titre du projet affiché suit le sélecteur (« Terminé » figure aussi dans les options : on cible le h2).
+    expect(wrapper.find('h2').text()).toBe('Terminé')
   })
 
   it('S23 affiche la marge d’une montre vendue, et rien sinon', async () => {

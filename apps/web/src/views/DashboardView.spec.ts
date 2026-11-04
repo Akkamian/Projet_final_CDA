@@ -115,6 +115,28 @@ describe('DashboardView', () => {
     expect(wrapper.find('a[href="/watches/new"]').exists()).toBe(true)
   })
 
+  it('pendant le premier chargement, ni « 0 montre » ni message « Aucune montre »', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    // Réponse retardée jusqu'à `release()`.
+    stubFetch(async () => {
+      await gate
+      return { status: 200, body: { items: all, counts } }
+    })
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const router = await makeRouter('/')
+    const wrapper = mount(DashboardView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="shown-count"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="empty"]').exists()).toBe(false)
+
+    release()
+    await flushPromises()
+    expect(wrapper.find('[data-test="shown-count"]').text()).toContain('3 montres')
+  })
+
   it('une erreur de l’API affiche un message, pas une liste vide trompeuse', async () => {
     api(() => ({ status: 500, body: {} }))
     const wrapper = await mountView()
