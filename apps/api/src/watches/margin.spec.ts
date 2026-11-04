@@ -19,7 +19,8 @@ describe('computeMargin', () => {
 
   it("RG-FIN-06 aucune erreur d'arrondi : 0.10 + 0.20 de coûts donne 0.30", () => {
     const margin = computeMargin({ resalePrice: d('1.00'), purchasePrice: d('0.40'), expenses: [d('0.10'), d('0.20')] });
-    expect(margin?.toFixed(2)).toBe('0.30');
+    // toString et non toFixed(2) : en `number` le résultat vaut 0.29999999999999993, que toFixed(2) arrondit à « 0.30 ».
+    expect(margin?.toString()).toBe('0.3');
   });
 
   it('RG-FIN-06 une marge négative est renvoyée telle quelle', () => {
