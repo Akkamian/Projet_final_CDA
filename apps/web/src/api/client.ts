@@ -87,5 +87,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   }
   if (!response.ok) throw await toApiError(response)
   if (response.status === 204) return undefined as T
-  return (await response.json()) as T
+  // Un succès sans corps (ex. 201 de l'inscription) n'est pas du JSON : `json()` échouerait alors que l'opération a réussi.
+  return (await response.json().catch(() => undefined)) as T
 }

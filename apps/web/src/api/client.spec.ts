@@ -119,6 +119,21 @@ describe('apiFetch', () => {
     await expect(apiFetch('/complications')).rejects.toMatchObject({ status: 502, code: undefined })
   })
 
+  it('accepte une réponse de succès sans corps autre que 204 (ex. 201 de l’inscription)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 201,
+        json: async () => {
+          throw new SyntaxError('Unexpected end of JSON input')
+        },
+      })),
+    )
+
+    await expect(apiFetch('/auth/register', { method: 'POST', body: '{}' })).resolves.toBeUndefined()
+  })
+
   it('envoie un corps texte en JSON et accepte une réponse 204 sans corps', async () => {
     const fetchMock = stubFetch(() => ({ status: 204 }))
 

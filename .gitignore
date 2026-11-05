@@ -40,3 +40,8 @@ uploads/
 # Client Prisma généré (prisma generate)
 apps/api/src/generated/
 *.tsbuildinfo
+
+# Tests de bout en bout
+dist-e2e/
+test-results/
+playwright-report/
