@@ -56,6 +56,12 @@ describe('StepList', () => {
     expect(boxes.map((b) => b.element.checked)).toEqual([true, false, false])
   })
 
+  it('S17 le champ d’ajout de photo reste atteignable au clavier (pas d’attribut hidden)', () => {
+    const { wrapper } = mountList()
+
+    expect(wrapper.find('[data-test="photo-input"]').attributes('hidden')).toBeUndefined()
+  })
+
   it('S12 cocher une étape envoie isCompleted', async () => {
     const done = { ...step(2, 'Sortir le mouvement'), isCompleted: true, completedAt: '2025-05-03T08:00:00Z' }
     const { wrapper, fetchMock } = mountList(() => ({ status: 200, body: done }))

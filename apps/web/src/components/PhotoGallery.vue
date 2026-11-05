@@ -38,7 +38,7 @@ function onChoose(event: Event): void {
       + Photo
       <input
         type="file"
-        hidden
+        class="visually-hidden-input"
         multiple
         accept="image/jpeg,image/png,image/webp"
         data-test="photo-input"
@@ -50,6 +50,19 @@ function onChoose(event: Event): void {
 </template>
 
 <style scoped>
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.add:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .gallery {
   display: grid;
   gap: var(--space-2);

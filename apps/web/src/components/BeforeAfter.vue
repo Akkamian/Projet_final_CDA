@@ -75,7 +75,7 @@ async function confirmRemove(): Promise<void> {
             {{ urlOf(slot.kind) ? 'Remplacer' : 'Ajouter' }}
             <input
               type="file"
-              hidden
+              class="visually-hidden-input"
               accept="image/jpeg,image/png,image/webp"
               :data-test="`photo-input-${slot.kind}`"
               :disabled="busy"
@@ -188,6 +188,18 @@ figcaption {
 
 .ghost.danger {
   color: var(--danger-text);
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.ghost:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .ghost.disabled {

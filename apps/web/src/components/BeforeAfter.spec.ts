@@ -37,6 +37,14 @@ describe('BeforeAfter', () => {
     setAccessToken('tok')
   })
 
+  it('S34 les champs d’ajout de photo restent atteignables au clavier (pas d’attribut hidden)', () => {
+    const { wrapper } = mountBlock({ photoBefore: null, photoAfter: null })
+
+    for (const kind of ['before', 'after']) {
+      expect(wrapper.find(`[data-test="photo-input-${kind}"]`).attributes('hidden')).toBeUndefined()
+    }
+  })
+
   it('S18 affiche l’avant et l’après côte à côte quand les deux existent', () => {
     const { wrapper } = mountBlock({ photoBefore: '/uploads/b.webp', photoAfter: '/uploads/a.webp' })
 

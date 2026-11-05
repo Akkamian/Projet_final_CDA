@@ -10,7 +10,9 @@ const POSITIONS = ['Cadran haut', 'Cadran bas', 'Couronne en haut', 'Couronne en
 
 const watches = useWatchesStore()
 const initial = props.measurement
-const date = ref(initial?.measuredAt ?? '')
+// L'API renvoie un horodatage ISO ; le champ date et la comparaison à « aujourd'hui » veulent le seul jour AAAA-MM-JJ saisi.
+const initialDay = initial ? initial.measuredAt.slice(0, 10) : ''
+const date = ref(initialDay)
 const position = ref<string | null>(initial?.watchPosition ?? null)
 const rate = ref(initial?.rateSecondsPerDay ?? '')
 const beat = ref(initial?.beatErrorMs ?? '')
@@ -64,7 +66,7 @@ async function submit(): Promise<void> {
     }
     // Modification (S33) : seuls les champs changés partent ; une position décochée est effacée (null).
     const patch: Partial<MeasurementPayload> = {}
-    if (values.measuredAt !== initial.measuredAt) patch.measuredAt = values.measuredAt
+    if (values.measuredAt !== initialDay) patch.measuredAt = values.measuredAt
     if (values.rateSecondsPerDay !== Number(initial.rateSecondsPerDay)) patch.rateSecondsPerDay = values.rateSecondsPerDay
     if (values.beatErrorMs !== Number(initial.beatErrorMs)) patch.beatErrorMs = values.beatErrorMs
     if (values.amplitudeDegrees !== Number(initial.amplitudeDegrees)) patch.amplitudeDegrees = values.amplitudeDegrees

@@ -116,6 +116,24 @@ describe('MeasurementForm', () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ beatErrorMs: 0.3, watchPosition: null })
   })
 
+  it('S33 une mesure reçue de l’API (horodatage ISO) s’ouvre avec sa date, même datée d’aujourd’hui', async () => {
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const day = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const existing = measure(9, `${day}T00:00:00.000Z`, '4.00', '0.40', '260.00')
+    const fetchMock = stubFetch(() => ({ status: 200, body: existing }))
+    const wrapper = mount(MeasurementForm, { props: { projectId: 5, measurement: existing } })
+
+    expect((wrapper.find('[data-test="m-date"]').element as HTMLInputElement).value).toBe(day)
+    await wrapper.find('[data-test="m-beat"]').setValue('0.3')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(calls(fetchMock)).toEqual(['PATCH /projects/5/measurements/9'])
+    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ beatErrorMs: 0.3 })
+  })
+
   it('affiche le message de l’API quand l’enregistrement échoue', async () => {
     stubFetch(() => ({ status: 400, body: { message: 'La date de mesure doit être une date existante' } }))
     const wrapper = mount(MeasurementForm, { props: { projectId: 5 } })
