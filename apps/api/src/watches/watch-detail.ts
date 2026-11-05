@@ -70,6 +70,17 @@ const day = (date: Date | null): string | null => (date ? date.toISOString().sli
 const money = (amount: Prisma.Decimal | null): string | null => (amount ? amount.toFixed(2) : null);
 
 /** Forme renvoyée par l'API pour une étape, avec ses photos. */
+export function toMeasurementDetail(m: Prisma.performance_measurementsGetPayload<object>): MeasurementDetail {
+  return {
+    id: m.id,
+    measuredAt: m.measured_at.toISOString(),
+    rateSecondsPerDay: m.rate_seconds_per_day.toFixed(2),
+    beatErrorMs: m.beat_error_ms.toFixed(2),
+    amplitudeDegrees: m.amplitude_degrees.toFixed(2),
+    watchPosition: m.watch_position,
+  };
+}
+
 export function toStepDetail(step: Prisma.restoration_stepsGetPayload<{ include: { step_pics: true } }>): StepDetail {
   return {
     id: step.id,
@@ -114,14 +125,7 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
         photoBefore: project.photo_before,
         photoAfter: project.photo_after,
         steps: project.restoration_steps.map(toStepDetail),
-        measurements: project.performance_measurements.map((m) => ({
-          id: m.id,
-          measuredAt: m.measured_at.toISOString(),
-          rateSecondsPerDay: m.rate_seconds_per_day.toFixed(2),
-          beatErrorMs: m.beat_error_ms.toFixed(2),
-          amplitudeDegrees: m.amplitude_degrees.toFixed(2),
-          watchPosition: m.watch_position,
-        })),
+        measurements: project.performance_measurements.map(toMeasurementDetail),
         expenses: project.expenses.map((e) => ({
           id: e.id,
           label: e.label,

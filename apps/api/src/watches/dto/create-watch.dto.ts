@@ -24,7 +24,7 @@ const NO_NUL = /^[^\u0000]*$/;
 const NO_NUL_MESSAGE = { message: 'Le texte contient un caractère interdit' };
 
 // Un prix peut arriver en texte (« 80.50 ») : on le lit comme nombre ; tout autre texte reste tel quel et sera refusé.
-const numericText = () =>
+export const numericText = () =>
   Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value,
   );

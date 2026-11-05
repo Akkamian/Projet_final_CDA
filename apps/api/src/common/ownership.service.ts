@@ -31,4 +31,12 @@ export class OwnershipService {
     if (!step) throw new NotFoundException();
     return step;
   }
+
+  async findOwnedMeasurement(userId: number, projectId: number, measurementId: number) {
+    const measurement = await this.prisma.performance_measurements.findFirst({
+      where: { id: measurementId, project_id: projectId, restoration_projects: { watches: { user_id: userId } } },
+    });
+    if (!measurement) throw new NotFoundException();
+    return measurement;
+  }
 }
