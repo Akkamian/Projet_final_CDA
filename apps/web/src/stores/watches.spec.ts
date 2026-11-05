@@ -134,4 +134,43 @@ describe('useWatchesStore', () => {
 
     expect(calls(fetchMock)).toEqual(['DELETE /projects/5/steps/2/photos/9', 'PUT /projects/5/photos/before', 'DELETE /projects/5/photos/after'])
   })
+
+  it('S19 S33 les méthodes de mesure appellent les bonnes routes avec le bon corps', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: {} }))
+    const store = useWatchesStore()
+    const body = { measuredAt: '2025-05-01', rateSecondsPerDay: 4, beatErrorMs: 0.4, amplitudeDegrees: 260 }
+
+    await store.addMeasurement(5, body)
+    await store.updateMeasurement(5, 8, { beatErrorMs: 0.3 })
+    await store.removeMeasurement(5, 8)
+
+    expect(calls(fetchMock)).toEqual(['POST /projects/5/measurements', 'PATCH /projects/5/measurements/8', 'DELETE /projects/5/measurements/8'])
+    expect(sentBody(fetchMock, 0)).toEqual(body)
+    expect(sentBody(fetchMock, 1)).toEqual({ beatErrorMs: 0.3 })
+  })
+
+  it('S21 S32 les méthodes de coût appellent les bonnes routes avec le bon corps', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: {} }))
+    const store = useWatchesStore()
+    const body = { label: 'Poussoirs', amount: '34.00', expenseDate: '2025-05-02' }
+
+    await store.addExpense(5, body)
+    await store.updateExpense(5, 3, { amount: '30.00' })
+    await store.removeExpense(5, 3)
+
+    expect(calls(fetchMock)).toEqual(['POST /projects/5/expenses', 'PATCH /projects/5/expenses/3', 'DELETE /projects/5/expenses/3'])
+    expect(sentBody(fetchMock, 0)).toEqual(body)
+    expect(sentBody(fetchMock, 1)).toEqual({ amount: '30.00' })
+  })
+
+  it('S22 S31 setResale et clearResale appellent PUT et DELETE sur la montre', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { id: 7 } }))
+    const store = useWatchesStore()
+
+    await store.setResale(7, { price: '200.00', date: '2025-06-01' })
+    await store.clearResale(7)
+
+    expect(calls(fetchMock)).toEqual(['PUT /watches/7/resale', 'DELETE /watches/7/resale'])
+    expect(sentBody(fetchMock, 0)).toEqual({ price: '200.00', date: '2025-06-01' })
+  })
 })

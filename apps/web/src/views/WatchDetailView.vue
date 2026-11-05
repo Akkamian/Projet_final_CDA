@@ -3,10 +3,12 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import BeforeAfter from '../components/BeforeAfter.vue'
+import FinanceBlock from '../components/FinanceBlock.vue'
+import PerformanceBlock from '../components/PerformanceBlock.vue'
 import ProjectSelector from '../components/ProjectSelector.vue'
 import StepList from '../components/StepList.vue'
-import { formatDate, formatMoney, MOVEMENT_LABELS } from '../format'
-import { useWatchesStore, type WatchDetail } from '../stores/watches'
+import { MOVEMENT_LABELS } from '../format'
+import { useWatchesStore, type ExpenseDetail, type WatchDetail } from '../stores/watches'
 
 const watches = useWatchesStore()
 const route = useRoute()
@@ -30,6 +32,27 @@ onMounted(async () => {
         : 'Impossible de charger la montre. Réessayez dans un instant.'
   }
 })
+
+// Les coûts ne portent pas la marge : après chaque écriture, on relit la fiche et on n'en garde que la marge.
+async function updateExpenses({ projectId, expenses }: { projectId: number; expenses: ExpenseDetail[] }): Promise<void> {
+  const target = watch.value?.projects.find((p) => p.id === projectId)
+  if (!target || !watch.value) return
+  target.expenses = expenses
+  try {
+    const fresh = await watches.get(watch.value.id)
+    watch.value.margin = fresh.margin
+  } catch {
+    // La liste est à jour ; la marge se corrigera à la prochaine ouverture de la fiche.
+  }
+}
+
+// La revente répond par la fiche : on en reprend la revente et la marge, pas les projets (qui portent l'état en cours d'édition).
+function updateResale(fresh: WatchDetail): void {
+  if (!watch.value) return
+  watch.value.resalePrice = fresh.resalePrice
+  watch.value.resaleDate = fresh.resaleDate
+  watch.value.margin = fresh.margin
+}
 </script>
 
 <template>
@@ -45,27 +68,6 @@ onMounted(async () => {
         <template v-if="watch.complications.length > 0"> · {{ watch.complications.map((c) => c.label).join(', ') }}</template>
       </p>
 
-      <dl class="facts">
-        <template v-if="watch.purchasePrice !== null || watch.purchaseDate !== null">
-          <dt>Achat</dt>
-          <dd>
-            <template v-if="watch.purchasePrice !== null">{{ formatMoney(watch.purchasePrice) }}</template>
-            <template v-if="watch.purchaseDate !== null"> le {{ formatDate(watch.purchaseDate) }}</template>
-          </dd>
-        </template>
-        <template v-if="watch.resaleDate !== null">
-          <dt>Vendue</dt>
-          <dd>
-            <template v-if="watch.resalePrice !== null">{{ formatMoney(watch.resalePrice) }}</template>
-            le {{ formatDate(watch.resaleDate) }}
-          </dd>
-        </template>
-        <template v-if="watch.margin !== null">
-          <dt>Marge</dt>
-          <dd data-test="margin">{{ formatMoney(watch.margin) }}</dd>
-        </template>
-      </dl>
-
       <p v-if="watch.projects.length === 0" class="notice">Aucun projet pour cette montre.</p>
       <template v-else>
         <ProjectSelector :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
@@ -80,8 +82,16 @@ onMounted(async () => {
           />
           <!-- key : la liste (éditeur, ajout, requêtes en vol) ne se réutilise jamais d'un projet à l'autre. -->
           <StepList :key="project.id" :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
+          <PerformanceBlock
+            :key="`perf-${project.id}`"
+            :project-id="project.id"
+            :measurements="project.measurements"
+            @update:measurements="project.measurements = $event"
+          />
         </template>
       </template>
+
+      <FinanceBlock :watch="watch" :selected-project-id="selectedId" @update:expenses="updateExpenses" @update:resale="updateResale" />
     </template>
   </section>
 </template>
@@ -95,21 +105,6 @@ onMounted(async () => {
 h1,
 h2,
 p {
-  margin: 0;
-}
-
-.facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: var(--space-1) var(--space-4);
-  margin: 0;
-}
-
-dt {
-  color: var(--text-secondary);
-}
-
-dd {
   margin: 0;
 }
 </style>

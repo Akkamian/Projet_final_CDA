@@ -37,6 +37,20 @@ export interface MeasurementDetail {
   watchPosition: string | null
 }
 
+export interface MeasurementPayload {
+  measuredAt: string
+  rateSecondsPerDay: number
+  beatErrorMs: number
+  amplitudeDegrees: number
+  watchPosition?: string | null
+}
+
+export interface ExpensePayload {
+  label: string
+  amount: string
+  expenseDate: string
+}
+
 export interface ExpenseDetail {
   id: number
   label: string
@@ -166,6 +180,42 @@ export const useWatchesStore = defineStore('watches', () => {
     return apiFetch<void>(`/projects/${projectId}/photos/${kind}`, { method: 'DELETE' })
   }
 
+  function addMeasurement(projectId: number, body: MeasurementPayload): Promise<MeasurementDetail> {
+    return apiFetch<MeasurementDetail>(`/projects/${projectId}/measurements`, { method: 'POST', body: JSON.stringify(body) })
+  }
+
+  function updateMeasurement(projectId: number, measurementId: number, patch: Partial<MeasurementPayload>): Promise<MeasurementDetail> {
+    return apiFetch<MeasurementDetail>(`/projects/${projectId}/measurements/${measurementId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    })
+  }
+
+  function removeMeasurement(projectId: number, measurementId: number): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}/measurements/${measurementId}`, { method: 'DELETE' })
+  }
+
+  function addExpense(projectId: number, body: ExpensePayload): Promise<ExpenseDetail> {
+    return apiFetch<ExpenseDetail>(`/projects/${projectId}/expenses`, { method: 'POST', body: JSON.stringify(body) })
+  }
+
+  function updateExpense(projectId: number, expenseId: number, patch: Partial<ExpensePayload>): Promise<ExpenseDetail> {
+    return apiFetch<ExpenseDetail>(`/projects/${projectId}/expenses/${expenseId}`, { method: 'PATCH', body: JSON.stringify(patch) })
+  }
+
+  function removeExpense(projectId: number, expenseId: number): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}/expenses/${expenseId}`, { method: 'DELETE' })
+  }
+
+  /** Saisie et correction de la revente (S22, S31) : renvoie la fiche, marge recalculée. */
+  function setResale(watchId: number, body: { price: string; date: string }): Promise<WatchDetail> {
+    return apiFetch<WatchDetail>(`/watches/${watchId}/resale`, { method: 'PUT', body: JSON.stringify(body) })
+  }
+
+  function clearResale(watchId: number): Promise<WatchDetail> {
+    return apiFetch<WatchDetail>(`/watches/${watchId}/resale`, { method: 'DELETE' })
+  }
+
   return {
     items,
     counts,
@@ -183,5 +233,13 @@ export const useWatchesStore = defineStore('watches', () => {
     removeStepPhoto,
     setProjectPhoto,
     removeProjectPhoto,
+    addMeasurement,
+    updateMeasurement,
+    removeMeasurement,
+    addExpense,
+    updateExpense,
+    removeExpense,
+    setResale,
+    clearResale,
   }
 })
