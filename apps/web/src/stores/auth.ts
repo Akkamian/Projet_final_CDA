@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiFetch, getAccessToken, onAccessTokenChange, refreshSession, setAccessToken } from '../api/client'
+import { useAccountStore } from './account'
 
 export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(getAccessToken())
@@ -9,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Le client change le jeton seul (renouvellement automatique, session perdue) : le store le suit.
   onAccessTokenChange((token) => {
     accessToken.value = token
+    if (token === null) useAccountStore().clear()
   })
 
   let bootstrapping: Promise<void> | null = null
