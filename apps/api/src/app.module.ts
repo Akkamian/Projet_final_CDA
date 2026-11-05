@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/jwt-auth.guard.js';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter.js';
 import { ConfigModule } from './config/config.module.js';
+import { ExpensesModule } from './expenses/expenses.module.js';
 import { HealthController } from './health.controller.js';
 import { MeasurementsModule } from './measurements/measurements.module.js';
 import { PhotosModule } from './photos/photos.module.js';
@@ -14,7 +15,7 @@ import { StepsModule } from './steps/steps.module.js';
 import { WatchesModule } from './watches/watches.module.js';
 
 @Module({
-  imports: [ConfigModule, AuthModule, PrismaModule, ReferenceDataModule, StepGenerationModule, StepsModule, WatchesModule, PhotosModule, MeasurementsModule],
+  imports: [ConfigModule, AuthModule, PrismaModule, ReferenceDataModule, StepGenerationModule, StepsModule, WatchesModule, PhotosModule, MeasurementsModule, ExpensesModule],
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },

@@ -39,4 +39,12 @@ export class OwnershipService {
     if (!measurement) throw new NotFoundException();
     return measurement;
   }
+
+  async findOwnedExpense(userId: number, projectId: number, expenseId: number) {
+    const expense = await this.prisma.expenses.findFirst({
+      where: { id: expenseId, project_id: projectId, restoration_projects: { watches: { user_id: userId } } },
+    });
+    if (!expense) throw new NotFoundException();
+    return expense;
+  }
 }

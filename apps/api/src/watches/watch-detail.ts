@@ -70,6 +70,10 @@ const day = (date: Date | null): string | null => (date ? date.toISOString().sli
 const money = (amount: Prisma.Decimal | null): string | null => (amount ? amount.toFixed(2) : null);
 
 /** Forme renvoyée par l'API pour une étape, avec ses photos. */
+export function toExpenseDetail(e: Prisma.expensesGetPayload<object>): ExpenseDetail {
+  return { id: e.id, label: e.label, amount: e.amount.toFixed(2), expenseDate: day(e.expense_date) as string };
+}
+
 export function toMeasurementDetail(m: Prisma.performance_measurementsGetPayload<object>): MeasurementDetail {
   return {
     id: m.id,
@@ -126,12 +130,7 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
         photoAfter: project.photo_after,
         steps: project.restoration_steps.map(toStepDetail),
         measurements: project.performance_measurements.map(toMeasurementDetail),
-        expenses: project.expenses.map((e) => ({
-          id: e.id,
-          label: e.label,
-          amount: e.amount.toFixed(2),
-          expenseDate: day(e.expense_date) as string,
-        })),
+        expenses: project.expenses.map(toExpenseDetail),
       })),
   };
 }
