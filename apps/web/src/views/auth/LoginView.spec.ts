@@ -38,6 +38,13 @@ describe('LoginView', () => {
     expect(wrapper.find('button[data-test="resend"]').exists()).toBe(true)
   })
 
+  it('S3 propose « Mot de passe oublié ? » vers la demande de réinitialisation', async () => {
+    stubFetch(() => ({ status: 404, body: {} }))
+    const { wrapper } = await mountView()
+
+    expect(wrapper.find('a[href="/forgot-password"]').text()).toContain('Mot de passe oublié')
+  })
+
   it('RG-CPT-07 affiche un seul message pour des identifiants invalides, sans proposer le renvoi', async () => {
     stubFetch(() => ({ status: 401, body: { statusCode: 401, code: 'INVALID_CREDENTIALS', message: 'x' } }))
     const { wrapper } = await mountView()

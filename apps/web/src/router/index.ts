@@ -39,6 +39,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { public: true },
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('../views/auth/ForgotPasswordView.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('../views/auth/ResetPasswordView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/verify-email',
     name: 'verify-email',
     component: () => import('../views/auth/VerifyEmailView.vue'),

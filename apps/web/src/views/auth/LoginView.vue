@@ -86,6 +86,7 @@ async function resend() {
       </div>
       <button class="btn" type="submit" :disabled="busy">Connexion</button>
     </form>
+    <p class="switch"><RouterLink to="/forgot-password">Mot de passe oublié ?</RouterLink></p>
 
     <template v-if="error === 'unverified'">
       <button class="btn btn-secondary" type="button" data-test="resend" @click="resend">
