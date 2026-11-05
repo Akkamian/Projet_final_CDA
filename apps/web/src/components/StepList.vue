@@ -61,7 +61,7 @@ async function saveEdit(step: StepDetail, value: { label: string; notes: string 
 async function confirmDelete(): Promise<void> {
   const step = deleting.value
   if (!step) return
-  const ok = await run(async () => {
+  await run(async () => {
     await watches.removeStep(props.projectId, step.id)
     // Les rangs restent 1..n (RG-ETP-13) : l'API renumérote, on reflète le même résultat.
     emit(
@@ -69,7 +69,8 @@ async function confirmDelete(): Promise<void> {
       props.steps.filter((s) => s.id !== step.id).map((s, i) => ({ ...s, stepOrder: i + 1 })),
     )
   })
-  if (ok) deleting.value = null
+  // Le dialogue se ferme aussi en cas d'échec : l'alerte, derrière un dialogue modal, resterait invisible.
+  deleting.value = null
 }
 
 async function add(): Promise<void> {

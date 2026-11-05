@@ -121,6 +121,18 @@ describe('StepList', () => {
     expect(wrapper.find('dialog').exists()).toBe(false)
   })
 
+  it('S30 si la suppression échoue, le dialogue se ferme et l’erreur est visible', async () => {
+    const { wrapper } = mountList(() => ({ status: 500, body: { message: 'boom' } }))
+
+    await wrapper.findAll('[data-test="delete"]')[1]!.trigger('click')
+    await wrapper.find('[data-test="confirm-ok"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.emitted('update:steps')).toBeUndefined()
+  })
+
   it('S30 annuler la suppression n’envoie rien et garde l’étape', async () => {
     const { wrapper, fetchMock } = mountList(() => ({ status: 204 }))
 

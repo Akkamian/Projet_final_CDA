@@ -70,7 +70,8 @@ onMounted(async () => {
         <ProjectSelector :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
         <template v-if="project">
           <h2>{{ project.status === 'in_progress' ? 'En cours' : 'Terminé' }}</h2>
-          <StepList :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
+          <!-- key : la liste (éditeur, ajout, requêtes en vol) ne se réutilise jamais d'un projet à l'autre. -->
+          <StepList :key="project.id" :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
         </template>
       </template>
     </template>

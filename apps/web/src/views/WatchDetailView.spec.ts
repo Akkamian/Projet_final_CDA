@@ -123,6 +123,34 @@ describe('WatchDetailView', () => {
     expect(wrapper.text()).toContain('1/2 terminées')
   })
 
+  it('une réponse tardive d’un projet n’écrase pas les étapes du projet affiché ensuite', async () => {
+    let release!: () => void
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    const a = [step(20, 'A1'), step(21, 'A2')]
+    stubFetch(async (_url, init) => {
+      if (init.method === 'PUT') {
+        await gate
+        return { status: 200, body: [{ ...a[1]!, stepOrder: 1 }, { ...a[0]!, stepOrder: 2 }] }
+      }
+      return {
+        status: 200,
+        body: watch([project(2, 'in_progress', '2025-06-01T10:00:00Z', a), project(1, 'completed', '2025-01-01T10:00:00Z', [step(10, 'B1')])]),
+      }
+    })
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+
+    await wrapper.find('[data-test="move-up"]').trigger('click')
+    await wrapper.find('[data-test="project-selector"] select').setValue('1')
+    release()
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['B1'])
+  })
+
   it('S23 affiche la marge d’une montre vendue, et rien sinon', async () => {
     const sold = await mountView(() => ({
       status: 200,
