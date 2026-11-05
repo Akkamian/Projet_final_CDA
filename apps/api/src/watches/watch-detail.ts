@@ -69,6 +69,19 @@ export type WatchWithDetail = Prisma.watchesGetPayload<{ include: typeof WATCH_D
 const day = (date: Date | null): string | null => (date ? date.toISOString().slice(0, 10) : null);
 const money = (amount: Prisma.Decimal | null): string | null => (amount ? amount.toFixed(2) : null);
 
+/** Forme renvoyée par l'API pour une étape, avec ses photos. */
+export function toStepDetail(step: Prisma.restoration_stepsGetPayload<{ include: { step_pics: true } }>): StepDetail {
+  return {
+    id: step.id,
+    stepOrder: step.step_order,
+    label: step.label,
+    notes: step.notes,
+    isCompleted: step.is_completed,
+    completedAt: step.completed_at?.toISOString() ?? null,
+    photos: step.step_pics.map((pic) => ({ id: pic.id, url: pic.url })),
+  };
+}
+
 /** Forme renvoyée par l'API pour une montre ; la marge est calculée ici, à la lecture, jamais stockée (RG-FIN-06). */
 export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
   return {
@@ -100,15 +113,7 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
         completedAt: project.completed_at?.toISOString() ?? null,
         photoBefore: project.photo_before,
         photoAfter: project.photo_after,
-        steps: project.restoration_steps.map((step) => ({
-          id: step.id,
-          stepOrder: step.step_order,
-          label: step.label,
-          notes: step.notes,
-          isCompleted: step.is_completed,
-          completedAt: step.completed_at?.toISOString() ?? null,
-          photos: step.step_pics.map((pic) => ({ id: pic.id, url: pic.url })),
-        })),
+        steps: project.restoration_steps.map(toStepDetail),
         measurements: project.performance_measurements.map((m) => ({
           id: m.id,
           measuredAt: m.measured_at.toISOString(),
