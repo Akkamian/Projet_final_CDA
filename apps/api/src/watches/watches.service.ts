@@ -4,6 +4,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { OwnershipService } from '../common/ownership.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { CreateWatchDto } from './dto/create-watch.dto.js';
+import type { ResaleDto } from './dto/resale.dto.js';
 import type { UpdateWatchDto } from './dto/update-watch.dto.js';
 import { computeMargin } from './margin.js';
 import { computeStatus, type DashboardStatus, type ProjectStatus } from './status.js';
@@ -118,6 +119,40 @@ export class WatchesService {
         await tx.comporte.createMany({ data: codes.map((complication_code) => ({ watch_id: watchId, complication_code })) });
       }
     });
+    return this.findOne(userId, watchId);
+  }
+
+  /**
+   * Saisie (S22) ou correction (S31) de la revente : prix et date s'écrivent ensemble (RG-FIN-03).
+   * Refusée tant qu'un projet est en cours (RG-FIN-05), qu'il s'agisse d'une saisie ou d'une correction.
+   * Les contrôles se font sous verrou de la montre : une revente et une modification concurrentes ne peuvent pas
+   * se croiser, la base ne répond jamais 500 à la place du refus (RG-FIN-10, chk_watches_resale_after_purchase).
+   */
+  async setResale(userId: number, watchId: number, dto: ResaleDto): Promise<WatchDetail> {
+    await this.ownership.findOwnedWatch(userId, watchId);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM watches WHERE id = ${watchId} FOR UPDATE`;
+      const current = await tx.watches.findUniqueOrThrow({ where: { id: watchId } });
+      const inProgress = await tx.restoration_projects.count({ where: { watch_id: watchId, status: 'in_progress' } });
+      if (inProgress > 0) {
+        throw apiError(409, 'PROJECT_IN_PROGRESS', 'La revente est impossible tant qu’un projet est en cours : terminez-le d’abord');
+      }
+      const date = new Date(dto.date);
+      if (current.purchase_date && date < current.purchase_date) {
+        throw apiError(400, 'RESALE_BEFORE_PURCHASE', 'La date de revente ne peut pas précéder la date d’achat');
+      }
+      await tx.watches.update({
+        where: { id: watchId },
+        data: { resale_price: new Prisma.Decimal(dto.price), resale_date: date, updated_at: new Date() },
+      });
+    });
+    return this.findOne(userId, watchId);
+  }
+
+  /** Annule la revente : la montre n'est plus vendue et aucune marge n'est calculée (S31, RG-FIN-12). Sans revente, rien ne change. */
+  async clearResale(userId: number, watchId: number): Promise<WatchDetail> {
+    await this.ownership.findOwnedWatch(userId, watchId);
+    await this.prisma.watches.update({ where: { id: watchId }, data: { resale_price: null, resale_date: null, updated_at: new Date() } });
     return this.findOne(userId, watchId);
   }
 

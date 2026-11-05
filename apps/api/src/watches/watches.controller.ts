@@ -1,8 +1,9 @@
-import { Body, Controller, Get, NotFoundException, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { DASHBOARD_STATUSES, type DashboardStatus } from './status.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/current-user.decorator.js';
 import { CreateWatchDto } from './dto/create-watch.dto.js';
+import { ResaleDto } from './dto/resale.dto.js';
 import { UpdateWatchDto } from './dto/update-watch.dto.js';
 import type { WatchDetail } from './watch-detail.js';
 import { WatchesService, type WatchList } from './watches.service.js';
@@ -39,5 +40,16 @@ export class WatchesController {
   @Patch(':id')
   update(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: UpdateWatchDto): Promise<WatchDetail> {
     return this.watches.update(user.id, parseWatchId(id), dto);
+  }
+
+  /** Saisie et correction de la revente : prix et date ensemble (S22, S31). */
+  @Put(':id/resale')
+  setResale(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: ResaleDto): Promise<WatchDetail> {
+    return this.watches.setResale(user.id, parseWatchId(id), dto);
+  }
+
+  @Delete(':id/resale')
+  clearResale(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<WatchDetail> {
+    return this.watches.clearResale(user.id, parseWatchId(id));
   }
 }
