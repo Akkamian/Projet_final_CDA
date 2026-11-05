@@ -156,7 +156,7 @@ describe('PrismaExceptionFilter', () => {
   it('un enregistrement introuvable (P2025) répond 404', () => {
     const { status, json } = run('P2025');
     expect(status).toHaveBeenCalledWith(404);
-    expect(json).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
+    expect(json).toHaveBeenCalledWith({ statusCode: 404, code: 'NOT_FOUND', message: 'Ressource introuvable' });
   });
 
   it('une autre erreur Prisma répond 500 sans détail interne', () => {

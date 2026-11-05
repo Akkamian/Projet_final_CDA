@@ -10,7 +10,7 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     if (exception.code === 'P2002') {
       response.status(HttpStatus.CONFLICT).json({ statusCode: 409, message: 'Cette valeur existe déjà' });
     } else if (exception.code === 'P2025') {
-      response.status(HttpStatus.NOT_FOUND).json({ statusCode: 404, message: 'Ressource introuvable' });
+      response.status(HttpStatus.NOT_FOUND).json({ statusCode: 404, code: 'NOT_FOUND', message: 'Ressource introuvable' });
     } else {
       response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ statusCode: 500, message: 'Erreur interne' });
     }

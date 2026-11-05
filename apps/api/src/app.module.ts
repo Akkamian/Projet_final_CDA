@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AccountModule } from './account/account.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './auth/jwt-auth.guard.js';
+import { NotFoundExceptionFilter } from './common/not-found.filter.js';
 import { PrismaExceptionFilter } from './common/prisma-exception.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import { ExpensesModule } from './expenses/expenses.module.js';
@@ -21,6 +22,7 @@ import { WatchesModule } from './watches/watches.module.js';
   controllers: [HealthController],
   providers: [
     { provide: APP_FILTER, useClass: PrismaExceptionFilter },
+    { provide: APP_FILTER, useClass: NotFoundExceptionFilter },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
