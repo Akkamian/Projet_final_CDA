@@ -94,18 +94,20 @@ export class WatchesService {
     for (const [field, value] of [['marque', dto.brand], ['modèle', dto.model], ['type de mouvement', dto.movementCode], ['complications', dto.complicationCodes]] as const) {
       if (value === null) throw apiError(400, 'REQUIRED_FIELD', `Le champ « ${field} » ne peut pas être null`);
     }
-    const current = await this.ownership.findOwnedWatch(userId, watchId);
-
-    // RG-FIN-10 : la base la refuserait aussi (chk_watches_resale_after_purchase), mais en erreur 500.
-    const purchaseDate = dto.purchaseDate === undefined ? current.purchase_date : dto.purchaseDate ? new Date(dto.purchaseDate) : null;
-    if (purchaseDate && current.resale_date && purchaseDate > current.resale_date) {
-      throw apiError(400, 'PURCHASE_AFTER_RESALE', 'La date d’achat ne peut pas être postérieure à la date de revente');
-    }
+    await this.ownership.findOwnedWatch(userId, watchId);
 
     const codes = dto.complicationCodes === undefined ? undefined : [...new Set(dto.complicationCodes)];
     if (codes) await this.assertKnownComplications(codes);
 
     await this.prisma.$transaction(async (tx) => {
+      // Sous le verrou de la montre, comme setResale : une revente concurrente est vue ici et non écrasée, la base ne répond pas 500 (RG-FIN-10).
+      await tx.$queryRaw`SELECT id FROM watches WHERE id = ${watchId} FOR UPDATE`;
+      const current = await tx.watches.findUniqueOrThrow({ where: { id: watchId } });
+      // RG-FIN-10 : la base la refuserait aussi (chk_watches_resale_after_purchase), mais en erreur 500.
+      const purchaseDate = dto.purchaseDate === undefined ? current.purchase_date : dto.purchaseDate ? new Date(dto.purchaseDate) : null;
+      if (purchaseDate && current.resale_date && purchaseDate > current.resale_date) {
+        throw apiError(400, 'PURCHASE_AFTER_RESALE', 'La date d’achat ne peut pas être postérieure à la date de revente');
+      }
       await tx.watches.update({
         where: { id: watchId },
         data: {

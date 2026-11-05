@@ -195,4 +195,21 @@ describe('PATCH /watches/:id : modifier une montre', () => {
       expect((await patch(watch.id, body)).status).toBe(400);
     }
   });
+
+  it('RG-FIN-10 une revente validée pendant la modification est vue : refus 400, jamais 500', async () => {
+    const watch = await createWatch(prisma, userId);
+    let concurrent: Promise<request.Response> | undefined;
+
+    // Une revente tient le verrou de la montre ; la modification démarre, puis la revente est validée.
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM watches WHERE id = ${watch.id} FOR UPDATE`;
+      await tx.watches.update({ where: { id: watch.id }, data: { resale_price: 100, resale_date: new Date('2024-06-01') } });
+      concurrent = patch(watch.id, { purchaseDate: '2024-12-01' }).then((r) => r);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    });
+
+    const res = await concurrent!;
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('PURCHASE_AFTER_RESALE');
+  });
 });
