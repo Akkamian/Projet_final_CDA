@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { OwnershipService } from '../common/ownership.service.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { projectPhotoUrls } from '../photos/photo-urls.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import {
   toWatchDetail,
   WATCH_DETAIL_INCLUDE,
@@ -30,6 +32,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ownership: OwnershipService,
+    private readonly storage: StorageService,
   ) {}
 
   /** Nouvelle révision (S9) : refusée si la montre est vendue (RG-PRJ-05) ou si un projet y est en cours (RG-PRJ-09). */
@@ -94,6 +97,20 @@ export class ProjectsService {
       }),
     );
     return this.detail(userId, owned.watch_id, projectId);
+  }
+
+  /**
+   * Supprime le projet avec ses étapes, notes, photos, mesures et coûts (cascade, RG-PRJ-11) ; la montre est conservée et sa marge,
+   * calculée à la lecture, ne compte plus ses coûts. Les fichiers s'effacent après le commit, sans faire échouer la requête.
+   */
+  async remove(userId: number, projectId: number): Promise<void> {
+    await this.ownership.findOwnedProject(userId, projectId);
+    const urls = await this.prisma.$transaction(async (tx) => {
+      const found = await projectPhotoUrls(tx, { id: projectId });
+      await tx.restoration_projects.deleteMany({ where: { id: projectId } });
+      return found;
+    });
+    await Promise.all(urls.map((url) => this.storage.deleteQuietly(url)));
   }
 
   /**

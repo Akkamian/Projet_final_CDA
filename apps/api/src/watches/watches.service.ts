@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { OwnershipService } from '../common/ownership.service.js';
+import { projectPhotoUrls } from '../photos/photo-urls.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import type { CreateWatchDto } from './dto/create-watch.dto.js';
 import type { ResaleDto } from './dto/resale.dto.js';
 import type { UpdateWatchDto } from './dto/update-watch.dto.js';
@@ -31,6 +33,7 @@ export class WatchesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ownership: OwnershipService,
+    private readonly storage: StorageService,
   ) {}
 
   /**
@@ -154,6 +157,20 @@ export class WatchesService {
     await this.ownership.findOwnedWatch(userId, watchId);
     await this.prisma.watches.update({ where: { id: watchId }, data: { resale_price: null, resale_date: null, updated_at: new Date() } });
     return this.findOne(userId, watchId);
+  }
+
+  /**
+   * Supprime la montre, vendue ou non, avec ses complications, ses projets et toutes leurs données (cascade, RG-MON-11) ;
+   * les fichiers photos s'effacent après le commit, sans faire échouer la requête.
+   */
+  async remove(userId: number, watchId: number): Promise<void> {
+    await this.ownership.findOwnedWatch(userId, watchId);
+    const urls = await this.prisma.$transaction(async (tx) => {
+      const found = await projectPhotoUrls(tx, { watch_id: watchId });
+      await tx.watches.deleteMany({ where: { id: watchId, user_id: userId } });
+      return found;
+    });
+    await Promise.all(urls.map((url) => this.storage.deleteQuietly(url)));
   }
 
   /** Détail d'une montre avec tous ses projets (RG-PRJ-08) ; 404 si elle n'est pas à cet utilisateur (RG-SEC-01). */

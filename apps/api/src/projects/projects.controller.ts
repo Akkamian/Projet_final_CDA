@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  Param,
+  Post,
+} from '@nestjs/common';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -28,6 +35,15 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
   ): Promise<ProjectDetail> {
     return this.projects.complete(user.id, parseId(projectId));
+  }
+
+  @Delete('projects/:projectId')
+  @HttpCode(204)
+  remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('projectId') projectId: string,
+  ): Promise<void> {
+    return this.projects.remove(user.id, parseId(projectId));
   }
 
   @Post('projects/:projectId/reopen')

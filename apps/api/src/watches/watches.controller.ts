@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { DASHBOARD_STATUSES, type DashboardStatus } from './status.js';
 import { CurrentUser, type AuthenticatedUser } from '../common/current-user.decorator.js';
@@ -46,6 +46,12 @@ export class WatchesController {
   @Put(':id/resale')
   setResale(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string, @Body() dto: ResaleDto): Promise<WatchDetail> {
     return this.watches.setResale(user.id, parseWatchId(id), dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
+    return this.watches.remove(user.id, parseWatchId(id));
   }
 
   @Delete(':id/resale')
