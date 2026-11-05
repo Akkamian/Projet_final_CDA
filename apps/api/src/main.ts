@@ -1,10 +1,9 @@
-import { config } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { configureApp } from './configure-app.js';
+import { loadDevEnv } from './load-env.js';
 
-// En dev le .env est à la racine du monorepo ; en production les variables viennent de l'hébergeur.
-config({ path: '../../.env', quiet: true });
+loadDevEnv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
