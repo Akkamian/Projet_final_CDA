@@ -1,0 +1,49 @@
+name: CI
+
+# Lint et tests de l'API et du web. Les tests E2E (Playwright, MailDev) n'y figurent pas : lancement manuel.
+on:
+  push:
+    branches: [dev]
+  pull_request:
+    branches: [staging, main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          # Base des tests d'intégration : le nom doit finir par _test (global-setup.ts le vérifie).
+          POSTGRES_DB: watch_tracker_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/watch_tracker_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run test:api
+
+      - run: npm run test:web
