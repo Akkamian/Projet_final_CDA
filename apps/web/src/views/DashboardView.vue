@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import Avatar from '../components/Avatar.vue'
 import StatusFilter from '../components/StatusFilter.vue'
 import WatchCard from '../components/WatchCard.vue'
 import { STATUS_LABELS } from '../format'
+import { useAccountStore } from '../stores/account'
 import { useWatchesStore, type DashboardStatus } from '../stores/watches'
 
 const watches = useWatchesStore()
+const account = useAccountStore()
 const selected = ref<DashboardStatus | null>(null)
 
 onMounted(() => watches.list())
@@ -32,7 +35,13 @@ function select(status: DashboardStatus | null) {
           {{ watches.items.length }} {{ watches.items.length > 1 ? 'montres' : 'montre' }}<template v-if="selected"> · {{ STATUS_LABELS[selected] }}</template>
         </p>
       </div>
-      <RouterLink class="btn btn-compact" to="/watches/new">Nouvelle montre</RouterLink>
+      <div class="top-actions">
+        <RouterLink class="btn btn-compact" to="/watches/new">Nouvelle montre</RouterLink>
+        <!-- Seul accès au compte en mobile (la barre du bas n'en porte pas) ; la barre latérale le porte dès 640 px. -->
+        <RouterLink class="account-btn" to="/account" :aria-label="account.email ? `Mon compte (${account.email})` : 'Mon compte'">
+          <Avatar variant="initial" :initial="account.initial" />
+        </RouterLink>
+      </div>
     </header>
 
     <StatusFilter :counts="watches.counts" :selected="selected" @select="select" />
@@ -69,6 +78,22 @@ function select(status: DashboardStatus | null) {
 h1,
 p {
   margin: 0;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.account-btn {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .account-btn {
+    display: inline-flex;
+  }
 }
 
 .btn-compact {

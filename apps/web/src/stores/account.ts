@@ -15,16 +15,22 @@ export const useAccountStore = defineStore('account', () => {
   const email = computed(() => profile.value?.email ?? null)
   const initial = computed(() => profile.value?.email.charAt(0).toUpperCase() || null)
 
+  // Une réponse tardive (déconnexion ou chargement plus récent entre-temps) ne doit jamais remplacer l'état courant.
+  let generation = 0
+
   /** Ne lève jamais : sans profil, la navigation reste utilisable et l'avatar affiche l'icône de repli. */
   async function load(): Promise<void> {
+    const current = ++generation
     try {
-      profile.value = await apiFetch<AccountProfile>('/account')
+      const loaded = await apiFetch<AccountProfile>('/account')
+      if (current === generation) profile.value = loaded
     } catch {
-      profile.value = null
+      if (current === generation) profile.value = null
     }
   }
 
   function clear(): void {
+    generation++
     profile.value = null
   }
 

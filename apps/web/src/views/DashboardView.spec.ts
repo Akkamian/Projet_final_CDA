@@ -180,11 +180,19 @@ describe('DashboardView', () => {
     expect(wrapper.find('[data-test="empty"]').exists()).toBe(false)
   })
 
-  it('le tableau de bord n’a plus de lien Mon compte ni de bouton Se déconnecter (la navigation les porte)', async () => {
+  it('le tableau de bord n’a plus de texte « Mon compte » ni de bouton Se déconnecter (la déconnexion est dans l’écran compte)', async () => {
     api()
     const wrapper = await mountView()
 
     expect(wrapper.text()).not.toContain('Mon compte')
     expect(wrapper.text()).not.toContain('Se déconnecter')
+  })
+
+  it('un bouton avatar mène à Mon compte : seul accès au compte en mobile, où la barre du bas n’en porte pas', async () => {
+    api()
+    const wrapper = await mountView()
+
+    const link = wrapper.get('a[aria-label^="Mon compte"]')
+    expect(link.attributes('href')).toBe('/account')
   })
 })

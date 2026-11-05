@@ -61,4 +61,33 @@ describe('account store', () => {
 
     expect(account.email).toBeNull()
   })
+
+  it('une réponse tardive après la déconnexion ne ressuscite pas le profil', async () => {
+    let answer!: (r: { status: number; body: unknown }) => void
+    stubFetch(() => new Promise((resolve) => (answer = resolve)))
+    useAuthStore()
+    const account = useAccountStore()
+    const loading = account.load()
+
+    setAccessToken(null)
+    answer({ status: 200, body: PROFILE })
+    await loading
+
+    expect(account.email).toBeNull()
+  })
+
+  it('la réponse d’un ancien chargement n’écrase pas celle du chargement suivant', async () => {
+    const answers: ((r: { status: number; body: unknown }) => void)[] = []
+    stubFetch(() => new Promise((resolve) => answers.push(resolve)))
+    const account = useAccountStore()
+    const first = account.load()
+    const second = account.load()
+
+    answers[1]({ status: 200, body: { ...PROFILE, email: 'deuxieme@example.com' } })
+    await second
+    answers[0]({ status: 200, body: { ...PROFILE, email: 'premier@example.com' } })
+    await first
+
+    expect(account.email).toBe('deuxieme@example.com')
+  })
 })

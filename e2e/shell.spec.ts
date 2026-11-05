@@ -33,3 +33,15 @@ test('mobile 390 px : la barre du bas remplace la barre latérale et Nouveau pro
   await nav.getByRole('link', { name: 'Nouveau projet' }).click()
   await expect(page).toHaveURL(/\/watches\/new$/)
 })
+
+test('mobile 390 px : le bouton avatar du tableau de bord mène au compte, où l’on peut se déconnecter', async ({ page, request }) => {
+  const email = uniqueEmail('shell-compte')
+  await createVerifiedAccount(request, email)
+  await page.setViewportSize({ width: 390, height: 800 })
+  await login(page, email)
+
+  await page.getByRole('link', { name: /^Mon compte/ }).click()
+  await expect(page).toHaveURL(/\/account$/)
+  await page.getByRole('button', { name: 'Se déconnecter' }).click()
+  await expect(page).toHaveURL(/\/login$/)
+})
