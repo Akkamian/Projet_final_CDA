@@ -1,8 +1,9 @@
-import { Body, Controller, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public } from '../common/public.decorator.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/configuration.js';
+import { AuthThrottlerGuard } from './auth-throttler.guard.js';
 import { AuthService, type SessionTokens } from './auth.service.js';
 import { EmailDto } from './dto/email.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -33,6 +34,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthThrottlerGuard)
   @Post('resend-verification')
   @HttpCode(204)
   resendVerification(@Body() dto: EmailDto): Promise<void> {
@@ -40,6 +42,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthThrottlerGuard)
   @Post('forgot-password')
   @HttpCode(204)
   forgotPassword(@Body() dto: EmailDto): Promise<void> {
@@ -54,6 +57,7 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthThrottlerGuard)
   @Post('login')
   @HttpCode(200)
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response): Promise<{ accessToken: string }> {

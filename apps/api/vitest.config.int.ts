@@ -21,6 +21,8 @@ export default defineConfig({
       SMTP_HOST: '127.0.0.1',
       SMTP_PORT: '1025',
       MAIL_FROM: 'no-reply@test.local',
+      // Élevée : les autres tests enchaînent connexions et demandes ; auth-throttle fixe sa propre limite.
+      THROTTLE_LIMIT: '1000',
     },
     testTimeout: 30_000,
     hookTimeout: 120_000,

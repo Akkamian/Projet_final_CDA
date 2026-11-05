@@ -10,6 +10,8 @@ export interface AppConfig {
   smtpHost: string;
   smtpPort: number;
   mailFrom: string;
+  throttleLimit: number;
+  throttleTtlSeconds: number;
   storage: StorageConfig;
 }
 
@@ -44,6 +46,9 @@ export function configuration(env: NodeJS.ProcessEnv = process.env): AppConfig {
     smtpHost: required(env, 'SMTP_HOST'),
     smtpPort: Number(required(env, 'SMTP_PORT')),
     mailFrom: required(env, 'MAIL_FROM'),
+    // Tentatives autorisées par IP et par fenêtre (RG-CPT-14) : 5 par minute par défaut.
+    throttleLimit: Number(env.THROTTLE_LIMIT || 5),
+    throttleTtlSeconds: Number(env.THROTTLE_TTL_SECONDS || 60),
     storage: storageConfig(env),
   };
 }
