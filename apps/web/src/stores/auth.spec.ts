@@ -102,4 +102,16 @@ describe('auth store', () => {
 
     expect(auth.isAuthenticated).toBe(false)
   })
+
+  it('changePassword garde la session : le nouveau jeton d’accès renvoyé par l’API remplace l’ancien', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { accessToken: 'nouveau' } }))
+    const auth = useAuthStore()
+    setAccessToken('ancien')
+
+    await auth.changePassword('ancien-mdp-1', 'nouveau-mdp-1')
+
+    expect(calls(fetchMock)).toEqual(['PATCH /account/password'])
+    expect(sentBody(fetchMock, 0)).toEqual({ currentPassword: 'ancien-mdp-1', newPassword: 'nouveau-mdp-1' })
+    expect(auth.accessToken).toBe('nouveau')
+  })
 })

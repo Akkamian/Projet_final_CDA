@@ -42,8 +42,13 @@ export const useAuthStore = defineStore('auth', () => {
     setAccessToken(null)
   }
 
-  function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    return apiFetch<void>('/account/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) })
+  /** L'API ferme les autres sessions et renvoie celle de cet appareil : on la garde pour ne pas être déconnecté. */
+  async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const result = await apiFetch<{ accessToken: string }>('/account/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    setAccessToken(result.accessToken)
   }
 
   return { accessToken, isAuthenticated, bootstrap, login, logout, deleteAccount, changePassword }

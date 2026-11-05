@@ -113,7 +113,7 @@ describe('AccountView', () => {
   })
 
   it('S4 confirme le changement réussi et vide les champs', async () => {
-    const { wrapper } = await mountView(() => ({ status: 204 }))
+    const { wrapper } = await mountView(() => ({ status: 200, body: { accessToken: 'nouveau' } }))
 
     await wrapper.find('#current-password').setValue('ancien-mdp-1')
     await wrapper.find('#new-password').setValue('nouveau-mdp-1')

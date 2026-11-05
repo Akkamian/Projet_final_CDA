@@ -56,6 +56,31 @@ describe('Limitation des tentatives (S36, S39, RG-CPT-14)', () => {
     expect((await forgot()).status).toBe(204);
   });
 
+  const loginFrom = (ip: string) =>
+    request(app.getHttpServer())
+      .post('/auth/login')
+      .set('X-Forwarded-For', ip)
+      .send({ email: 'foo@bar.fr', password: 'mauvais-mdp-1' });
+
+  it('sans proxy déclaré, X-Forwarded-For est ignoré : changer d’en-tête ne remet pas le compteur à zéro', async () => {
+    for (let i = 0; i < 3; i++)
+      expect((await loginFrom(`10.0.0.${i}`)).status).toBe(401);
+
+    expect((await loginFrom('10.0.0.99')).status).toBe(429);
+  });
+
+  it('TRUST_PROXY : derrière un proxy de confiance, chaque client a son propre compteur', async () => {
+    await app.close();
+    vi.stubEnv('TRUST_PROXY', 'loopback');
+    ({ app } = await createTestApp());
+
+    for (let i = 0; i < 3; i++)
+      expect((await loginFrom('10.0.0.1')).status).toBe(401);
+
+    expect((await loginFrom('10.0.0.1')).status).toBe(429);
+    expect((await loginFrom('10.0.0.2')).status).toBe(401);
+  });
+
   it('les autres routes ne sont pas limitées', async () => {
     for (let i = 0; i < 8; i++) {
       expect((await post('/auth/refresh')).status).toBe(401);

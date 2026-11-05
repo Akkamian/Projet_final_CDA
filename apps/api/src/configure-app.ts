@@ -9,6 +9,10 @@ import { GENERATED_KEY, UPLOADS_PREFIX } from './storage/local-storage.driver.js
 export function configureApp(app: INestApplication): void {
   // D5 : en production l'API est sur un sous-domaine, le front doit être autorisé explicitement.
   app.enableCors({ origin: process.env.WEB_ORIGIN, credentials: true });
+  // Derrière un proxy (Passenger), sans ceci tous les clients auraient l'IP du proxy et partageraient un seul compteur (RG-CPT-14).
+  // Absent par défaut : X-Forwarded-For n'est pas cru, un client ne peut pas choisir son IP.
+  const trustProxy = process.env.TRUST_PROXY;
+  if (trustProxy) (app as NestExpressApplication).set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   serveLocalUploads(app as NestExpressApplication);

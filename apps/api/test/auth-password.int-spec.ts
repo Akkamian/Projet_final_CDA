@@ -170,7 +170,7 @@ describe('Mot de passe oublié, réinitialisation et changement (S3, S4)', () =>
             newPassword: 'changement-1',
           })
         ).status,
-      ).toBe(204);
+      ).toBe(200);
 
       const res = await reset(linkToken());
 
@@ -257,7 +257,7 @@ describe('Mot de passe oublié, réinitialisation et changement (S3, S4)', () =>
         newPassword: 'nouveau-mdp-1',
       });
 
-      expect(res.status).toBe(204);
+      expect(res.status).toBe(200);
       const row = await prisma.users.findUniqueOrThrow({
         where: { id: user.id },
       });
@@ -265,6 +265,24 @@ describe('Mot de passe oublié, réinitialisation et changement (S3, S4)', () =>
         true,
       );
       expect(row.password_changed_at).not.toBeNull();
+    });
+
+    it('S4 garde la session de l’appareil courant : nouveau jeton d’accès et cookie de renouvellement encore valable', async () => {
+      const user = await createUser(prisma, { email: 'foo@bar.fr' });
+
+      const res = await change(user.id, {
+        currentPassword: user.password,
+        newPassword: 'nouveau-mdp-1',
+      });
+
+      expect(typeof res.body.accessToken).toBe('string');
+      const setCookie = res.headers['set-cookie'] as unknown as string[];
+      const cookie = setCookie.find((c) => c.startsWith('refresh_token='));
+      expect(cookie).toBeDefined();
+      const refreshed = await http()
+        .post('/auth/refresh')
+        .set('Cookie', cookie!.split(';')[0]);
+      expect(refreshed.status).toBe(200);
     });
 
     it('S4 refuse un mot de passe actuel incorrect (400 WRONG_PASSWORD), rien ne change', async () => {

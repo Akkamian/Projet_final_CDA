@@ -26,9 +26,9 @@
 | 4 | **Prisma sur le mutualisé** | Prisma 7 utilise l'adaptateur `pg` (pas de moteur binaire de requête), mais `prisma generate` doit tourner au build. Confirmer que la compilation (`npm ci` puis `npm run build -w apps/api`) est possible sur le serveur, sinon compiler ailleurs et envoyer `dist/` avec `node_modules`. |
 | 5 | **Sous-domaine `api.` et certificat SSL** | Création dans N0C du sous-domaine (ex. `api.example.com`) et certificat associé : le cookie de renouvellement est `Secure` et n'est envoyé qu'en HTTPS. |
 | 6 | **PostgreSQL** | Version proposée (la cible est 16), accès en `127.0.0.1` depuis l'application, nom de base, utilisateur et mot de passe. |
-| 7 | **Fournisseur SMTP de production** (point ouvert D4) | SMTP de PlanetHoster ou service transactionnel : hôte, port, identifiants, expéditeur autorisé. Le code n'en dépend pas (variables `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`). Sans lui, ni vérification d'adresse ni mot de passe oublié. |
+| 7 | **Fournisseur SMTP de production** (point ouvert D4) | SMTP de PlanetHoster ou service transactionnel : hôte, port, identifiants, expéditeur autorisé. Le code n'en dépend pas (variables `SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM`, et `SMTP_USER` / `SMTP_PASS` si le relais exige une authentification ; `SMTP_SECURE=true` pour TLS implicite, par défaut seulement sur le port 465). Sans lui, ni vérification d'adresse ni mot de passe oublié. |
 | 8 | **Stockage objet S3** | Fournisseur, point d'accès, bucket, clés ; le bucket doit permettre la lecture publique des photos (les URL sont enregistrées en base). Le disque de l'hébergement n'est pas utilisé en production (`STORAGE_DRIVER=s3`). |
-| 9 | **IP vue par l'API derrière le proxy** | La limitation des tentatives compte par IP. Si l'API ne reçoit que l'IP du proxy, tous les utilisateurs partagent un compteur : il faudrait activer `trust proxy` (non fait, voir « Limites connues »). |
+| 9 | **IP vue par l'API derrière le proxy** | La limitation des tentatives compte par IP. Si l'API ne reçoit que l'IP du proxy, tous les utilisateurs partagent un compteur : renseigner `TRUST_PROXY` (par exemple `loopback`, ou `1` pour un seul proxy) ; sans cette variable, `X-Forwarded-For` est ignoré. **Sans elle derrière un proxy, 5 connexions de n'importe qui dans la minute bloquent tout le site : à vérifier avant l'ouverture** (l'IP réellement transmise par Passenger n'est pas vérifiée). |
 | 10 | **Pages CGV et Politique de confidentialité** | Le lien existe dans l'inscription ; le contenu reste à rédiger (hors plan). |
 
 ## 3. Préparer l'hébergement
@@ -47,7 +47,7 @@ npm ci                          # dépendances (les outils de build et Prisma so
 npm run build -w apps/api       # prisma generate, puis nest build : apps/api/dist/
 ```
 
-Renseigner les variables d'environnement de l'application dans l'interface de l'hébergeur, d'après `apps/api/.env.production.example` : `NODE_ENV=production`, `DATABASE_URL`, `WEB_ORIGIN` (l'origine exacte du front), `JWT_SESSION_SECRET` et `JWT_LINK_SECRET` (deux secrets distincts, longs et aléatoires), **`COOKIE_SECURE=true`**, `THROTTLE_*`, SMTP, `STORAGE_DRIVER=s3` et les quatre variables `S3_*`. En production l'API ne lit aucun fichier `.env`.
+Renseigner les variables d'environnement de l'application dans l'interface de l'hébergeur, d'après `apps/api/.env.production.example` : `NODE_ENV=production`, `DATABASE_URL`, `WEB_ORIGIN` (l'origine exacte du front), `JWT_SESSION_SECRET` et `JWT_LINK_SECRET` (deux secrets distincts, longs et aléatoires), **`COOKIE_SECURE=true`**, `THROTTLE_*`, `TRUST_PROXY`, SMTP (dont `SMTP_USER` et `SMTP_PASS` si requis), `STORAGE_DRIVER=s3` et les quatre variables `S3_*`. En production l'API ne lit aucun fichier `.env`.
 
 Démarrage : Passenger lance `dist/main.js` depuis `apps/api` (équivalent de `npm run start:prod`, soit `node dist/main`). Vérifier ensuite `https://api.<domaine>/health` : la réponse attendue est `{"status":"ok"}`.
 
@@ -80,6 +80,6 @@ npm run db:seed      # charge le référentiel (types de mouvement, complication
 
 ## 8. Limites connues
 
-- **Limitation des tentatives** : compteur en mémoire par IP, remis à zéro à chaque redémarrage de l'application et non partagé entre instances. Derrière un proxy, l'IP vue peut être celle du proxy (point 9 de la section 2).
+- **Limitation des tentatives** : compteur en mémoire par IP, remis à zéro à chaque redémarrage de l'application et non partagé entre instances. Derrière un proxy, l'IP vue est celle du proxy tant que `TRUST_PROXY` n'est pas renseigné (point 9 de la section 2).
 - **Suppression de compte et changement de mot de passe** ne sont pas limités en tentatives.
 - Aucun journal ni surveillance n'est mis en place au-delà des journaux de l'application.

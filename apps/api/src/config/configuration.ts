@@ -9,6 +9,10 @@ export interface AppConfig {
   cookieSecure: boolean;
   smtpHost: string;
   smtpPort: number;
+  /** TLS implicite (port 465) ; sinon STARTTLS si le serveur le propose. */
+  smtpSecure: boolean;
+  /** Identifiants du relais ; absents en développement (MailDev). */
+  smtpAuth?: { user: string; pass: string };
   mailFrom: string;
   throttleLimit: number;
   throttleTtlSeconds: number;
@@ -36,6 +40,11 @@ export function storageConfig(env: NodeJS.ProcessEnv): StorageConfig {
   throw new Error(`STORAGE_DRIVER inconnu : ${driver} (local ou s3)`);
 }
 
+function smtpAuth(env: NodeJS.ProcessEnv): AppConfig['smtpAuth'] {
+  if (!env.SMTP_USER) return undefined;
+  return { user: env.SMTP_USER, pass: required(env, 'SMTP_PASS') };
+}
+
 /** Lit l'environnement ; échoue au démarrage si un secret ou un réglage obligatoire manque. */
 export function configuration(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return {
@@ -45,6 +54,8 @@ export function configuration(env: NodeJS.ProcessEnv = process.env): AppConfig {
     cookieSecure: env.COOKIE_SECURE === 'true',
     smtpHost: required(env, 'SMTP_HOST'),
     smtpPort: Number(required(env, 'SMTP_PORT')),
+    smtpSecure: env.SMTP_SECURE ? env.SMTP_SECURE === 'true' : env.SMTP_PORT === '465',
+    smtpAuth: smtpAuth(env),
     mailFrom: required(env, 'MAIL_FROM'),
     // Tentatives autorisées par IP et par fenêtre (RG-CPT-14) : 5 par minute par défaut.
     throttleLimit: Number(env.THROTTLE_LIMIT || 5),

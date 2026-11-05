@@ -10,7 +10,7 @@ import { MailService } from './mail.service.js';
     {
       provide: MAIL_TRANSPORT,
       inject: [APP_CONFIG],
-      useFactory: (config: AppConfig) => createTransport({ host: config.smtpHost, port: config.smtpPort, secure: false }),
+      useFactory: (config: AppConfig) => createTransport({ host: config.smtpHost, port: config.smtpPort, secure: config.smtpSecure, auth: config.smtpAuth }),
     },
     MailService,
   ],

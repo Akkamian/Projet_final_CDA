@@ -13,6 +13,10 @@ import {
   refreshCookieOptions,
 } from '../auth/refresh-cookie.js';
 import {
+  SESSION_LIFETIME_SECONDS,
+  TokensService,
+} from '../auth/tokens.service.js';
+import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../common/current-user.decorator.js';
@@ -26,20 +30,28 @@ import { DeleteAccountDto } from './dto/delete-account.dto.js';
 export class AccountController {
   constructor(
     private readonly account: AccountService,
+    private readonly tokens: TokensService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
+  /** Le changement ferme les autres sessions : l'appareil courant reçoit une session neuve pour rester connecté. */
   @Patch('password')
-  @HttpCode(204)
-  changePassword(
+  @HttpCode(200)
+  async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
-  ): Promise<void> {
-    return this.account.changePassword(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ accessToken: string }> {
+    await this.account.changePassword(
       user.id,
       dto.currentPassword,
       dto.newPassword,
     );
+    res.cookie(REFRESH_COOKIE, this.tokens.signSession('refresh', user.id), {
+      ...refreshCookieOptions(this.config),
+      maxAge: SESSION_LIFETIME_SECONDS.refresh * 1000,
+    });
+    return { accessToken: this.tokens.signSession('access', user.id) };
   }
 
   @Delete()
