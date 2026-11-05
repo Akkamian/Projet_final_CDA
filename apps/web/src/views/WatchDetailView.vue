@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
 import ProjectSelector from '../components/ProjectSelector.vue'
+import StepList from '../components/StepList.vue'
 import { formatDate, formatMoney, MOVEMENT_LABELS } from '../format'
 import { useWatchesStore, type WatchDetail } from '../stores/watches'
 
@@ -69,9 +70,7 @@ onMounted(async () => {
         <ProjectSelector :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
         <template v-if="project">
           <h2>{{ project.status === 'in_progress' ? 'En cours' : 'Terminé' }}</h2>
-          <ol class="steps">
-            <li v-for="step in project.steps" :key="step.id" data-test="step">{{ step.label }}</li>
-          </ol>
+          <StepList :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
         </template>
       </template>
     </template>
@@ -103,15 +102,5 @@ dt {
 
 dd {
   margin: 0;
-}
-
-.steps {
-  margin: 0;
-  padding-left: var(--space-5);
-}
-
-.steps li {
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border);
 }
 </style>

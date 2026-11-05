@@ -123,5 +123,26 @@ export const useWatchesStore = defineStore('watches', () => {
     return apiFetch<GeneratedStep[]>(`/step-previews?${query}`)
   }
 
-  return { items, counts, loading, error, list, get, create, fetchPreview }
+  function addStep(projectId: number, label: string): Promise<StepDetail> {
+    return apiFetch<StepDetail>(`/projects/${projectId}/steps`, { method: 'POST', body: JSON.stringify({ label }) })
+  }
+
+  function updateStep(
+    projectId: number,
+    stepId: number,
+    patch: { label?: string; notes?: string | null; isCompleted?: boolean },
+  ): Promise<StepDetail> {
+    return apiFetch<StepDetail>(`/projects/${projectId}/steps/${stepId}`, { method: 'PATCH', body: JSON.stringify(patch) })
+  }
+
+  function removeStep(projectId: number, stepId: number): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}/steps/${stepId}`, { method: 'DELETE' })
+  }
+
+  /** Envoie la liste complète des étapes dans le nouvel ordre (RG-ETP-12). */
+  function reorderSteps(projectId: number, stepIds: number[]): Promise<StepDetail[]> {
+    return apiFetch<StepDetail[]>(`/projects/${projectId}/steps/order`, { method: 'PUT', body: JSON.stringify({ stepIds }) })
+  }
+
+  return { items, counts, loading, error, list, get, create, fetchPreview, addStep, updateStep, removeStep, reorderSteps }
 })

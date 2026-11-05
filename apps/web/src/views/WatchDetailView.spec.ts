@@ -69,7 +69,7 @@ describe('WatchDetailView', () => {
     expect(text).toContain('Chronographe')
     expect(text).toContain('80,00 €')
     expect(text).toContain('En cours')
-    expect(wrapper.findAll('[data-test="step"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
+    expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
   })
 
   it('S26 le sélecteur de projet n’apparaît qu’avec 2 projets ou plus', async () => {
@@ -93,13 +93,34 @@ describe('WatchDetailView', () => {
       status: 200,
       body: watch([project(2, 'in_progress', '2025-06-01T10:00:00Z'), project(1, 'completed', '2025-01-01T10:00:00Z')]),
     }))
-    expect(wrapper.findAll('[data-test="step"]').map((s) => s.text())).toEqual(['Étape du projet 2'])
+    expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 2'])
 
     await wrapper.find('[data-test="project-selector"] select').setValue('1')
 
-    expect(wrapper.findAll('[data-test="step"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
+    expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
     // Le titre du projet affiché suit le sélecteur (« Terminé » figure aussi dans les options : on cible le h2).
     expect(wrapper.find('h2').text()).toBe('Terminé')
+  })
+
+  it('S12 cocher une étape sur la fiche l’envoie à l’API et met à jour le décompte', async () => {
+    const steps = [step(10, 'Désarmer'), step(11, 'Sortir le mouvement')]
+    const fetchMock = stubFetch((_url, init) =>
+      init.method === 'PATCH'
+        ? { status: 200, body: { ...steps[0], isCompleted: true, completedAt: '2025-05-02T10:00:00Z' } }
+        : { status: 200, body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z', steps)]) },
+    )
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    expect(wrapper.text()).toContain('0/2 terminées')
+
+    await wrapper.find('input[type="checkbox"]').setValue(true)
+    await flushPromises()
+
+    expect(fetchMock.mock.calls.map(([u, i]) => `${i?.method ?? 'GET'} ${new URL(String(u)).pathname}`)).toContain('PATCH /projects/1/steps/10')
+    expect(wrapper.text()).toContain('1/2 terminées')
   })
 
   it('S23 affiche la marge d’une montre vendue, et rien sinon', async () => {
