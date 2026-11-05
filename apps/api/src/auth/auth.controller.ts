@@ -7,6 +7,7 @@ import { AuthService, type SessionTokens } from './auth.service.js';
 import { EmailDto } from './dto/email.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { TokenDto } from './dto/token.dto.js';
 import { REFRESH_COOKIE, refreshCookieOptions } from './refresh-cookie.js';
 import { SESSION_LIFETIME_SECONDS } from './tokens.service.js';
@@ -36,6 +37,20 @@ export class AuthController {
   @HttpCode(204)
   resendVerification(@Body() dto: EmailDto): Promise<void> {
     return this.auth.resendVerification(dto.email);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(204)
+  forgotPassword(@Body() dto: EmailDto): Promise<void> {
+    return this.auth.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(204)
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<void> {
+    return this.auth.resetPassword(dto.token, dto.password);
   }
 
   @Public()

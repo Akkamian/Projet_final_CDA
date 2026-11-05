@@ -107,6 +107,42 @@ export class AuthService {
     }
   }
 
+  /** Répond pareil que le compte existe ou non (RG-CPT-10) ; le lien est valable 1 h (RG-CPT-09). */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.prisma.users.findUnique({ where: { email } });
+    if (!user) return;
+    try {
+      const token = this.tokens.signLink('reset', user.id);
+      await this.mail.sendPasswordResetEmail(user.email, `${this.config.webOrigin}/reset-password?token=${token}`);
+    } catch (error) {
+      // Une panne d'envoi ne doit pas distinguer une adresse connue d'une inconnue : on journalise et on répond pareil.
+      this.logger.error(`Envoi du lien de réinitialisation impossible : ${String(error)}`);
+    }
+  }
+
+  /**
+   * Usage unique sans table de jetons : le lien est refusé s'il a été émis avant le dernier changement de mot de passe
+   * (RG-CPT-09). Une seule requête conditionnelle : deux clics simultanés ne peuvent pas réussir tous les deux.
+   */
+  async resetPassword(token: string, password: string): Promise<void> {
+    let payload: TokenPayload;
+    try {
+      payload = this.tokens.verifyLink('reset', token);
+    } catch {
+      throw invalidLink();
+    }
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const { count } = await this.prisma.users.updateMany({
+      where: {
+        id: payload.sub,
+        // `iat` est en secondes entières : un changement survenu dans la même seconde invalide aussi le lien.
+        OR: [{ password_changed_at: null }, { password_changed_at: { lt: new Date(payload.iat * 1000) } }],
+      },
+      data: { password_hash: passwordHash, password_changed_at: new Date() },
+    });
+    if (count === 0) throw invalidLink();
+  }
+
   private issueSession(userId: number): SessionTokens {
     return {
       accessToken: this.tokens.signSession('access', userId),

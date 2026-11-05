@@ -4,6 +4,7 @@ import {
   Delete,
   HttpCode,
   Inject,
+  Patch,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -18,6 +19,7 @@ import {
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/configuration.js';
 import { AccountService } from './account.service.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { DeleteAccountDto } from './dto/delete-account.dto.js';
 
 @Controller('account')
@@ -26,6 +28,19 @@ export class AccountController {
     private readonly account: AccountService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
+
+  @Patch('password')
+  @HttpCode(204)
+  changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<void> {
+    return this.account.changePassword(
+      user.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+  }
 
   @Delete()
   @HttpCode(204)

@@ -5,12 +5,40 @@ import { projectPhotoUrls } from '../photos/photo-urls.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { StorageService } from '../storage/storage.service.js';
 
+const BCRYPT_ROUNDS = 10;
+
 @Injectable()
 export class AccountService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
   ) {}
+
+  /** Exige le mot de passe actuel (RG-CPT-11) ; `password_changed_at` invalide les jetons de renouvellement et liens plus anciens. */
+  async changePassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const user = await this.prisma.users.findUniqueOrThrow({
+      where: { id: userId },
+      select: { password_hash: true },
+    });
+    if (!(await bcrypt.compare(currentPassword, user.password_hash))) {
+      throw apiError(
+        400,
+        'WRONG_PASSWORD',
+        'Le mot de passe actuel est incorrect',
+      );
+    }
+    await this.prisma.users.update({
+      where: { id: userId },
+      data: {
+        password_hash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS),
+        password_changed_at: new Date(),
+      },
+    });
+  }
 
   /**
    * Supprime le compte et, en cascade, toutes ses données (RG-CPT-15, RG-SEC-05), après vérification du mot de passe.
