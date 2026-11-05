@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import type { CookieOptions, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { Public } from '../common/public.decorator.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/configuration.js';
@@ -8,9 +8,8 @@ import { EmailDto } from './dto/email.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { TokenDto } from './dto/token.dto.js';
+import { REFRESH_COOKIE, refreshCookieOptions } from './refresh-cookie.js';
 import { SESSION_LIFETIME_SECONDS } from './tokens.service.js';
-
-const REFRESH_COOKIE = 'refresh_token';
 
 @Controller('auth')
 export class AuthController {
@@ -69,8 +68,7 @@ export class AuthController {
     return { accessToken: tokens.accessToken };
   }
 
-  // RG-CPT-12 : httpOnly, SameSite=Lax, limité à /auth ; Secure en production.
-  private cookieOptions(): CookieOptions {
-    return { httpOnly: true, secure: this.config.cookieSecure, sameSite: 'lax', path: '/auth' };
+  private cookieOptions() {
+    return refreshCookieOptions(this.config);
   }
 }
