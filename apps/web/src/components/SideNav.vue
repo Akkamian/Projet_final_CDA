@@ -78,7 +78,7 @@ const entries = computed(() => [
 
 .entries {
   display: grid;
-  gap: var(--space-1);
+  gap: 2px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -113,7 +113,10 @@ const entries = computed(() => [
   gap: var(--space-3);
   min-width: 0;
   margin-top: auto;
-  padding: 0 var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 
 .email {

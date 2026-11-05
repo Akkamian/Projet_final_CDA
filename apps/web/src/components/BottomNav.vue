@@ -52,6 +52,11 @@ a.active {
   color: var(--text);
 }
 
+a > svg {
+  width: 22px;
+  height: 22px;
+}
+
 /* Filet d'accent en haut de l'entrée active, sur 40 % de sa largeur. */
 a.active::before {
   content: '';
