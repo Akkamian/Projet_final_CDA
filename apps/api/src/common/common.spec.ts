@@ -116,6 +116,23 @@ describe('configuration', () => {
     expect(configuration({ ...complete, COOKIE_SECURE: 'true' }).cookieSecure).toBe(true);
     expect(configuration(complete).smtpPort).toBe(1025);
   });
+
+  it('le stockage des photos est local par défaut, dans ./uploads', () => {
+    expect(configuration(complete).storage).toEqual({ driver: 'local', uploadDir: './uploads' });
+    expect(configuration({ ...complete, UPLOAD_DIR: '/data/up' }).storage).toEqual({ driver: 'local', uploadDir: '/data/up' });
+  });
+
+  it('STORAGE_DRIVER=s3 exige les quatre réglages S3_*', () => {
+    const s3 = { ...complete, STORAGE_DRIVER: 's3' };
+    expect(() => configuration(s3)).toThrow(/S3_ENDPOINT/);
+    expect(
+      configuration({ ...s3, S3_ENDPOINT: 'https://s3.test', S3_BUCKET: 'b', S3_ACCESS_KEY: 'a', S3_SECRET_KEY: 's' }).storage,
+    ).toEqual({ driver: 's3', endpoint: 'https://s3.test', bucket: 'b', accessKey: 'a', secretKey: 's' });
+  });
+
+  it('un STORAGE_DRIVER inconnu est refusé au démarrage', () => {
+    expect(() => configuration({ ...complete, STORAGE_DRIVER: 'ftp' })).toThrow(/STORAGE_DRIVER/);
+  });
 });
 
 describe('PrismaExceptionFilter', () => {
