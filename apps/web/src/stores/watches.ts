@@ -144,5 +144,44 @@ export const useWatchesStore = defineStore('watches', () => {
     return apiFetch<StepDetail[]>(`/projects/${projectId}/steps/order`, { method: 'PUT', body: JSON.stringify({ stepIds }) })
   }
 
-  return { items, counts, loading, error, list, get, create, fetchPreview, addStep, updateStep, removeStep, reorderSteps }
+  function upload(blob: Blob): FormData {
+    const form = new FormData()
+    form.append('file', blob, 'photo')
+    return form
+  }
+
+  function addStepPhoto(projectId: number, stepId: number, blob: Blob): Promise<{ id: number; url: string }> {
+    return apiFetch(`/projects/${projectId}/steps/${stepId}/photos`, { method: 'POST', body: upload(blob) })
+  }
+
+  function removeStepPhoto(projectId: number, stepId: number, photoId: number): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}/steps/${stepId}/photos/${photoId}`, { method: 'DELETE' })
+  }
+
+  function setProjectPhoto(projectId: number, kind: 'before' | 'after', blob: Blob): Promise<{ url: string }> {
+    return apiFetch(`/projects/${projectId}/photos/${kind}`, { method: 'PUT', body: upload(blob) })
+  }
+
+  function removeProjectPhoto(projectId: number, kind: 'before' | 'after'): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}/photos/${kind}`, { method: 'DELETE' })
+  }
+
+  return {
+    items,
+    counts,
+    loading,
+    error,
+    list,
+    get,
+    create,
+    fetchPreview,
+    addStep,
+    updateStep,
+    removeStep,
+    reorderSteps,
+    addStepPhoto,
+    removeStepPhoto,
+    setProjectPhoto,
+    removeProjectPhoto,
+  }
 })

@@ -107,4 +107,31 @@ describe('useWatchesStore', () => {
     expect(url.searchParams.get('movementCode')).toBe('manual')
     expect(url.searchParams.get('complicationCodes')).toBe('chronograph,date')
   })
+
+  it('S17 addStepPhoto envoie le fichier en multipart (champ file)', async () => {
+    const fetchMock = stubFetch(() => ({ status: 201, body: { id: 9, url: '/uploads/a.webp' } }))
+    const store = useWatchesStore()
+    const blob = new Blob(['webp'], { type: 'image/webp' })
+
+    const photo = await store.addStepPhoto(5, 2, blob)
+
+    expect(calls(fetchMock)).toEqual(['POST /projects/5/steps/2/photos'])
+    const init = fetchMock.mock.calls[0]![1]!
+    expect(init.body).toBeInstanceOf(FormData)
+    expect((init.body as FormData).get('file')).toBeInstanceOf(Blob)
+    // Le navigateur fixe lui-même le Content-Type multipart (avec sa frontière).
+    expect(new Headers(init.headers).has('Content-Type')).toBe(false)
+    expect(photo).toEqual({ id: 9, url: '/uploads/a.webp' })
+  })
+
+  it('S34 removeStepPhoto, setProjectPhoto et removeProjectPhoto appellent les bonnes routes', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { url: '/uploads/b.webp' } }))
+    const store = useWatchesStore()
+
+    await store.removeStepPhoto(5, 2, 9)
+    await store.setProjectPhoto(5, 'before', new Blob(['x']))
+    await store.removeProjectPhoto(5, 'after')
+
+    expect(calls(fetchMock)).toEqual(['DELETE /projects/5/steps/2/photos/9', 'PUT /projects/5/photos/before', 'DELETE /projects/5/photos/after'])
+  })
 })

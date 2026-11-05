@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StepDetail } from '../stores/watches'
+import PhotoGallery from './PhotoGallery.vue'
 import StepEditor from './StepEditor.vue'
 
 defineProps<{
@@ -17,6 +18,8 @@ const emit = defineEmits<{
   'cancel-edit': []
   save: [value: { label: string; notes: string | null }]
   delete: []
+  'add-photos': [files: File[]]
+  'remove-photo': [photo: { id: number; url: string }]
 }>()
 
 function onToggle(event: Event): void {
@@ -67,6 +70,13 @@ function onToggle(event: Event): void {
     <p v-if="step.notes && !editing" class="notes" data-test="step-notes">
       {{ step.notes }}
     </p>
+    <PhotoGallery
+      :photos="step.photos"
+      :label="step.label"
+      :busy="busy"
+      @add="emit('add-photos', $event)"
+      @remove="emit('remove-photo', $event)"
+    />
     <StepEditor
       v-if="editing"
       :label="step.label"

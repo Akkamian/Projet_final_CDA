@@ -151,6 +151,28 @@ describe('WatchDetailView', () => {
     expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['B1'])
   })
 
+  it('S18 la fiche affiche l’avant/après du projet et suit un nouvel envoi', async () => {
+    const fetchMock = stubFetch((_url, init) =>
+      init.method === 'PUT'
+        ? { status: 200, body: { url: '/uploads/apres.webp' } }
+        : { status: 200, body: watch([{ ...project(1, 'in_progress', '2025-05-01T10:00:00Z'), photoBefore: '/uploads/avant.webp' } as unknown as ReturnType<typeof project>]) },
+    )
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    expect(wrapper.findAll('figure img').map((i) => i.attributes('src'))).toEqual([expect.stringMatching(/\/uploads\/avant\.webp$/)])
+
+    const input = wrapper.find('[data-test="photo-input-after"]')
+    Object.defineProperty(input.element, 'files', { value: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })], configurable: true })
+    await input.trigger('change')
+    await flushPromises()
+
+    expect(fetchMock.mock.calls.some(([u, i]) => i?.method === 'PUT' && new URL(String(u)).pathname === '/projects/1/photos/after')).toBe(true)
+    expect(wrapper.findAll('figure img')).toHaveLength(2)
+  })
+
   it('S23 affiche la marge d’une montre vendue, et rien sinon', async () => {
     const sold = await mountView(() => ({
       status: 200,

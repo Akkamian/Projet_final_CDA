@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError } from '../api/client'
+import BeforeAfter from '../components/BeforeAfter.vue'
 import ProjectSelector from '../components/ProjectSelector.vue'
 import StepList from '../components/StepList.vue'
 import { formatDate, formatMoney, MOVEMENT_LABELS } from '../format'
@@ -70,6 +71,13 @@ onMounted(async () => {
         <ProjectSelector :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
         <template v-if="project">
           <h2>{{ project.status === 'in_progress' ? 'En cours' : 'Terminé' }}</h2>
+          <BeforeAfter
+            :key="`photos-${project.id}`"
+            :project-id="project.id"
+            :photo-before="project.photoBefore"
+            :photo-after="project.photoAfter"
+            @change="project[$event.kind === 'before' ? 'photoBefore' : 'photoAfter'] = $event.url"
+          />
           <!-- key : la liste (éditeur, ajout, requêtes en vol) ne se réutilise jamais d'un projet à l'autre. -->
           <StepList :key="project.id" :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
         </template>

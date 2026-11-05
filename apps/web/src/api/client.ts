@@ -1,5 +1,10 @@
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
+/** Les fichiers du stockage local sont servis par l'API (URL relative) ; ceux de S3 ont déjà une URL absolue. */
+export function fileUrl(url: string): string {
+  return url.startsWith('/') ? `${API_URL}${url}` : url
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly code?: string

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { calls, stubFetch } from '../test/helpers'
-import { ApiError, apiFetch, getAccessToken, setAccessToken } from './client'
+import { ApiError, apiFetch, fileUrl, getAccessToken, setAccessToken } from './client'
 
 describe('apiFetch', () => {
   beforeEach(() => {
@@ -125,5 +125,15 @@ describe('apiFetch', () => {
     await expect(apiFetch('/auth/verify-email', { method: 'POST', body: '{"token":"t"}' })).resolves.toBeUndefined()
 
     expect(new Headers(fetchMock.mock.calls[0]![1]!.headers).get('Content-Type')).toBe('application/json')
+  })
+})
+
+describe('fileUrl', () => {
+  it('préfixe une URL relative par l’origine de l’API (le front est servi ailleurs)', () => {
+    expect(fileUrl('/uploads/abc.png')).toMatch(/^https?:\/\/[^/]+\/uploads\/abc\.png$/)
+  })
+
+  it('laisse une URL absolue (stockage S3) telle quelle', () => {
+    expect(fileUrl('https://s3.example.test/photos/abc.png')).toBe('https://s3.example.test/photos/abc.png')
   })
 })

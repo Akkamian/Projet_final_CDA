@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useWatchesStore, type StepDetail } from '../stores/watches'
 import ConfirmDialog from './ConfirmDialog.vue'
 import StepItem from './StepItem.vue'
+import { prepareUpload } from '../utils/prepare-upload'
 
 const props = defineProps<{ projectId: number; steps: StepDetail[] }>()
 const emit = defineEmits<{ 'update:steps': [steps: StepDetail[]] }>()
@@ -13,6 +14,7 @@ const busy = ref(false)
 const error = ref<string | null>(null)
 const editingId = ref<number | null>(null)
 const deleting = ref<StepDetail | null>(null)
+const removingPhoto = ref<{ step: StepDetail; photo: { id: number; url: string } } | null>(null)
 const adding = ref(false)
 const newLabel = ref('')
 
@@ -73,6 +75,32 @@ async function confirmDelete(): Promise<void> {
   deleting.value = null
 }
 
+/** Un envoi par fichier, dans l'ordre ; en cas d'échec, les photos déjà envoyées restent affichées (S17). */
+async function addPhotos(step: StepDetail, files: File[]): Promise<void> {
+  await run(async () => {
+    let steps = props.steps
+    for (const file of files) {
+      const photo = await watches.addStepPhoto(props.projectId, step.id, await prepareUpload(file))
+      steps = steps.map((s) => (s.id === step.id ? { ...s, photos: [...s.photos, photo] } : s))
+      emit('update:steps', steps)
+    }
+  })
+}
+
+async function confirmRemovePhoto(): Promise<void> {
+  const target = removingPhoto.value
+  if (!target) return
+  await run(async () => {
+    await watches.removeStepPhoto(props.projectId, target.step.id, target.photo.id)
+    emit(
+      'update:steps',
+      props.steps.map((s) => (s.id === target.step.id ? { ...s, photos: s.photos.filter((p) => p.id !== target.photo.id) } : s)),
+    )
+  })
+  // Le dialogue se ferme aussi en cas d'échec : l'alerte, derrière un dialogue modal, resterait invisible.
+  removingPhoto.value = null
+}
+
 async function add(): Promise<void> {
   const label = newLabel.value.trim()
   if (label === '') {
@@ -127,6 +155,8 @@ async function add(): Promise<void> {
         @cancel-edit="editingId = null"
         @save="(value) => saveEdit(step, value)"
         @delete="deleting = step"
+        @add-photos="(files) => addPhotos(step, files)"
+        @remove-photo="(photo) => (removingPhoto = { step, photo })"
       />
     </ol>
 
@@ -137,6 +167,14 @@ async function add(): Promise<void> {
       confirm-label="Supprimer"
       @confirm="confirmDelete"
       @cancel="deleting = null"
+    />
+    <ConfirmDialog
+      v-if="removingPhoto"
+      title="Supprimer cette photo ?"
+      message="La photo sera définitivement supprimée."
+      confirm-label="Supprimer"
+      @confirm="confirmRemovePhoto"
+      @cancel="removingPhoto = null"
     />
   </section>
 </template>

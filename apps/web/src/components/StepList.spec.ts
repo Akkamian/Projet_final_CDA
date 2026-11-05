@@ -6,6 +6,19 @@ import { calls, sentBody, stubFetch, type StubResponse } from '../test/helpers'
 import type { StepDetail } from '../stores/watches'
 import StepList from './StepList.vue'
 
+// jsdom n'a pas de canvas : la compression est testée à part (compress-image.spec.ts).
+vi.mock('../utils/compress-image', () => ({ compressImage: vi.fn(async () => new Blob(['webp'], { type: 'image/webp' })) }))
+
+const imageFile = (name = 'IMG_0001.jpg', size = 2_000_000) => {
+  const file = new File(['x'], name, { type: 'image/jpeg' })
+  Object.defineProperty(file, 'size', { value: size })
+  return file
+}
+async function choose(input: { element: Element; trigger: (e: string) => Promise<void> }, files: File[]) {
+  Object.defineProperty(input.element, 'files', { value: files, configurable: true })
+  await input.trigger('change')
+}
+
 const step = (id: number, label: string, done = false, notes: string | null = null): StepDetail => ({
   id,
   stepOrder: id,
@@ -201,5 +214,95 @@ describe('StepList', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
     expect(wrapper.emitted('update:steps')).toBeUndefined()
     expect(wrapper.findAll<HTMLInputElement>('input[type="checkbox"]')[1]!.element.checked).toBe(false)
+  })
+
+  describe('photos d’une étape', () => {
+    const withPhotos = [{ ...step(1, 'Désarmer', true), photos: [{ id: 9, url: '/uploads/x.png' }] }, step(2, 'Sortir le mouvement')]
+
+    it('affiche les vignettes de la photo, servies depuis l’origine de l’API', () => {
+      const { wrapper } = mountList(undefined, withPhotos)
+
+      const images = wrapper.findAll('[data-test="photo"] img')
+      expect(images).toHaveLength(1)
+      expect(images[0]!.attributes('src')).toMatch(/^https?:\/\/[^/]+\/uploads\/x\.png$/)
+      expect(images[0]!.attributes('alt')).toContain('Désarmer')
+    })
+
+    it('S17 ajoute plusieurs photos à la même étape : un envoi par fichier, compressé', async () => {
+      let n = 0
+      const { wrapper, fetchMock } = mountList(() => {
+        n += 1
+        return { status: 201, body: { id: 20 + n, url: `/uploads/new-${n}.webp` } }
+      }, withPhotos)
+
+      await choose(wrapper.findAll('[data-test="photo-input"]')[1]!, [imageFile('a.jpg'), imageFile('b.jpg')])
+      await flushPromises()
+
+      expect(calls(fetchMock)).toEqual(['POST /projects/5/steps/2/photos', 'POST /projects/5/steps/2/photos'])
+      const sent = fetchMock.mock.calls[0]![1]!.body as FormData
+      expect((sent.get('file') as Blob).type).toBe('image/webp')
+      expect(lastEmitted(wrapper)[1]!.photos.map((p) => p.url)).toEqual(['/uploads/new-1.webp', '/uploads/new-2.webp'])
+    })
+
+    it('S17 un fichier de plus de 10 Mo est refusé avant envoi, avec un message', async () => {
+      const { wrapper, fetchMock } = mountList(undefined, withPhotos)
+
+      await choose(wrapper.findAll('[data-test="photo-input"]')[1]!, [imageFile('gros.jpg', 10 * 1024 * 1024 + 1)])
+      await flushPromises()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(wrapper.find('[role="alert"]').text()).toMatch(/10 Mo/)
+      expect(wrapper.emitted('update:steps')).toBeUndefined()
+    })
+
+    it('S17 10 Mo exactement est accepté', async () => {
+      const { wrapper, fetchMock } = mountList(() => ({ status: 201, body: { id: 30, url: '/uploads/ok.webp' } }), withPhotos)
+
+      await choose(wrapper.findAll('[data-test="photo-input"]')[1]!, [imageFile('limite.jpg', 10 * 1024 * 1024)])
+      await flushPromises()
+
+      expect(calls(fetchMock)).toEqual(['POST /projects/5/steps/2/photos'])
+    })
+
+    it('S17 le refus du serveur s’affiche et les photos déjà envoyées sont gardées', async () => {
+      let n = 0
+      const { wrapper } = mountList(() => {
+        n += 1
+        return n === 1
+          ? { status: 201, body: { id: 40, url: '/uploads/first.webp' } }
+          : { status: 400, body: { message: 'Le fichier doit être une image JPEG, PNG ou WebP' } }
+      }, withPhotos)
+
+      await choose(wrapper.findAll('[data-test="photo-input"]')[1]!, [imageFile('a.jpg'), imageFile('b.heic')])
+      await flushPromises()
+
+      expect(wrapper.find('[role="alert"]').text()).toContain('JPEG, PNG ou WebP')
+      expect(lastEmitted(wrapper)[1]!.photos.map((p) => p.url)).toEqual(['/uploads/first.webp'])
+    })
+
+    it('S34 la suppression d’une photo demande confirmation, et rien n’est envoyé avant', async () => {
+      const { wrapper, fetchMock } = mountList(() => ({ status: 204 }), withPhotos)
+
+      await wrapper.find('[data-test="photo-delete"]').trigger('click')
+      expect(wrapper.find('dialog').exists()).toBe(true)
+      expect(fetchMock).not.toHaveBeenCalled()
+
+      await wrapper.find('[data-test="confirm-ok"]').trigger('click')
+      await flushPromises()
+
+      expect(calls(fetchMock)).toEqual(['DELETE /projects/5/steps/1/photos/9'])
+      expect(lastEmitted(wrapper)[0]!.photos).toEqual([])
+      expect(wrapper.find('dialog').exists()).toBe(false)
+    })
+
+    it('S34 annuler la suppression d’une photo n’envoie rien', async () => {
+      const { wrapper, fetchMock } = mountList(() => ({ status: 204 }), withPhotos)
+
+      await wrapper.find('[data-test="photo-delete"]').trigger('click')
+      await wrapper.find('[data-test="confirm-cancel"]').trigger('click')
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(wrapper.find('dialog').exists()).toBe(false)
+    })
   })
 })
