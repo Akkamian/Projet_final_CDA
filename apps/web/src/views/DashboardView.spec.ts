@@ -157,7 +157,10 @@ describe('DashboardView', () => {
     })
     const pinia = createPinia()
     setActivePinia(pinia)
-    const router = await makeRouter('/')
+    const router = await makeRouter('/', [
+      { path: '/watches/new', name: 'new-watch', component: { template: '<div />' } },
+      { path: '/watches/:id', name: 'watch-detail', component: { template: '<div />' } },
+    ])
     const wrapper = mount(DashboardView, { global: { plugins: [pinia, router] } })
     await flushPromises()
 
