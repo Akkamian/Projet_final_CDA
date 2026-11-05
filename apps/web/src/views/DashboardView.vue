@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import StatusFilter from '../components/StatusFilter.vue'
 import WatchCard from '../components/WatchCard.vue'
-import { useAuthStore } from '../stores/auth'
 import { STATUS_LABELS } from '../format'
 import { useWatchesStore, type DashboardStatus } from '../stores/watches'
 
 const watches = useWatchesStore()
-const auth = useAuthStore()
-const router = useRouter()
 const selected = ref<DashboardStatus | null>(null)
 
 onMounted(() => watches.list())
@@ -19,10 +16,6 @@ function select(status: DashboardStatus | null) {
   return watches.list(status ?? undefined)
 }
 
-async function logout() {
-  await auth.logout()
-  await router.push({ name: 'login' })
-}
 </script>
 
 <template>
@@ -56,10 +49,6 @@ async function logout() {
         <template v-else>Aucune montre ne correspond à ce statut.</template>
       </p>
     </template>
-
-    <p v-if="auth.isAuthenticated" class="logout">
-      <RouterLink to="/account">Mon compte</RouterLink> · <button type="button" @click="logout">Se déconnecter</button>
-    </p>
   </section>
 </template>
 
@@ -90,16 +79,6 @@ p {
 
 h1 {
   font-size: 1.375rem;
-}
-
-.logout button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--text-secondary);
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 .cards {

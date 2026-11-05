@@ -179,4 +179,12 @@ describe('DashboardView', () => {
     expect(wrapper.find('[role="alert"]').text()).toContain('Impossible de charger')
     expect(wrapper.find('[data-test="empty"]').exists()).toBe(false)
   })
+
+  it('le tableau de bord n’a plus de lien Mon compte ni de bouton Se déconnecter (la navigation les porte)', async () => {
+    api()
+    const wrapper = await mountView()
+
+    expect(wrapper.text()).not.toContain('Mon compte')
+    expect(wrapper.text()).not.toContain('Se déconnecter')
+  })
 })
