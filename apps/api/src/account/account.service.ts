@@ -7,12 +7,38 @@ import { StorageService } from '../storage/storage.service.js';
 
 const BCRYPT_ROUNDS = 10;
 
+/** Profil de la session : jamais le hachage du mot de passe. */
+export interface AccountProfile {
+  email: string;
+  createdAt: string;
+  emailVerifiedAt: string | null;
+  passwordChangedAt: string | null;
+}
+
 @Injectable()
 export class AccountService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
   ) {}
+
+  async profile(userId: number): Promise<AccountProfile> {
+    const user = await this.prisma.users.findUniqueOrThrow({
+      where: { id: userId },
+      select: {
+        email: true,
+        created_at: true,
+        email_verified_at: true,
+        password_changed_at: true,
+      },
+    });
+    return {
+      email: user.email,
+      createdAt: user.created_at.toISOString(),
+      emailVerifiedAt: user.email_verified_at?.toISOString() ?? null,
+      passwordChangedAt: user.password_changed_at?.toISOString() ?? null,
+    };
+  }
 
   /** Exige le mot de passe actuel (RG-CPT-11) ; `password_changed_at` invalide les jetons de renouvellement et liens plus anciens. */
   async changePassword(

@@ -61,6 +61,7 @@ Déduit des scénarios. Une route qui existe déjà dans `docs/UML.md` est repri
 | `POST /auth/logout` | oui | — |
 | `POST /auth/forgot-password` `{ email }` | non | S3 |
 | `POST /auth/reset-password` `{ token, password }` | non | S3 |
+| `GET /account` : `{ email, createdAt, emailVerifiedAt, passwordChangedAt }` (avatar et email de l'écran ; chantier fidélité aux maquettes, sous-projet A) | oui | — |
 | `PATCH /account/password` `{ currentPassword, newPassword }` | oui | S4 |
 | `DELETE /account` `{ password }` | oui | S35 |
 

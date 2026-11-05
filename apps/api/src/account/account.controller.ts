@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   Inject,
   Patch,
@@ -22,7 +23,7 @@ import {
 } from '../common/current-user.decorator.js';
 import { APP_CONFIG } from '../config/config.module.js';
 import type { AppConfig } from '../config/configuration.js';
-import { AccountService } from './account.service.js';
+import { AccountService, type AccountProfile } from './account.service.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { DeleteAccountDto } from './dto/delete-account.dto.js';
 
@@ -33,6 +34,11 @@ export class AccountController {
     private readonly tokens: TokensService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
+
+  @Get()
+  profile(@CurrentUser() user: AuthenticatedUser): Promise<AccountProfile> {
+    return this.account.profile(user.id);
+  }
 
   /** Le changement ferme les autres sessions : l'appareil courant reçoit une session neuve pour rester connecté. */
   @Patch('password')
