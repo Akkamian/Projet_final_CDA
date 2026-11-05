@@ -45,7 +45,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-CPT-11 | Changer son mot de passe exige le mot de passe actuel correct ; le changement met à jour `password_changed_at`. | S4 | Service | à écrire |
 | RG-CPT-12 | La session utilise un jeton d'accès de 15 minutes et un jeton de renouvellement de 7 jours. | plan AUTH | Service (configuration JWT) | à écrire |
 | RG-CPT-13 | L'adresse email est enregistrée en minuscules, sans espace superflu, avant tout enregistrement ou toute recherche. | S1 ; arbitrage A9 | DTO / Service (normalisation) | à écrire |
-| RG-CPT-14 | Les tentatives répétées sur la connexion, la demande de réinitialisation et le renvoi du lien de vérification sont limitées par adresse IP ; au-delà du plafond, les requêtes sont refusées temporairement. | S36, S39 ; arbitrage A8 | Service (limitation de débit ; plafond fixé en configuration) | à écrire |
+| RG-CPT-14 | Les tentatives répétées sur l'inscription, la connexion, la demande de réinitialisation et le renvoi du lien de vérification sont limitées par adresse IP ; au-delà du plafond, les requêtes sont refusées temporairement. | S36, S39 ; arbitrage A8 | Service (limitation de débit ; plafond fixé en configuration) | à écrire |
 | RG-CPT-15 | L'utilisateur peut supprimer son compte après confirmation de son mot de passe : toutes ses données sont supprimées, y compris les fichiers photos du stockage, et sa session est fermée. | S35 ; arbitrage A7 | Service ; BDD : `ON DELETE CASCADE` | à écrire |
 | RG-CPT-16 | À l'inscription, la confirmation du mot de passe doit être identique au mot de passe saisi ; sinon l'inscription est refusée avec un message explicite. | S1 ; arbitrage C5 | Interface (comparaison à la saisie) | à écrire |
 | RG-CPT-17 | L'inscription exige l'acceptation des Conditions Générales de Vente et de la Politique de Confidentialité ; sans cette acceptation, le compte n'est pas créé. | S1 ; arbitrage C5 | Interface ; DTO (acceptation obligatoire) | à écrire |
@@ -174,7 +174,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | A5 | Un projet terminé reste modifiable et peut être rouvert. | RG-PRJ-10 | `SPECS.md` S28. |
 | A6 | Toutes les corrections sont admises : décocher et supprimer une étape, corriger ou annuler la revente, modifier ou supprimer un coût, une mesure, une photo. | RG-ETP-14, 15 ; RG-PHO-06, 07 ; RG-PER-05 ; RG-FIN-11, 12 | `SPECS.md` S29 à S34. |
 | A7 | Suppression de compte avec ses données, en v1. | RG-CPT-15 | `SPECS.md` S35. La suppression des fichiers du stockage s'ajoute à la cascade en base. |
-| A8 | Limitation de débit sur la connexion, la réinitialisation et le renvoi du lien. | RG-CPT-14 | `SPECS.md` S36. Valeur du plafond fixée à l'implémentation. |
+| A8 | Limitation de débit sur l'inscription, la connexion, la réinitialisation et le renvoi du lien. | RG-CPT-14 | `SPECS.md` S36. Valeur du plafond fixée à l'implémentation. |
 | A9 | Email normalisé en minuscules ; refus explicite d'une adresse déjà utilisée à l'inscription. | RG-CPT-01, 10, 13 | `SPECS.md` S1. Exception assumée à l'anti-énumération. |
 | A10 | La revente ne précède pas l'achat ; aucune date saisie n'est dans le futur. | RG-FIN-10, RG-GEN-01 | Script SQL : `chk_watches_resale_after_purchase`. Dates futures contrôlées par l'application seulement. `SPECS.md` S5, S19, S21, S22. |
 | A11 | Photos servies par URL non devinable, sans limite de nombre par étape. | RG-SEC-06 | Aucun. Compromis à citer en soutenance. |

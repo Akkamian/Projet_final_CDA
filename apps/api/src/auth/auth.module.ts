@@ -12,7 +12,7 @@ import { TokensService } from './tokens.service.js';
   imports: [
     MailModule,
     JwtModule.register({}),
-    // Le guard n'est posé que sur trois routes d'AuthController : le module ne limite rien par lui-même.
+    // Le guard n'est posé que sur quatre routes d'AuthController (inscription, renvoi du lien, mot de passe oublié, connexion) : le module ne limite rien par lui-même.
     ThrottlerModule.forRootAsync({
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => [{ limit: config.throttleLimit, ttl: config.throttleTtlSeconds * 1000 }],

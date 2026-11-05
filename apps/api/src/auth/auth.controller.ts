@@ -21,6 +21,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @UseGuards(AuthThrottlerGuard)
   @Post('register')
   register(@Body() dto: RegisterDto): Promise<void> {
     return this.auth.register(dto);

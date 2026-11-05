@@ -44,6 +44,13 @@ describe('Limitation des tentatives (S36, S39, RG-CPT-14)', () => {
     expect((await forgot()).status).toBe(429);
   });
 
+  it('l’inscription est limitée : elle envoie un email à chaque appel', async () => {
+    const register = () => post('/auth/register', { email: 'foo@bar.fr', password: 'password123', acceptTerms: false });
+    for (let i = 0; i < 3; i++) expect((await register()).status).toBe(400);
+
+    expect((await register()).status).toBe(429);
+  });
+
   it('S39 le renvoi du lien est limité', async () => {
     for (let i = 0; i < 3; i++) expect((await resend()).status).toBe(204);
 
