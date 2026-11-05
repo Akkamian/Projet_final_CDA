@@ -2,7 +2,9 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError, apiFetch } from '../api/client'
+import { MOVEMENT_LABELS } from '../format'
 import { useStepPreviewStore } from '../stores/stepPreview'
+import { useWatchesStore, type WatchCard, type WatchDetail } from '../stores/watches'
 
 interface EditableStep {
   key: number
@@ -18,6 +20,7 @@ interface CreatedWatch {
 }
 
 const preview = useStepPreviewStore()
+const watches = useWatchesStore()
 const route = useRoute()
 
 const brand = ref('')
@@ -30,14 +33,66 @@ const newStep = ref('')
 const error = ref<string | null>(null)
 const sessionExpired = ref(false)
 const busy = ref(false)
-const created = ref<{ id: number; brand: string; model: string; stepCount: number } | null>(null)
+const created = ref<{ id: number; brand: string; model: string; stepCount: number; revision: boolean } | null>(null)
+// S9 : liste « Montre existante » (montres non vendues, sans projet en cours) et montre choisie, affichée en lecture seule.
+const openable = ref<WatchCard[]>([])
+const existingId = ref('')
+const existing = ref<WatchDetail | null>(null)
 
 // Sélection (mouvement + complications) d'après laquelle `steps` a été construit : revenir en arrière sans
 // la changer garde les ajustements de l'utilisateur, la changer régénère la liste proposée.
 let stepsSignature = ''
 let nextKey = 0
 
-onMounted(() => preview.loadReferenceData())
+onMounted(async () => {
+  const reference = preview.loadReferenceData()
+  try {
+    openable.value = await watches.listOpenable()
+  } catch {
+    // Sans la liste, on peut toujours saisir une nouvelle montre.
+  }
+  // « Nouvelle révision » depuis la fiche d'une montre : elle arrive présélectionnée.
+  const wanted = String(route.query.watch ?? '')
+  if (openable.value.some((w) => String(w.id) === wanted)) {
+    existingId.value = wanted
+    await selectExisting()
+  }
+  await reference
+})
+
+async function selectExisting() {
+  error.value = null
+  const id = existingId.value
+  if (id === '') {
+    existing.value = null
+    return
+  }
+  try {
+    const detail = await watches.get(Number(id))
+    if (id === existingId.value) existing.value = detail
+  } catch {
+    existing.value = null
+    error.value = 'Impossible de charger cette montre. Réessayez dans un instant.'
+  }
+}
+
+async function existingToSteps() {
+  const watch = existing.value
+  if (!watch) return
+  error.value = null
+  try {
+    const proposed = await watches.fetchPreview(
+      watch.movementCode,
+      watch.complications.map((c) => c.code),
+    )
+    steps.value = proposed.map((s) => ({ key: nextKey++, label: s.label, complicationLabel: s.complicationLabel }))
+    // La liste n'est plus celle d'une nouvelle montre : y revenir doit la régénérer.
+    stepsSignature = ''
+    stage.value = 'steps'
+  } catch {
+    error.value = 'Les étapes proposées ne sont pas disponibles. Réessayez dans un instant.'
+  }
+}
 
 const pad = (n: number) => String(n).padStart(2, '0')
 function localToday(): string {
@@ -106,6 +161,8 @@ function addStep() {
 }
 
 function failureMessage(e: unknown): string {
+  if (existing.value && e instanceof ApiError && (e.status === 400 || e.status === 409))
+    return `Impossible de créer le projet : ${e.message}`
   if (e instanceof ApiError && e.status === 400) return `Impossible de créer la montre : ${e.message}`
   return 'Impossible de créer la montre. Vérifiez les informations puis réessayez.'
 }
@@ -117,6 +174,21 @@ async function create() {
   busy.value = true
   const price = parsePrice()
   try {
+    if (existing.value) {
+      const revision = await watches.createRevision(
+        existing.value.id,
+        steps.value.map((s) => ({ label: s.label })),
+      )
+      created.value = {
+        id: existing.value.id,
+        brand: existing.value.brand,
+        model: existing.value.model,
+        stepCount: revision.steps.length,
+        revision: true,
+      }
+      stage.value = 'done'
+      return
+    }
     const watch = await apiFetch<CreatedWatch>('/watches', {
       method: 'POST',
       body: JSON.stringify({
@@ -129,7 +201,13 @@ async function create() {
         steps: steps.value.map((s) => ({ label: s.label })),
       }),
     })
-    created.value = { id: watch.id, brand: watch.brand, model: watch.model, stepCount: watch.projects[0]?.steps.length ?? 0 }
+    created.value = {
+      id: watch.id,
+      brand: watch.brand,
+      model: watch.model,
+      stepCount: watch.projects[0]?.steps.length ?? 0,
+      revision: false,
+    }
     stage.value = 'done'
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) sessionExpired.value = true
@@ -148,6 +226,8 @@ function startOver() {
   stepsSignature = ''
   error.value = null
   created.value = null
+  existingId.value = ''
+  existing.value = null
   stage.value = 'identity'
 }
 </script>
@@ -155,7 +235,7 @@ function startOver() {
 <template>
   <section class="watch-form">
     <template v-if="stage === 'done' && created">
-      <h1>Montre créée</h1>
+      <h1>{{ created.revision ? 'Projet créé' : 'Montre créée' }}</h1>
       <p class="notice" role="status">
         {{ created.brand }} {{ created.model }} · projet en cours · {{ created.stepCount }} étapes
       </p>
@@ -176,7 +256,32 @@ function startOver() {
       </div>
       <p v-if="preview.error && stage === 'identity'" class="alert" role="alert">{{ preview.error }}</p>
 
-      <form v-show="stage === 'identity'" data-test="identity" novalidate @submit.prevent="goToSteps">
+      <div v-show="stage === 'identity'" class="existing">
+        <div class="field">
+          <label for="existing-watch">Montre existante</label>
+          <select id="existing-watch" v-model="existingId" :disabled="openable.length === 0" @change="selectExisting">
+            <option value="">Saisir une nouvelle montre</option>
+            <option v-for="watch in openable" :key="watch.id" :value="String(watch.id)">{{ watch.brand }} {{ watch.model }}</option>
+          </select>
+          <span v-if="openable.length === 0" class="field-hint">
+            Aucune montre disponible : une montre vendue ou qui a déjà un projet en cours n’est pas proposée.
+          </span>
+        </div>
+        <template v-if="existing">
+          <dl class="summary" data-test="existing-summary">
+            <dt>Montre</dt>
+            <dd>{{ existing.brand }} {{ existing.model }}</dd>
+            <dt>Mouvement</dt>
+            <dd>{{ MOVEMENT_LABELS[existing.movementCode] }}</dd>
+            <dt>Complications</dt>
+            <dd>{{ existing.complications.length > 0 ? existing.complications.map((c) => c.label).join(', ') : 'Aucune' }}</dd>
+          </dl>
+          <p class="hint">Ces informations se modifient depuis la fiche de la montre.</p>
+          <button class="btn" type="button" data-test="existing-next" @click="existingToSteps">Voir les étapes proposées</button>
+        </template>
+      </div>
+
+      <form v-show="stage === 'identity' && !existing" data-test="identity" novalidate @submit.prevent="goToSteps">
         <div class="field">
           <label for="brand">Marque</label>
           <input id="brand" v-model="brand" name="brand" type="text" maxlength="255" autocomplete="off" />
@@ -297,6 +402,39 @@ function startOver() {
 .watch-form h1,
 .watch-form h2,
 .watch-form p {
+  margin: 0;
+}
+
+.existing {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.existing select {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.summary dt {
+  color: var(--text-secondary);
+}
+
+.summary dd {
   margin: 0;
 }
 

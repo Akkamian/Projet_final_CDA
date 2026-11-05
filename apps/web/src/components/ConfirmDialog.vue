@@ -20,6 +20,7 @@ onMounted(() => {
   <dialog ref="dialog" class="confirm" aria-labelledby="confirm-title" @cancel.prevent="emit('cancel')">
     <h2 id="confirm-title">{{ title }}</h2>
     <p>{{ message }}</p>
+    <slot />
     <div class="actions">
       <button type="button" data-test="confirm-cancel" @click="emit('cancel')">Annuler</button>
       <button type="button" class="danger" data-test="confirm-ok" @click="emit('confirm')">

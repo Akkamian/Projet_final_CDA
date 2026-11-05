@@ -57,7 +57,9 @@ async function logout() {
       </p>
     </template>
 
-    <p v-if="auth.isAuthenticated" class="logout"><button type="button" @click="logout">Se déconnecter</button></p>
+    <p v-if="auth.isAuthenticated" class="logout">
+      <RouterLink to="/account">Mon compte</RouterLink> · <button type="button" @click="logout">Se déconnecter</button>
+    </p>
   </section>
 </template>
 

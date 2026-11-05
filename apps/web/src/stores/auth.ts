@@ -36,5 +36,15 @@ export const useAuthStore = defineStore('auth', () => {
     setAccessToken(null)
   }
 
-  return { accessToken, isAuthenticated, bootstrap, login, logout }
+  /** Supprime le compte et ses données après confirmation du mot de passe (S35) ; l'API efface aussi le cookie de renouvellement. */
+  async function deleteAccount(password: string): Promise<void> {
+    await apiFetch<void>('/account', { method: 'DELETE', body: JSON.stringify({ password }) })
+    setAccessToken(null)
+  }
+
+  function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    return apiFetch<void>('/account/password', { method: 'PATCH', body: JSON.stringify({ currentPassword, newPassword }) })
+  }
+
+  return { accessToken, isAuthenticated, bootstrap, login, logout, deleteAccount, changePassword }
 })

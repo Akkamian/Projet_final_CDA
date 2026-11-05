@@ -20,6 +20,11 @@ export const routes: RouteRecordRaw[] = [
     name: 'watch-detail',
     component: () => import('../views/WatchDetailView.vue'),
   },
+  {
+    path: '/account',
+    name: 'account',
+    component: () => import('../views/AccountView.vue'),
+  },
   // Pages d'authentification : seules routes accessibles sans session.
   {
     path: '/login',

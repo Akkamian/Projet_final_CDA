@@ -216,6 +216,33 @@ export const useWatchesStore = defineStore('watches', () => {
     return apiFetch<WatchDetail>(`/watches/${watchId}/resale`, { method: 'DELETE' })
   }
 
+  /** Montres sur lesquelles un projet peut être ouvert : ni vendues, ni déjà en cours (S9, RG-AFF-04). */
+  async function listOpenable(): Promise<WatchCard[]> {
+    const result = await apiFetch<{ items: WatchCard[] }>('/watches')
+    return result.items.filter((w) => w.status === 'completed' || w.status === 'no_project')
+  }
+
+  function completeProject(projectId: number): Promise<ProjectDetail> {
+    return apiFetch<ProjectDetail>(`/projects/${projectId}/complete`, { method: 'POST' })
+  }
+
+  function reopenProject(projectId: number): Promise<ProjectDetail> {
+    return apiFetch<ProjectDetail>(`/projects/${projectId}/reopen`, { method: 'POST' })
+  }
+
+  /** Nouvelle révision d'une montre déjà suivie, avec la liste d'étapes choisie (S9). */
+  function createRevision(watchId: number, steps: { label: string }[]): Promise<ProjectDetail> {
+    return apiFetch<ProjectDetail>(`/watches/${watchId}/projects`, { method: 'POST', body: JSON.stringify({ steps }) })
+  }
+
+  function removeProject(projectId: number): Promise<void> {
+    return apiFetch<void>(`/projects/${projectId}`, { method: 'DELETE' })
+  }
+
+  function removeWatch(watchId: number): Promise<void> {
+    return apiFetch<void>(`/watches/${watchId}`, { method: 'DELETE' })
+  }
+
   return {
     items,
     counts,
@@ -241,5 +268,11 @@ export const useWatchesStore = defineStore('watches', () => {
     removeExpense,
     setResale,
     clearResale,
+    listOpenable,
+    completeProject,
+    reopenProject,
+    createRevision,
+    removeProject,
+    removeWatch,
   }
 })
