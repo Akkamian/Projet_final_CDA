@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { apiError } from '../common/api-error.js';
 import { OwnershipService } from '../common/ownership.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -12,8 +12,6 @@ const COLUMN = { before: 'photo_before', after: 'photo_after' } as const;
 
 @Injectable()
 export class PhotosService {
-  private readonly logger = new Logger(PhotosService.name);
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly ownership: OwnershipService,
@@ -27,7 +25,7 @@ export class PhotosService {
       const row = await this.prisma.step_pics.create({ data: { restoration_step_id: stepId, url } });
       return { id: row.id, url: row.url };
     } catch (error) {
-      await this.discard(url);
+      await this.storage.deleteQuietly(url);
       throw error;
     }
   }
@@ -38,7 +36,7 @@ export class PhotosService {
     const photo = await this.prisma.step_pics.findFirst({ where: { id: photoId, restoration_step_id: stepId } });
     if (!photo) throw apiError(404, 'NOT_FOUND', 'Photo introuvable');
     await this.prisma.step_pics.deleteMany({ where: { id: photo.id } });
-    await this.discard(photo.url);
+    await this.storage.deleteQuietly(photo.url);
   }
 
   /** Enregistre ou remplace la photo d'état initial ou final ; l'ancien fichier est effacé après la mise à jour (RG-PHO-07). */
@@ -49,10 +47,10 @@ export class PhotosService {
     try {
       await this.prisma.restoration_projects.update({ where: { id: projectId }, data: { [COLUMN[kind]]: url } });
     } catch (error) {
-      await this.discard(url);
+      await this.storage.deleteQuietly(url);
       throw error;
     }
-    if (previous) await this.discard(previous);
+    if (previous) await this.storage.deleteQuietly(previous);
     return { url };
   }
 
@@ -61,7 +59,7 @@ export class PhotosService {
     const previous = project[COLUMN[kind]];
     if (!previous) return;
     await this.prisma.restoration_projects.update({ where: { id: projectId }, data: { [COLUMN[kind]]: null } });
-    await this.discard(previous);
+    await this.storage.deleteQuietly(previous);
   }
 
   /** Le contenu est vérifié sur ses octets d'en-tête, jamais sur le type déclaré par le client (RG-PHO-01). */
@@ -70,14 +68,5 @@ export class PhotosService {
       throw apiError(400, 'INVALID_IMAGE_TYPE', 'Le fichier doit être une image JPEG, PNG ou WebP');
     }
     return this.storage.save(file);
-  }
-
-  /** Effacement au mieux : une ligne déjà à jour ne doit pas échouer parce qu'un fichier résiste. */
-  private async discard(url: string): Promise<void> {
-    try {
-      await this.storage.delete(url);
-    } catch (error) {
-      this.logger.warn(`Fichier non effacé (${url}) : ${error instanceof Error ? error.message : String(error)}`);
-    }
   }
 }

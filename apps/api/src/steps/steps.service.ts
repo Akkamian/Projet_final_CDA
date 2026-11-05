@@ -3,6 +3,7 @@ import { apiError } from '../common/api-error.js';
 import { OwnershipService } from '../common/ownership.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { toStepDetail, type StepDetail } from '../watches/watch-detail.js';
 
 const WITH_PHOTOS = { step_pics: { orderBy: { id: 'asc' } } } satisfies Prisma.restoration_stepsInclude;
@@ -12,6 +13,7 @@ export class StepsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ownership: OwnershipService,
+    private readonly storage: StorageService,
   ) {}
 
   /** Étape ajoutée à la suite des existantes : rang = dernier rang + 1 (RG-ETP-09). */
@@ -48,18 +50,22 @@ export class StepsService {
     return toStepDetail(step);
   }
 
-  /** Supprime l'étape (ses photos partent en cascade) puis renumérote 1..n en une transaction (RG-ETP-15, RG-ETP-13). */
+  /** Supprime l'étape (ses photos et leurs fichiers partent avec elle) puis renumérote 1..n en une transaction (RG-ETP-15, RG-ETP-13). */
   async remove(userId: number, projectId: number, stepId: number): Promise<void> {
     await this.ownership.findOwnedStep(userId, projectId, stepId);
-    await this.prisma.$transaction(async (tx) => {
+    const photos = await this.prisma.$transaction(async (tx) => {
       await this.lockProject(tx, projectId);
+      const urls = await tx.step_pics.findMany({ where: { restoration_step_id: stepId }, select: { url: true } });
       await tx.restoration_steps.deleteMany({ where: { id: stepId, project_id: projectId } });
       await tx.$executeRaw`
         UPDATE restoration_steps s SET step_order = r.rank
         FROM (SELECT id, row_number() OVER (ORDER BY step_order, id)::smallint AS rank
               FROM restoration_steps WHERE project_id = ${projectId}) r
         WHERE s.id = r.id`;
+      return urls;
     });
+    // Les lignes de photos sont parties en cascade : leurs fichiers aussi, une fois la transaction validée.
+    await Promise.all(photos.map((photo) => this.storage.deleteQuietly(photo.url)));
   }
 
   /** La liste doit être exactement l'ensemble des étapes du projet (RG-ETP-12) ; renumérotation 1..n en un seul lot (RG-ETP-13). */

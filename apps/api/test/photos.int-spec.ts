@@ -154,6 +154,36 @@ describe('Photos : étapes, état initial et état final', () => {
     });
   });
 
+  describe('suppression d’une étape (RG-ETP-15)', () => {
+    it('RG-ETP-15 supprimer une étape efface les fichiers de ses photos, pas ceux des autres étapes', async () => {
+      const other = await prisma.restoration_steps.create({ data: { project_id: projectId, step_order: 2, label: 'Autre' } });
+      const a = await upload(stepPath(), PNG);
+      const b = await upload(stepPath(), JPEG);
+      const kept = await upload(`/projects/${projectId}/steps/${other.id}/photos`, PNG);
+
+      expect((await del(`/projects/${projectId}/steps/${stepId}`)).status).toBe(204);
+
+      expect(existsSync(fileOf(a.body.url))).toBe(false);
+      expect(existsSync(fileOf(b.body.url))).toBe(false);
+      expect(existsSync(fileOf(kept.body.url))).toBe(true);
+      expect(await prisma.step_pics.count()).toBe(1);
+    });
+
+    it('RG-ETP-15 si un fichier ne s’efface pas, la suppression de l’étape réussit quand même', async () => {
+      await upload(stepPath(), PNG);
+      vi.spyOn(storage, 'delete').mockRejectedValueOnce(new Error('disque en lecture seule'));
+
+      expect((await del(`/projects/${projectId}/steps/${stepId}`)).status).toBe(204);
+
+      expect(await prisma.restoration_steps.count()).toBe(0);
+    });
+
+    it('une étape sans photo se supprime toujours', async () => {
+      expect((await del(`/projects/${projectId}/steps/${stepId}`)).status).toBe(204);
+      expect(await files()).toEqual([]);
+    });
+  });
+
   describe.each([
     ['before', 'photo_before'],
     ['after', 'photo_after'],
