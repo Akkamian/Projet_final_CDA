@@ -33,6 +33,13 @@
 
   --touch-min: 44px;
 
+  /* Structure commune (maquettes desktop : barre latérale, barre du haut, largeurs de contenu). */
+  --page-bg: #05070a;
+  --sidebar-w: 236px;
+  --content-max: 1280px;
+  --settings-max: 720px;
+  --topbar-h: 69px;
+
   /* Polices système : aucune police web à télécharger. */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
