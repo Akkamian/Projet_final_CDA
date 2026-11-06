@@ -41,4 +41,21 @@ describe('PageHeader', () => {
 
     expect(wrapper.get('[data-test="action"]').text()).toBe('Nouveau projet')
   })
+
+  it('avec parent, un fil d’Ariane renvoie au tableau de bord et l’en-tête le signale', async () => {
+    const wrapper = await mountHeader({ title: 'Seiko 6119-8100', back: '/', parent: { label: 'Tableau de bord', to: '/' } })
+
+    const crumb = wrapper.get('nav[aria-label="Fil d’Ariane"]')
+    expect(crumb.get('a').text()).toBe('Tableau de bord')
+    expect(crumb.get('a').attributes('href')).toBe('/')
+    expect(wrapper.get('header').classes()).toContain('has-parent')
+    expect(wrapper.get('h1').text()).toBe('Seiko 6119-8100')
+  })
+
+  it('sans parent, aucun fil d’Ariane', async () => {
+    const wrapper = await mountHeader({ title: 'Tableau de bord' })
+
+    expect(wrapper.find('nav').exists()).toBe(false)
+    expect(wrapper.get('header').classes()).not.toContain('has-parent')
+  })
 })

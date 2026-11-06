@@ -107,6 +107,8 @@ export interface WatchDetail {
   resalePrice: string | null
   resaleDate: string | null
   margin: string | null
+  /** Prix d'achat + coûts de tous les projets (RG-FIN-13) ; null si le prix d'achat est inconnu. */
+  costPrice: string | null
   projects: ProjectDetail[]
 }
 

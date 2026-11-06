@@ -34,6 +34,7 @@ const watch = (projects: ProjectDetail[], extra: Partial<WatchDetail> = {}): Wat
   resalePrice: null,
   resaleDate: null,
   margin: null,
+  costPrice: '80.00',
   projects,
   ...extra,
 })
