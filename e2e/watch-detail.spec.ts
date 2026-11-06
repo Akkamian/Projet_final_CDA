@@ -60,6 +60,19 @@ test('fiche montre desktop : bandeau, coût de revient, mesure et verdict, modif
     'Dans la zone (250–310°)',
   ])
   await expect(fact(page, 'Dernière mesure')).toHaveText('+14 s/j')
+  await expect(page.locator('dialog')).toHaveCount(0)
+
+  // Corriger la mesure par le crayon de sa ligne (feuille d'édition), puis la supprimer depuis cette feuille.
+  await page.getByRole('button', { name: /Modifier la mesure du/ }).click()
+  await expect(page.getByRole('heading', { name: 'Modifier la mesure' })).toBeVisible()
+  await page.locator('[data-test="m-rate"]').fill('6')
+  await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
+  await expect(fact(page, 'Dernière mesure')).toHaveText('+6 s/j')
+  await page.getByRole('button', { name: /Modifier la mesure du/ }).click()
+  await page.getByRole('button', { name: 'Supprimer cette mesure' }).click()
+  await expect(page.getByRole('heading', { name: 'Supprimer cette mesure ?' })).toBeVisible()
+  await page.locator('[data-test="confirm-ok"]').click()
+  await expect(page.locator('[data-test="measurement-row"]')).toHaveCount(0)
 
   // Modifier la montre : le nouveau modèle apparaît sur la fiche.
   await page.getByRole('link', { name: 'Modifier la montre' }).click()
@@ -72,6 +85,32 @@ test('fiche montre desktop : bandeau, coût de revient, mesure et verdict, modif
 
 test.describe('fiche montre mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } })
+
+  test('la mesure s\u2019ouvre en feuille du bas, le tableau ne défile pas à l\u2019horizontale', async ({ page, request }) => {
+    const email = uniqueEmail('sheet-mobile')
+    await createVerifiedAccount(request, email)
+    const id = await createWatch(request, email)
+    await login(page, email)
+    await page.goto(`/watches/${id}`)
+
+    await page.locator('[data-test="measurement-add"]').click()
+    const sheet = page.locator('dialog.sheet')
+    await expect(sheet).toBeVisible()
+    const box = (await sheet.boundingBox())!
+    expect(box.width).toBe(390)
+    expect(box.y + box.height).toBeGreaterThan(844 - 2)
+
+    await page.locator('[data-test="m-date"]').fill(today())
+    await page.locator('[data-test="m-rate"]').fill('14')
+    await page.locator('[data-test="m-beat"]').fill('0.4')
+    await page.locator('[data-test="m-amp"]').fill('268')
+    await page.getByRole('button', { name: 'Enregistrer la mesure' }).click()
+    await expect(sheet).toHaveCount(0)
+
+    const wrap = page.locator('.table-wrap')
+    expect(await wrap.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    await expect(page.getByRole('button', { name: /Modifier la mesure du/ })).toBeVisible()
+  })
 
   test('finances avant les étapes, menu « ⋯ » et suppression de la montre', async ({ page, request }) => {
     const email = uniqueEmail('detail-mobile')

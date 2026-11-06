@@ -32,6 +32,7 @@ test('S21 + S22 + S23 : coût de 40 €, projet terminé, revente à 200 €, ac
   await page.locator('[data-test="resale-price"]').fill('200')
   await page.locator('[data-test="resale-date"]').fill(today())
   await page.getByRole('button', { name: 'Enregistrer' }).click()
+  await expect(page.locator('dialog')).toHaveCount(0)
 
   // S23 : 200 − 80 − 40 = 80.
   await expect(page.locator('[data-test="margin"]')).toContainText('80 €')

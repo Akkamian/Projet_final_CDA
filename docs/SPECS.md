@@ -296,6 +296,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** un beat error ou une amplitude négatifs sont refusés, alors qu'une marche négative (la montre retarde) est acceptée
 **And** une date de mesure dans le futur est refusée
+**And** la saisie se fait dans une feuille qui monte du bas de l'écran sur mobile et dans un dialogue centré sur grand écran ; elle se ferme à l'enregistrement, avec « Annuler », la touche Échap ou le bouton de fermeture, sans rien enregistrer
 
 ---
 
@@ -325,6 +326,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** un montant négatif est refusé
 **And** une date de coût dans le futur est refusée
+**And** la saisie se fait dans la même feuille (mobile) ou le même dialogue (grand écran) que la mesure
 
 ---
 
@@ -341,6 +343,7 @@ L'application doit permettre à un horloger amateur de :
 **And** la revente est refusée tant qu'un projet est en cours, ou si la montre est déjà vendue
 **And** il n'est plus possible d'ouvrir un nouveau projet sur une montre vendue
 **And** la date de revente ne peut précéder la date d'achat (lorsqu'elle est connue) ni être dans le futur
+**And** la saisie et la correction de la revente se font dans la même feuille (mobile) ou le même dialogue (grand écran) que la mesure
 
 ---
 
@@ -517,6 +520,7 @@ L'application doit permettre à un horloger amateur de :
 **Then** la modification ou la suppression est enregistrée
 
 **And** les mêmes contrôles qu'à la saisie s'appliquent (beat error et amplitude non négatifs, date non future)
+**And** chaque ligne du tableau n'a qu'un bouton d'édition ; la suppression se demande depuis la feuille d'édition (« Supprimer cette mesure »), qui se ferme avant la confirmation
 
 ---
 
@@ -546,6 +550,7 @@ L'application doit permettre à un horloger amateur de :
 **And** la montre est conservée, même si elle n'a plus aucun projet
 **And** la marge de la montre est recalculée sans les coûts du projet supprimé
 **And** la suppression est définitive
+**And** la confirmation s'affiche en feuille du bas sur mobile et en dialogue centré sur grand écran
 
 ---
 
@@ -560,6 +565,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** la montre disparaît du tableau de bord
 **And** la suppression est définitive
+**And** la confirmation s'affiche en feuille du bas sur mobile et en dialogue centré sur grand écran
 
 ---
 

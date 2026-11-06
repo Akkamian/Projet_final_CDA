@@ -229,6 +229,7 @@ body:has(dialog[open]) {
 }
 
 .chip-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 36px;
@@ -265,6 +266,7 @@ body:has(dialog[open]) {
 }
 
 .segmented-option {
+  position: relative;
   display: flex;
   flex: 1;
   align-items: center;
@@ -289,15 +291,14 @@ body:has(dialog[open]) {
   outline-offset: 2px;
 }
 
+/* L'entrée native couvre toute l'étiquette, invisible : le clic, le clavier et les lecteurs d'écran la trouvent, et rien ne l'intercepte. */
 .chip-toggle input,
 .segmented-option input {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
 }
