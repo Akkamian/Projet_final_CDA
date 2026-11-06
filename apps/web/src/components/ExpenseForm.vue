@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { formatDate } from '../format'
 import { useWatchesStore, type ExpenseDetail, type ExpensePayload } from '../stores/watches'
 import { errorMessage, today } from '../utils/today'
@@ -10,7 +10,7 @@ const props = defineProps<{
   projectId: number
   expense?: ExpenseDetail
 }>()
-const emit = defineEmits<{ saved: [value: { projectId: number; expense: ExpenseDetail }]; cancel: [] }>()
+const emit = defineEmits<{ saved: [value: { projectId: number; expense: ExpenseDetail }]; cancel: []; busy: [value: boolean] }>()
 
 const watches = useWatchesStore()
 const initial = props.expense
@@ -19,6 +19,8 @@ const label = ref(initial?.label ?? '')
 const amount = ref(initial?.amount ?? '')
 const date = ref(initial?.expenseDate ?? '')
 const busy = ref(false)
+// Le parent le transmet à la feuille, qui refuse de se fermer pendant un enregistrement.
+watch(busy, (value) => emit('busy', value))
 const error = ref<string | null>(null)
 
 // La virgule décimale française est acceptée ; l'API reçoit un point.

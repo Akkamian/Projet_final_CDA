@@ -218,6 +218,32 @@ describe('PerformanceBlock', () => {
     expect((wrapper.emitted('update:measurements')![0]![0] as MeasurementDetail[]).map((m) => m.id)).toContain(9)
   })
 
+  it('pendant l’enregistrement, Échap ne ferme pas la feuille : la mesure créée n’est pas perdue', async () => {
+    const created = measure(9, '2026-09-10', '3.00', '0.30', '260.00')
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    stubFetch(async () => {
+      await gate
+      return { status: 201, body: created }
+    })
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.find('[data-test="measurement-add"]').trigger('click')
+    await wrapper.find('[data-test="m-date"]').setValue('2026-09-10')
+    await wrapper.find('[data-test="m-rate"]').setValue('3')
+    await wrapper.find('[data-test="m-beat"]').setValue('0.3')
+    await wrapper.find('[data-test="m-amp"]').setValue('260')
+    await wrapper.find('form').trigger('submit')
+    await wrapper.find('dialog.sheet').trigger('cancel')
+    expect(wrapper.find('dialog.sheet').exists()).toBe(true)
+
+    release()
+    await flushPromises()
+
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect((wrapper.emitted('update:measurements')![0]![0] as MeasurementDetail[]).map((m) => m.id)).toContain(9)
+  })
+
   it('une erreur de validation laisse la feuille ouverte avec la saisie', async () => {
     const wrapper = mountBlock(mockup)
 

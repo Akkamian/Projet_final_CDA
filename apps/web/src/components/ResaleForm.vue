@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { formatDate } from '../format'
 import { useWatchesStore, type WatchDetail } from '../stores/watches'
 import { errorMessage, today } from '../utils/today'
 
 const props = defineProps<{ watchId: number; purchaseDate: string | null; initial?: { price: string; date: string } }>()
-const emit = defineEmits<{ saved: [value: WatchDetail]; cancel: [] }>()
+const emit = defineEmits<{ saved: [value: WatchDetail]; cancel: []; busy: [value: boolean] }>()
 
 const watches = useWatchesStore()
 const price = ref(props.initial?.price ?? '')
 const date = ref(props.initial?.date ?? '')
 const busy = ref(false)
+// Le parent le transmet à la feuille, qui refuse de se fermer pendant un enregistrement.
+watch(busy, (value) => emit('busy', value))
 const error = ref<string | null>(null)
 
 const priceText = () => price.value.trim().replace(',', '.')

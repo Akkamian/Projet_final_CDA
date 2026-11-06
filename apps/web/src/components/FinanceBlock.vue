@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch as vueWatch } from 'vue'
 import { formatDate, formatMargin, formatMoney } from '../format'
 import { useWatchesStore, type ExpenseDetail, type WatchDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
@@ -20,6 +20,15 @@ const error = ref<string | null>(null)
 // Une seule feuille ouverte à la fois : ajout de coût, correction d'un coût, revente (saisie ou correction).
 const expenseForm = ref<{ projectId: number; expense?: ExpenseDetail } | null>(null)
 const resaleOpen = ref(false)
+// Enregistrement en cours dans la feuille : elle refuse de se fermer (Échap, fond, ×) avant la réponse.
+const formBusy = ref(false)
+// `watch` est le nom de la prop de la montre : la fonction de Vue est importée sous un alias.
+vueWatch(
+  () => expenseForm.value !== null || resaleOpen.value,
+  (open) => {
+    if (!open) formBusy.value = false
+  },
+)
 const removing = ref<{ projectId: number; expense: ExpenseDetail } | null>(null)
 const clearing = ref(false)
 
@@ -133,7 +142,12 @@ async function confirmClearResale(): Promise<void> {
       </button>
     </div>
 
-    <Sheet v-if="expenseForm" :title="expenseForm.expense ? 'Modifier le coût' : 'Ajouter un coût'" @close="expenseForm = null">
+    <Sheet
+      v-if="expenseForm"
+      :title="expenseForm.expense ? 'Modifier le coût' : 'Ajouter un coût'"
+      :busy="formBusy"
+      @close="expenseForm = null"
+    >
       <ExpenseForm
         :key="expenseForm.expense?.id ?? 'new'"
         :projects="watch.projects"
@@ -141,6 +155,7 @@ async function confirmClearResale(): Promise<void> {
         :expense="expenseForm.expense"
         @saved="expenseSaved"
         @cancel="expenseForm = null"
+        @busy="formBusy = $event"
       />
     </Sheet>
 
@@ -184,13 +199,14 @@ async function confirmClearResale(): Promise<void> {
       <strong class="tabular" data-test="cost-price">{{ watch.costPrice === null ? '—' : formatMoney(watch.costPrice) }}</strong>
     </p>
 
-    <Sheet v-if="resaleOpen" :title="sold ? 'Corriger la revente' : 'Renseigner la revente'" @close="resaleOpen = false">
+    <Sheet v-if="resaleOpen" :title="sold ? 'Corriger la revente' : 'Renseigner la revente'" :busy="formBusy" @close="resaleOpen = false">
       <ResaleForm
         :watch-id="watch.id"
         :purchase-date="watch.purchaseDate"
         :initial="sold ? { price: watch.resalePrice ?? '', date: watch.resaleDate ?? '' } : undefined"
         @saved="resaleSaved"
         @cancel="resaleOpen = false"
+        @busy="formBusy = $event"
       />
     </Sheet>
     <div v-if="sold" class="resale" data-test="resale-box">

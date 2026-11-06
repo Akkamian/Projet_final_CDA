@@ -304,6 +304,31 @@ describe('FinanceBlock', () => {
     expect(calls(fetchMock)).toEqual([])
   })
 
+  it('pendant l’enregistrement d’un coût, Échap ne ferme pas la feuille : le coût créé n’est pas perdu', async () => {
+    const added = expense(5, 'Poussoirs', '34.00', '2025-05-02')
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    stubFetch(async () => {
+      await gate
+      return { status: 201, body: added }
+    })
+    const wrapper = mountBlock(watch([project(1, 'in_progress', '2025-04-01T10:00:00Z')]))
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+    await wrapper.find('[data-test="e-label"]').setValue('Poussoirs')
+    await wrapper.find('[data-test="e-amount"]').setValue('34')
+    await wrapper.find('[data-test="e-date"]').setValue('2025-05-02')
+    await wrapper.find('[data-test="expense-form"]').trigger('submit')
+    await wrapper.find('dialog.sheet').trigger('cancel')
+    expect(wrapper.find('dialog.sheet').exists()).toBe(true)
+
+    release()
+    await flushPromises()
+
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(wrapper.emitted('update:expenses')![0]![0]).toEqual({ projectId: 1, expenses: [added] })
+  })
+
   it('une erreur de validation laisse la feuille de coût ouverte avec la saisie', async () => {
     const wrapper = mountBlock(watch([project(1, 'in_progress', '2025-04-01T10:00:00Z')]))
 

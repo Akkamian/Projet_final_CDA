@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { formatDate, formatDelta, formatMeasure, formatRate } from '../format'
 import { useWatchesStore, type MeasurementDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
@@ -17,6 +17,14 @@ const adding = ref(false)
 const editing = ref<MeasurementDetail | null>(null)
 const removing = ref<MeasurementDetail | null>(null)
 const busy = ref(false)
+// Enregistrement en cours dans la feuille : elle refuse de se fermer (Échap, fond, ×) avant la réponse.
+const formBusy = ref(false)
+watch(
+  () => adding.value || editing.value !== null,
+  (open) => {
+    if (!open) formBusy.value = false
+  },
+)
 const error = ref<string | null>(null)
 // Choix de l'utilisateur pour le filtre de position : undefined = pas encore choisi, null = « Toutes ».
 const choice = ref<string | null | undefined>(undefined)
@@ -111,7 +119,7 @@ async function confirmRemove(): Promise<void> {
       <button type="button" class="ghost" data-test="measurement-add" @click="adding = true">+ Mesure</button>
     </div>
 
-    <Sheet v-if="adding || editing" :title="editing ? 'Modifier la mesure' : 'Ajouter une mesure'" @close="closeForm">
+    <Sheet v-if="adding || editing" :title="editing ? 'Modifier la mesure' : 'Ajouter une mesure'" :busy="formBusy" @close="closeForm">
       <MeasurementForm
         :key="editing?.id ?? 'new'"
         :project-id="projectId"
@@ -119,6 +127,7 @@ async function confirmRemove(): Promise<void> {
         @saved="saved"
         @cancel="closeForm"
         @remove="askRemove"
+        @busy="formBusy = $event"
       />
     </Sheet>
 

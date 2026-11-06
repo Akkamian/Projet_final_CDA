@@ -2,11 +2,13 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Sheet from './Sheet.vue'
 
-const proto = HTMLDialogElement.prototype as { showModal?: () => void }
+const proto = HTMLDialogElement.prototype as { showModal?: () => void; close?: () => void }
 const originalShowModal = proto.showModal
+const originalClose = proto.close
 
 afterEach(() => {
   proto.showModal = originalShowModal
+  proto.close = originalClose
   document.body.innerHTML = ''
 })
 
@@ -78,6 +80,39 @@ describe('Sheet', () => {
   it('la variante confirm pose la classe confirm, form par défaut', () => {
     expect(mountSheet({ variant: 'confirm' }).classes()).toEqual(expect.arrayContaining(['sheet', 'confirm']))
     expect(mountSheet().classes()).toEqual(expect.arrayContaining(['sheet', 'form']))
+  })
+
+  it('au démontage, la feuille se ferme (lève l’inertie du reste de la page) avant de rendre le focus', () => {
+    // Un dialog modal rend le reste de la page inerte : focus() sur le déclencheur ne marche qu'une fois le dialog fermé.
+    proto.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute('open', '')
+    }
+    proto.close = function (this: HTMLDialogElement) {
+      this.removeAttribute('open')
+    }
+    const closeSpy = vi.spyOn(HTMLDialogElement.prototype, 'close')
+    const opener = document.createElement('button')
+    document.body.appendChild(opener)
+    opener.focus()
+    const focusSpy = vi.spyOn(opener, 'focus')
+    const wrapper = mountSheet()
+
+    wrapper.unmount()
+
+    expect(closeSpy).toHaveBeenCalledTimes(1)
+    expect(focusSpy).toHaveBeenCalledTimes(1)
+    expect(closeSpy.mock.invocationCallOrder[0]!).toBeLessThan(focusSpy.mock.invocationCallOrder[0]!)
+  })
+
+  it('occupée (busy), la feuille ignore Échap, le clic sur le fond et la fermeture, et désactive le bouton ×', async () => {
+    const wrapper = mountSheet({ busy: true })
+
+    wrapper.element.dispatchEvent(new Event('cancel', { cancelable: true }))
+    await wrapper.trigger('click')
+    await wrapper.find('[data-test="sheet-close"]').trigger('click')
+
+    expect(wrapper.emitted('close')).toBeUndefined()
+    expect(wrapper.find('[data-test="sheet-close"]').attributes('disabled')).toBeDefined()
   })
 
   it('le focus revient à l’élément actif au montage quand la feuille est démontée', () => {

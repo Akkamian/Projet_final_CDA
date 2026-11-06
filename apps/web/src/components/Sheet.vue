@@ -6,7 +6,9 @@ let sequence = 0
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-withDefaults(defineProps<{ title: string; variant?: 'form' | 'confirm' }>(), { variant: 'form' })
+// `busy` : un enregistrement est en cours. La feuille refuse alors de se fermer (Échap, fond, ×) : le parent la démonterait avant la réponse
+// et perdrait l'événement `saved` (mesure créée mais absente de la liste, risque de doublon à la ressaisie).
+const props = withDefaults(defineProps<{ title: string; variant?: 'form' | 'confirm'; busy?: boolean }>(), { variant: 'form', busy: false })
 const emit = defineEmits<{ close: [] }>()
 
 const titleId = `sheet-title-${++sequence}`
@@ -22,22 +24,29 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  // Un dialog modal rend le reste de la page inerte : on le ferme d'abord, sinon focus() sur le déclencheur est sans effet.
+  const el = dialog.value
+  if (el?.open && typeof el.close === 'function') el.close()
   if (opener?.isConnected) opener.focus()
 })
 
+function requestClose(): void {
+  if (!props.busy) emit('close')
+}
+
 // Le clic sur le fond (cible = le dialog lui-même, pas son contenu) ferme comme Échap.
 function onClick(event: MouseEvent): void {
-  if (event.target === dialog.value) emit('close')
+  if (event.target === dialog.value) requestClose()
 }
 </script>
 
 <template>
-  <dialog ref="dialog" class="sheet" :class="variant" :aria-labelledby="titleId" @cancel.prevent="emit('close')" @click="onClick">
+  <dialog ref="dialog" class="sheet" :class="variant" :aria-labelledby="titleId" @cancel.prevent="requestClose" @click="onClick">
     <div class="sheet-frame">
       <div class="sheet-handle" aria-hidden="true"></div>
       <div class="sheet-header">
         <h2 :id="titleId">{{ title }}</h2>
-        <button type="button" class="sheet-close" data-test="sheet-close" aria-label="Fermer" @click="emit('close')">
+        <button type="button" class="sheet-close" data-test="sheet-close" aria-label="Fermer" :disabled="busy" @click="requestClose">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
           </svg>
@@ -52,7 +61,9 @@ function onClick(event: MouseEvent): void {
 .sheet {
   width: 100%;
   max-width: 100%;
-  max-height: 96%;
+  /* Hauteur absolue : un pourcentage se résout contre la hauteur du dialog, elle-même indéfinie, et ne borne rien. */
+  max-height: 96vh;
+  max-height: 96dvh;
   margin: auto 0 0;
   padding: 0;
   border: 1px solid var(--border);
@@ -65,7 +76,8 @@ function onClick(event: MouseEvent): void {
 }
 
 .sheet.confirm {
-  max-height: 88%;
+  max-height: 88vh;
+  max-height: 88dvh;
 }
 
 .sheet::backdrop {

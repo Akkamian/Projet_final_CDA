@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useWatchesStore, type MeasurementDetail, type MeasurementPayload } from '../stores/watches'
 import { errorMessage, today } from '../utils/today'
 
 const props = defineProps<{ projectId: number; measurement?: MeasurementDetail }>()
-const emit = defineEmits<{ saved: [value: MeasurementDetail]; cancel: []; remove: [] }>()
+const emit = defineEmits<{ saved: [value: MeasurementDetail]; cancel: []; remove: []; busy: [value: boolean] }>()
 
 const POSITIONS = ['Cadran haut', 'Cadran bas', 'Couronne en haut', 'Couronne en bas', 'Couronne à gauche', 'Couronne à droite']
 
@@ -18,6 +18,8 @@ const rate = ref(initial?.rateSecondsPerDay ?? '')
 const beat = ref(initial?.beatErrorMs ?? '')
 const amplitude = ref(initial?.amplitudeDegrees ?? '')
 const busy = ref(false)
+// Le parent le transmet à la feuille, qui refuse de se fermer pendant un enregistrement.
+watch(busy, (value) => emit('busy', value))
 const error = ref<string | null>(null)
 
 // Une position saisie autrement (hors des puces) reste visible et décochable.
