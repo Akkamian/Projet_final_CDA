@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { apiFetch } from '../api/client'
 import type { GeneratedStep } from './stepPreview'
 
@@ -14,7 +14,33 @@ export interface WatchCard {
   status: DashboardStatus
   thumbnailUrl: string | null
   margin: string | null
+  purchasePrice: string | null
+  purchaseDate: string | null
+  resalePrice: string | null
+  resaleDate: string | null
+  progress: { done: number; total: number } | null
 }
+
+/** Paramètres de GET /watches conservés par le store (RG-AFF-08, 09, 11). */
+export interface WatchListParams {
+  status: DashboardStatus | null
+  q: string
+  sort: 'purchase_date' | null
+  order: 'asc' | 'desc'
+  page: number
+}
+
+interface WatchListResponse {
+  items: WatchCard[]
+  counts: StatusCounts
+  total: number
+  page: number
+  pageSize: number
+  totalMargin: string
+}
+
+const PAGE_SIZE = 8
+const OPENABLE_PAGE_SIZE = 50
 
 export type StatusCounts = { all: number } & Record<DashboardStatus, number>
 
@@ -99,29 +125,63 @@ const EMPTY_COUNTS: StatusCounts = { all: 0, in_progress: 0, completed: 0, sold:
 export const useWatchesStore = defineStore('watches', () => {
   const items = ref<WatchCard[]>([])
   const counts = ref<StatusCounts>({ ...EMPTY_COUNTS })
+  const total = ref(0)
+  const totalMargin = ref('0.00')
+  const params = ref<WatchListParams>({ status: null, q: '', sort: null, order: 'desc', page: 1 })
+  const page = computed(() => params.value.page)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
   // Numéro de la dernière demande : une réponse plus ancienne ne doit pas écraser la liste affichée.
   let latestRequest = 0
 
-  async function list(status?: DashboardStatus): Promise<void> {
+  function listQuery(p: WatchListParams, pageSize: number): string {
+    const query = new URLSearchParams()
+    if (p.status) query.set('status', p.status)
+    if (p.q.trim() !== '') query.set('q', p.q.trim())
+    if (p.sort) {
+      query.set('sort', p.sort)
+      query.set('order', p.order)
+    }
+    query.set('page', String(p.page))
+    query.set('pageSize', String(pageSize))
+    return query.toString()
+  }
+
+  /**
+   * Charge une page de la liste. Les paramètres non fournis sont conservés ; changer le statut, la recherche
+   * ou le tri ramène à la page 1 (RG-AFF-11). `append` ajoute la page aux montres déjà affichées (« Voir plus »).
+   */
+  async function list(patch: Partial<WatchListParams> = {}, mode: 'replace' | 'append' = 'replace'): Promise<void> {
+    const current = params.value
+    const resets = ['status', 'q', 'sort', 'order'].some(
+      (key) => key in patch && patch[key as keyof WatchListParams] !== current[key as keyof WatchListParams],
+    )
+    const next: WatchListParams = { ...current, ...patch, page: patch.page ?? (resets ? 1 : current.page) }
     const request = ++latestRequest
     loading.value = true
     try {
-      const query = status ? `?${new URLSearchParams({ status })}` : ''
-      const result = await apiFetch<{ items: WatchCard[]; counts: StatusCounts }>(`/watches${query}`)
+      const result = await apiFetch<WatchListResponse>(`/watches?${listQuery(next, PAGE_SIZE)}`)
       if (request !== latestRequest) return
-      items.value = result.items
+      items.value = mode === 'append' ? [...items.value, ...result.items] : result.items
       counts.value = result.counts
+      total.value = result.total
+      totalMargin.value = result.totalMargin
+      params.value = { ...next, page: result.page }
       error.value = null
     } catch {
       if (request !== latestRequest) return
-      items.value = []
+      if (mode === 'replace') items.value = []
       error.value = 'Impossible de charger vos montres. Réessayez dans un instant.'
     } finally {
       if (request === latestRequest) loading.value = false
     }
+  }
+
+  /** Ajoute la page suivante ; sans effet quand toutes les montres sont affichées ou qu'un chargement est en cours. */
+  async function loadMore(): Promise<void> {
+    if (loading.value || items.value.length >= total.value) return
+    await list({ page: params.value.page + 1 }, 'append')
   }
 
   function get(id: number): Promise<WatchDetail> {
@@ -216,10 +276,17 @@ export const useWatchesStore = defineStore('watches', () => {
     return apiFetch<WatchDetail>(`/watches/${watchId}/resale`, { method: 'DELETE' })
   }
 
-  /** Montres sur lesquelles un projet peut être ouvert : ni vendues, ni déjà en cours (S9, RG-AFF-04). */
+  /** Montres sur lesquelles un projet peut être ouvert : ni vendues, ni déjà en cours (S9, RG-AFF-04). Parcourt toutes les pages. */
   async function listOpenable(): Promise<WatchCard[]> {
-    const result = await apiFetch<{ items: WatchCard[] }>('/watches')
-    return result.items.filter((w) => w.status === 'completed' || w.status === 'no_project')
+    const all: WatchCard[] = []
+    for (let pageNumber = 1; ; pageNumber++) {
+      const result = await apiFetch<WatchListResponse>(
+        `/watches?${listQuery({ status: null, q: '', sort: null, order: 'desc', page: pageNumber }, OPENABLE_PAGE_SIZE)}`,
+      )
+      all.push(...result.items)
+      if (result.items.length === 0 || all.length >= result.total) break
+    }
+    return all.filter((w) => w.status === 'completed' || w.status === 'no_project')
   }
 
   function completeProject(projectId: number): Promise<ProjectDetail> {
@@ -246,9 +313,15 @@ export const useWatchesStore = defineStore('watches', () => {
   return {
     items,
     counts,
+    total,
+    totalMargin,
+    params,
+    page,
+    pageSize: PAGE_SIZE,
     loading,
     error,
     list,
+    loadMore,
     get,
     create,
     fetchPreview,

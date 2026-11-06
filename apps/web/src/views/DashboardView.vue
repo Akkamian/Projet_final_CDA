@@ -16,7 +16,7 @@ onMounted(() => watches.list())
 
 function select(status: DashboardStatus | null) {
   selected.value = status
-  return watches.list(status ?? undefined)
+  return watches.list({ status })
 }
 
 </script>
