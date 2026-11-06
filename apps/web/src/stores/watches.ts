@@ -284,7 +284,8 @@ export const useWatchesStore = defineStore('watches', () => {
         `/watches?${listQuery({ status: null, q: '', sort: null, order: 'desc', page: pageNumber }, OPENABLE_PAGE_SIZE)}`,
       )
       all.push(...result.items)
-      if (result.items.length === 0 || all.length >= result.total) break
+      // Une page plus courte que demandée est la dernière.
+      if (result.items.length < OPENABLE_PAGE_SIZE || all.length >= result.total) break
     }
     return all.filter((w) => w.status === 'completed' || w.status === 'no_project')
   }
