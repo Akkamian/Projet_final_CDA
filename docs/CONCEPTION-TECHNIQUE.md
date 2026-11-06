@@ -23,7 +23,7 @@ Stack actée : Vue 3, NestJS, Prisma, PostgreSQL 16, TypeScript de bout en bout,
 | D4 | Emails | `nodemailer` en SMTP configuré par `.env`. **MailDev** (Docker) en dev. Fournisseur de production **non choisi** (point ouvert, §10). | Mailpit. |
 | D5 | Origine de l'API en prod | **Sous-domaine `api.`** : CORS avec credentials (origine du front en liste blanche) et cookie `SameSite=Lax`, valable car front et API partagent le même domaine. | Reverse proxy `/api/*` sur la même origine. |
 | D6 | Réordonnancement des étapes (S15) | Boutons « monter / descendre ». Glisser-déposer reporté après la v1. | Glisser-déposer tactile ; les deux. |
-| D7 | Front | Vue 3, Vite, Vue Router, Pinia, CSS maison à variables issues du design system Luminova green (les maquettes se transposent telles quelles). Boîtes de confirmation avec l'élément natif `<dialog>`. Graphique de performances : Chart.js en import ciblé. | shadcn-vue et Tailwind ; reka-ui ; graphique SVG maison. |
+| D7 | Front | Vue 3, Vite, Vue Router, Pinia, CSS maison à variables issues du design system Luminova green (les maquettes se transposent telles quelles). Boîtes de confirmation avec l'élément natif `<dialog>`. Performances : échelles maison avec zones cibles indicatives (RG-PER-06), sans bibliothèque de graphique (Chart.js retiré le 2026-11-06, sous-projet C : la maquette montre des échelles, pas une courbe). | shadcn-vue et Tailwind ; reka-ui ; Chart.js (écarté le 2026-11-06). |
 | D8 | Tests | API : Jest, avec intégration sur un vrai PostgreSQL 16 (Docker). Front : Vitest et Vue Test Utils. E2E : Playwright sur les parcours clés. | Pas d'E2E en v1. |
 | D9 | Dépôt | Monorepo npm workspaces : `apps/api`, `apps/web`. `docker-compose.yml` (PostgreSQL 16 et MailDev) et `.env.example` à la racine. | pnpm. |
 | D10 | Intégration continue | GitHub Actions (dépôt `Akkamian/Projet_final_CDA`) : lint et tests API (PostgreSQL en service du workflow) et front à chaque push sur `dev` et sur les PR vers `staging` ou `main`. E2E lancés à la main. Déploiement manuel (SSH + Git), la cible n'a pas de pipeline. | Pas de CI. |
@@ -79,8 +79,8 @@ Déduit des scénarios. Une route qui existe déjà dans `docs/UML.md` est repri
 |---|---|
 | `GET /watches` : une carte par montre (statut calculé, miniature, marge, achat, revente, progression du projet le plus récent) ; réponse `{ items, counts, total, page, pageSize, totalMargin }` où `counts` et `totalMargin` (somme des marges des montres vendues) portent sur toutes les montres ; paramètres optionnels `?status=`, `?q=` (recherche sur marque et modèle, sans casse ni accents, tous les mots), `?sort=purchase_date&order=asc\|desc` (sans date d'achat en dernier), `?page=` (1 par défaut) et `?pageSize=` (8 par défaut, 50 au plus) ; toute valeur invalide répond 400 (`INVALID_STATUS`, `INVALID_QUERY`, `INVALID_SORT`, `INVALID_ORDER`, `INVALID_PAGE`, `INVALID_PAGE_SIZE`). Le calcul se fait en mémoire sur une seule requête : le statut reste défini par `computeStatus`, mais le coût croît avec le nombre de montres d'un utilisateur (quelques centaines au plus pour un collectionneur) | S25, S40 |
 | `POST /watches` : montre, complications, premier projet et étapes, en une écriture | S5, S8 |
-| `GET /watches/:id` : montre, projets, finances et marge | S18, S23, S24, S26 |
-| `PATCH /watches/:id` | S10 |
+| `GET /watches/:id` : montre, projets, finances, marge et coût de revient (`costPrice` : achat + coûts de tous les projets, `null` sans prix d'achat, RG-FIN-13) | S18, S23, S24, S26 |
+| `PATCH /watches/:id` : seuls les champs envoyés changent ; `complicationCodes` remplace la liste entière (écran `/watches/:id/edit`) | S10 |
 | `DELETE /watches/:id` | S38 |
 | `PUT /watches/:id/resale` `{ price, date }` : saisie ou correction | S22, S31 |
 | `DELETE /watches/:id/resale` | S31 |
@@ -143,10 +143,11 @@ Les listes de mesures et de coûts sont incluses dans `GET /watches/:id` : pas d
 
 ## 7. Front
 
-- Écrans à construire d'après les maquettes `design/` : authentification (connexion, inscription, mot de passe oublié, réinitialisation), tableau de bord, nouveau projet en deux temps, détail montre (1 ou plusieurs projets, états vendue, terminé, sans projet), ajout de mesure, compte.
+- Écrans à construire d'après les maquettes `design/` : authentification (connexion, inscription, mot de passe oublié, réinitialisation), tableau de bord, nouveau projet en deux temps, détail montre (1 ou plusieurs projets, états vendue, terminé, sans projet), modification d'une montre (`/watches/:id/edit`), ajout de mesure, compte.
 - Variables CSS tirées de `design/2026-07-09-design-system-style-guide-technique-luminova-green.html` (`--bg`, `--accent`, `--space-*`, `--radius`, `--touch-min`…), reprises telles quelles dans le CSS de l'application, sans Tailwind ni bibliothèque de composants (D7).
 - Réordonnancement (D6) : un bouton « monter » et un bouton « descendre » par étape, qui envoient la liste complète à `PUT /projects/:id/steps/order`.
 - Confirmations de suppression (S35, S37, S38) : élément natif `<dialog>`.
+- Fiche montre (sous-projet C) : une seule vue, mise en page en CSS seul. Le DOM suit l'ordre mobile (en-tête, rail Finances et Avant/Après, colonne Étapes et Performances) ; à partir de 1181 px, grille à deux colonnes avec rail collant. Onglets de projet à partir de 2 projets (`ProjectTabs`), menu « ⋯ » (`WatchMenu`), bandeau de faits (`WatchFacts`), performances en échelles (`PerformanceScales`, zones dans `performance-zones.ts`). Le bouton « Marquer le projet terminé » existe deux fois dans le DOM (barre du haut au-delà de 640 px, bloc d'en-tête en dessous), masqué par CSS à l'autre largeur.
 - **Écrans sans maquette repérée**, à confirmer (recherche par mots-clés dans les fichiers, pas une lecture écran par écran) : formulaire de coût, changement de mot de passe, réordonnancement des étapes, page de vérification d'adresse, pages CGV et confidentialité. Ce sont des formulaires simples qui réutilisent les composants du design system.
 
 ## 8. Tests

@@ -174,6 +174,8 @@ L'application doit permettre à un horloger amateur de :
 
 **And** les étapes des projets existants ne changent pas ; seules les nouvelles révisions utilisent les complications modifiées
 
+**And** l'écran « Modifier la montre », ouvert depuis la fiche (bouton ou menu « ⋯ »), préremplit la marque, le modèle, le mouvement, les complications, le prix et la date d'achat ; il n'envoie que les champs modifiés
+
 ---
 
 #### Scénario 11 — Marquer un projet terminé
@@ -304,7 +306,9 @@ L'application doit permettre à un horloger amateur de :
 
 **Given** un projet contient plusieurs mesures
 **When** j'ouvre le bloc « Performances »
-**Then** je vois un graphique d'évolution dans le temps et la liste des dernières mesures
+**Then** je vois, pour la marche, le beat error et l'amplitude, une échelle avec la zone cible, la première et la dernière mesure et un verdict (« Dans la zone », « Hors zone », « Avance de 14 s/j · hors zone (±10 s/j) »), puis la liste des mesures de la plus récente à la plus ancienne
+
+**And** je peux restreindre l'échelle et la liste à une position de la montre ; la marche affiche son écart avec la mesure précédente à la même position
 
 ---
 
@@ -350,6 +354,8 @@ L'application doit permettre à un horloger amateur de :
 **Then** la marge affichée est de 80 € (200 − 80 − 40)
 
 **And** la marge est calculée par montre : elle additionne les coûts de tous ses projets
+
+**And** le coût de revient (achat 80 € + coûts 40 € = 120 €) s'affiche avec elle, même tant que la montre n'est pas vendue
 
 ---
 

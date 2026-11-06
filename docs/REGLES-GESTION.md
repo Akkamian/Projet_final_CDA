@@ -123,6 +123,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-PER-03 | Un beat error ou une amplitude négatifs sont refusés. | S19 ; arbitrage A2 | BDD : `chk_performance_measurements_beat_error`, `chk_performance_measurements_amplitude` ; DTO | à écrire |
 | RG-PER-04 | Les mesures d'un projet sont présentées dans l'ordre chronologique. | S20 | Service (tri sur `measured_at`) ; Interface | à écrire |
 | RG-PER-05 | Une mesure peut être modifiée ou supprimée ; les mêmes contrôles qu'à la saisie s'appliquent. | S33 ; arbitrage A6 | Service ; DTO ; BDD | à écrire |
+| RG-PER-06 | Le verdict d'une mesure se lit par rapport à des zones cibles indicatives : marche entre −10 et +10 s/j, beat error de 0,5 ms au plus, amplitude de 250° à 310°, bornes incluses. Ces repères ne sont pas des normes horlogères : l'écran les présente comme « repères indicatifs ». | S20 ; maquette du 2026-10-07 ; décision du 2026-11-06 | Interface (`performance-zones.ts`) | Unitaire (`performance-zones.spec`), e2e (`watch-detail`) |
 
 ## 8. Finances (`RG-FIN`)
 
@@ -140,6 +141,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-FIN-10 | La date de revente ne peut pas précéder la date d'achat, lorsque celle-ci est connue. | S22 ; arbitrage A10 | BDD : `chk_watches_resale_after_purchase` ; DTO | à écrire |
 | RG-FIN-11 | Un coût peut être modifié ou supprimé ; les mêmes contrôles qu'à la saisie s'appliquent et la marge est recalculée à la lecture. | S32 ; arbitrage A6 | Service ; DTO ; BDD | Marge (design MCD) pour le recalcul ; à écrire pour le reste |
 | RG-FIN-12 | La revente peut être corrigée (prix et date modifiés ensemble) ou annulée : la montre n'est alors plus vendue, aucune marge n'est calculée, et elle peut de nouveau recevoir un projet. | S31 ; arbitrage A6 | Service ; BDD : `chk_watches_resale` | à écrire |
+| RG-FIN-13 | Le coût de revient d'une montre = prix d'achat + somme des coûts de tous ses projets. Il est calculé à la lecture, même si la montre n'est pas vendue, et reste inconnu si le prix d'achat est inconnu. | S23, S26 ; décision du 2026-11-06 | Service (`costPrice`, `Prisma.Decimal`) ; Interface | Intégration (`watches-detail.int-spec`), unitaire (`margin.spec`), e2e (`watch-detail`) |
 
 ## 9. Confidentialité (`RG-SEC`), règles transversales (`RG-GEN`) et affichage (`RG-AFF`)
 
@@ -166,6 +168,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-AFF-10 | Les compteurs par statut, les tuiles et la marge cumulée (somme des marges des montres vendues, RG-FIN-06) portent sur toutes les montres de l'utilisateur, quels que soient le filtre et la recherche. | S25, S40 | Service (`counts`, `totalMargin`) | à écrire |
 | RG-AFF-11 | La liste est paginée par 8 montres (50 au plus par demande) ; `total` compte les montres après filtre et recherche ; une page hors limites est vide. | S25 | Service (`?page=`, `?pageSize=`) ; Interface | à écrire |
 | RG-AFF-12 | Les montants s'affichent sans décimales nulles (« 95 € », « +185 € », « 95,50 € ») et les dates au format JJ/MM/AAAA. | S25 ; décision d'affichage du 2026-11-06 | Interface | à écrire |
+| RG-AFF-13 | Les mesures s'affichent sans décimales superflues (« +14 s/j », « 0.4 ms », « 268° », vrai signe moins) ; l'écart de marche d'une mesure est calculé avec la mesure précédente à la même position, et absent sans position ou sans mesure précédente à cette position. | S20 | Interface | Unitaire (`format.spec`, `PerformanceBlock.spec`) |
 
 ## 10. Arbitrages du 2026-10-07
 
@@ -237,13 +240,13 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S17 — Ajouter des photos | RG-PHO-01, 02, 03, 04, 05 |
 | S18 — Consulter l'avant / après | RG-PRJ-07 |
 | S19 — Ajouter une mesure | RG-PER-01, 02, 03 ; RG-GEN-01 |
-| S20 — Consulter l'évolution des mesures | RG-PER-04 |
+| S20 — Consulter l'évolution des mesures | RG-PER-04, 06 ; RG-AFF-13 |
 | S21 — Ajouter un coût | RG-FIN-01, 02 ; RG-GEN-01, 02 |
 | S22 — Renseigner la revente | RG-FIN-03, 04, 05, 10 ; RG-PRJ-05 ; RG-MON-09 ; RG-GEN-01 |
-| S23 — Consulter la marge | RG-FIN-06, 08 |
+| S23 — Consulter la marge | RG-FIN-06, 08, 13 |
 | S24 — Ne pas afficher une marge incalculable | RG-FIN-07 |
 | S25 — Consulter le tableau de bord | RG-AFF-01, 02, 05, 07, 10, 11, 12 ; RG-PRJ-08 |
-| S26 — Historique des interventions | RG-AFF-03 ; RG-FIN-08, 09 |
+| S26 — Historique des interventions | RG-AFF-03 ; RG-FIN-08, 09, 13 |
 | S27 — Refuser l'accès aux données d'un autre | RG-SEC-01, 02, 03, 04, 06 |
 | S28 — Rouvrir un projet terminé | RG-PRJ-10, 05, 09 |
 | S29 — Décocher une étape terminée | RG-ETP-14 |
