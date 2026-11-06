@@ -55,8 +55,8 @@ describe('FinanceBlock', () => {
       watch([project(1, 'completed', '2025-04-01T10:00:00Z')], { resalePrice: '200.00', resaleDate: '2025-06-01', margin: '80.00' }),
     )
 
-    expect(wrapper.find('[data-test="margin"]').text()).toContain('80,00 €')
-    expect(wrapper.text()).toContain('200,00 €')
+    expect(wrapper.find('[data-test="margin"]').text()).toContain('80 €')
+    expect(wrapper.text()).toContain('200 €')
   })
 
   it('S24 pas de marge affichée si la montre n’est pas vendue', () => {
@@ -80,10 +80,10 @@ describe('FinanceBlock', () => {
     const groups = wrapper.findAll('[data-test="expense-group"]')
     expect(groups).toHaveLength(2)
     expect(groups[0]!.text()).toContain('Joint de fond')
-    expect(groups[0]!.find('[data-test="group-total"]').text()).toBe('15,00 €')
+    expect(groups[0]!.find('[data-test="group-total"]').text()).toBe('15 €')
     expect(groups[1]!.text()).toContain('Tube de couronne')
-    expect(groups[1]!.find('[data-test="group-total"]').text()).toBe('30,00 €')
-    expect(wrapper.find('[data-test="expenses-total"]').text()).toContain('45,00 €')
+    expect(groups[1]!.find('[data-test="group-total"]').text()).toBe('30 €')
+    expect(wrapper.find('[data-test="expenses-total"]').text()).toContain('45 €')
   })
 
   it('S22 le formulaire de revente est absent tant qu’un projet est en cours', () => {

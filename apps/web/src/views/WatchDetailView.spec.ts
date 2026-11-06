@@ -74,7 +74,7 @@ describe('WatchDetailView', () => {
     const text = wrapper.text()
     expect(text).toContain('Seiko 6119-8100')
     expect(text).toContain('Chronographe')
-    expect(text).toContain('80,00 €')
+    expect(text).toContain('80 €')
     expect(text).toContain('En cours')
     expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
   })
@@ -185,7 +185,7 @@ describe('WatchDetailView', () => {
       status: 200,
       body: watch([project(1, 'completed', '2025-01-01T10:00:00Z')], { resalePrice: '200.00', resaleDate: '2025-06-01', margin: '80.00' }),
     }))
-    expect(sold.find('[data-test="margin"]').text()).toContain('80,00 €')
+    expect(sold.find('[data-test="margin"]').text()).toContain('80 €')
     expect(sold.text()).toContain('Revente')
 
     const unsold = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-01-01T10:00:00Z')]) }))
@@ -214,7 +214,7 @@ describe('WatchDetailView', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-test="expense-group"]').text()).toContain('Poussoirs')
-    expect(wrapper.find('[data-test="margin"]').text()).toContain('86,00 €')
+    expect(wrapper.find('[data-test="margin"]').text()).toContain('86 €')
   })
 
   it('S22 la revente enregistrée met à jour la marge sans recharger les projets', async () => {
@@ -230,7 +230,7 @@ describe('WatchDetailView', () => {
     await wrapper.find('[data-test="resale-form"]').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.find('[data-test="margin"]').text()).toContain('120,00 €')
+    expect(wrapper.find('[data-test="margin"]').text()).toContain('120 €')
     expect(wrapper.findAll('[data-test="step-label"]')).toHaveLength(1)
   })
 
@@ -258,7 +258,7 @@ describe('WatchDetailView', () => {
       status: 200,
       body: watch([], { resalePrice: '70.00', resaleDate: '2025-06-01', margin: '-20.00' }),
     }))
-    expect(wrapper.find('[data-test="margin"]').text()).toContain('-20,00 €')
+    expect(wrapper.find('[data-test="margin"]').text()).toContain('-20 €')
   })
 
   it('RG-SEC-01 une montre introuvable (404) affiche un message sans rien révéler', async () => {

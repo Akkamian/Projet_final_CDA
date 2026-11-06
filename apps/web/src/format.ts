@@ -12,12 +12,12 @@ export const MOVEMENT_LABELS: Record<string, string> = {
   automatic: 'Automatique',
 }
 
-/** « 80.00 » (chaîne de l'API) → « 80,00 € » ; une marge négative garde son signe. */
+/** « 80.00 » (chaîne de l'API) → « 80 € », « 95.50 » → « 95,50 € » ; une marge négative garde son signe (RG-AFF-12). */
 export function formatMoney(amount: string): string {
-  return `${amount.replace('.', ',')} €`
+  return `${amount.replace('.', ',').replace(/,00$/, '')} €`
 }
 
-/** Marge des cartes : « +185,00 € » pour un gain, « −25,00 € » (vrai signe moins) pour une perte, « 0,00 € » sinon. */
+/** Marge des cartes : « +185 € » pour un gain, « −25 € » (vrai signe moins) pour une perte, « 0 € » sinon. */
 export function formatMargin(amount: string): string {
   if (amount.startsWith('-')) return `−${formatMoney(amount.slice(1))}`
   const positive = Number(amount) > 0

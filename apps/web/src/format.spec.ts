@@ -2,18 +2,25 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { formatDate, formatMargin, formatMoney } from './format'
 
 describe('formatMoney', () => {
-  it('S23 met la virgule française et garde le signe, y compris pour zéro', () => {
-    expect(formatMoney('80.00')).toBe('80,00 €')
-    expect(formatMoney('-20.00')).toBe('-20,00 €')
-    expect(formatMoney('0.00')).toBe('0,00 €')
+  it('RG-AFF-12 met la virgule française, garde le signe et supprime les décimales nulles', () => {
+    expect(formatMoney('80.00')).toBe('80 €')
+    expect(formatMoney('-20.00')).toBe('-20 €')
+    expect(formatMoney('0.00')).toBe('0 €')
+  })
+
+  it('RG-AFF-12 garde les centimes quand il y en a', () => {
+    expect(formatMoney('95.50')).toBe('95,50 €')
+    expect(formatMoney('1234.50')).toBe('1234,50 €')
+    expect(formatMoney('0.05')).toBe('0,05 €')
   })
 })
 
 describe('formatMargin', () => {
   it('S23 un gain prend « + », une perte le vrai signe moins, zéro reste sans signe', () => {
-    expect(formatMargin('185.00')).toBe('+185,00 €')
-    expect(formatMargin('-25.00')).toBe('−25,00 €')
-    expect(formatMargin('0.00')).toBe('0,00 €')
+    expect(formatMargin('185.00')).toBe('+185 €')
+    expect(formatMargin('-25.00')).toBe('−25 €')
+    expect(formatMargin('0.00')).toBe('0 €')
+    expect(formatMargin('12.50')).toBe('+12,50 €')
   })
 })
 
