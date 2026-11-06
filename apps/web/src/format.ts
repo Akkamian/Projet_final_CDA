@@ -37,3 +37,30 @@ export function formatDate(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
 }
+
+const MINUS = '−'
+
+/** Nombre sans zéros superflus, avec le vrai signe moins : « 14.00 » → « 14 », « -12.50 » → « −12.5 ». */
+function plain(n: number): string {
+  const text = String(Math.round(n * 100) / 100 || 0)
+  return text.startsWith('-') ? `${MINUS}${text.slice(1)}` : text
+}
+
+/** Mesure de la fiche (RG-AFF-13) : « 0.40 », « ms » → « 0.4 ms » ; « 268.00 », « ° » → « 268° ». */
+export function formatMeasure(value: string, unit = ''): string {
+  const suffix = unit === '' ? '' : unit === '°' ? unit : ` ${unit}`
+  return `${plain(Number(value))}${suffix}`
+}
+
+/** Marche en secondes par jour : « +14 » en avance, « −12 » en retard, « 0 » sinon. */
+export function formatRate(value: string): string {
+  const n = Number(value)
+  return `${n > 0 ? '+' : ''}${plain(n)}`
+}
+
+/** Écart de marche avec la mesure précédente à la même position (« −12 »), ou null s'il n'y en a pas (RG-AFF-13). */
+export function formatDelta(current: string, previous: string | null): string | null {
+  if (previous === null) return null
+  const diff = Number(current) - Number(previous)
+  return `${Math.round(diff * 100) > 0 ? '+' : ''}${plain(diff)}`
+}
