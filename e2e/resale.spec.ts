@@ -23,7 +23,7 @@ test('S21 + S22 + S23 : coût de 40 €, projet terminé, revente à 200 €, ac
   await page.locator('[data-test="e-amount"]').fill('40')
   await page.locator('[data-test="e-date"]').fill(today())
   await page.getByRole('button', { name: 'Enregistrer' }).click()
-  await expect(page.locator('[data-test="expenses-total"]')).toContainText('40,00')
+  await expect(page.locator('[data-test="expenses-total"]')).toContainText('40 €')
 
   // S22 : la revente exige un projet terminé.
   await page.getByRole('button', { name: 'Terminer le projet' }).click()
@@ -34,7 +34,7 @@ test('S21 + S22 + S23 : coût de 40 €, projet terminé, revente à 200 €, ac
   await page.getByRole('button', { name: 'Enregistrer' }).click()
 
   // S23 : 200 − 80 − 40 = 80.
-  await expect(page.locator('[data-test="margin"]')).toContainText('80,00')
+  await expect(page.locator('[data-test="margin"]')).toContainText('80 €')
   await page.reload()
-  await expect(page.locator('[data-test="margin"]')).toContainText('80,00')
+  await expect(page.locator('[data-test="margin"]')).toContainText('80 €')
 })
