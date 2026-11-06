@@ -17,6 +17,13 @@ describe('Avatar', () => {
     expect(wrapper.text()).toBe('')
   })
 
+  it('la variante large affiche l’initiale sur le grand format', () => {
+    const wrapper = mount(Avatar, { props: { variant: 'large', initial: 'a' } })
+
+    expect(wrapper.classes()).toContain('large')
+    expect(wrapper.text()).toBe('a')
+  })
+
   it('la variante icône affiche l’icône même avec une initiale', () => {
     const wrapper = mount(Avatar, { props: { variant: 'icon', initial: 'A' } })
 
