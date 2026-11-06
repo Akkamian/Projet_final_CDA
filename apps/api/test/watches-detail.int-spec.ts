@@ -62,6 +62,44 @@ describe('GET /watches/:id : détail, marge et propriété', () => {
     expect((await get(watch.id)).body.margin).toBeNull();
   });
 
+  it('RG-FIN-13 le coût de revient additionne l’achat et les coûts de tous les projets', async () => {
+    const watch = await createWatch(prisma, userId, { purchase_price: '120' });
+    const first = await createProject(prisma, watch.id, { status: 'completed' });
+    const second = await createProject(prisma, watch.id);
+    await expense(first.id, 'Joint', '45', '2025-02-01');
+    await expense(second.id, 'Verre', '30', '2025-03-01');
+
+    expect((await get(watch.id)).body.costPrice).toBe('195.00');
+  });
+
+  it('RG-FIN-13 le coût de revient est renvoyé même si la montre n’est pas vendue', async () => {
+    const watch = await createWatch(prisma, userId, { purchase_price: '120' });
+    await createProject(prisma, watch.id);
+
+    const { body } = await get(watch.id);
+
+    expect(body).toMatchObject({ costPrice: '120.00', margin: null });
+  });
+
+  it('RG-FIN-13 sans prix d’achat le coût de revient est null', async () => {
+    const watch = await createWatch(prisma, userId);
+    const project = await createProject(prisma, watch.id);
+    await expense(project.id, 'Joint', '45', '2025-02-01');
+
+    expect((await get(watch.id)).body.costPrice).toBeNull();
+  });
+
+  it('RG-FIN-13 il suit l’ajout et la suppression d’un coût', async () => {
+    const watch = await createWatch(prisma, userId, { purchase_price: '100' });
+    const project = await createProject(prisma, watch.id);
+
+    const added = await expense(project.id, 'Joint', '25.5', '2025-02-01');
+    expect((await get(watch.id)).body.costPrice).toBe('125.50');
+
+    await prisma.expenses.delete({ where: { id: added.id } });
+    expect((await get(watch.id)).body.costPrice).toBe('100.00');
+  });
+
   it('RG-FIN-09 les coûts sont renvoyés par projet', async () => {
     const watch = await createWatch(prisma, userId);
     const first = await createProject(prisma, watch.id, { status: 'completed' });

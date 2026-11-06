@@ -1,5 +1,5 @@
 import type { Prisma } from '../generated/prisma/client.js';
-import { computeMargin } from './margin.js';
+import { computeCostPrice, computeMargin } from './margin.js';
 
 export interface MeasurementDetail {
   id: number;
@@ -50,6 +50,7 @@ export interface WatchDetail {
   resalePrice: string | null;
   resaleDate: string | null;
   margin: string | null;
+  costPrice: string | null;
   projects: ProjectDetail[];
 }
 
@@ -114,6 +115,12 @@ export function toWatchDetail(watch: WatchWithDetail): WatchDetail {
     margin: money(
       computeMargin({
         resalePrice: watch.resale_price,
+        purchasePrice: watch.purchase_price,
+        expenses: watch.restoration_projects.flatMap((project) => project.expenses.map((e) => e.amount)),
+      }),
+    ),
+    costPrice: money(
+      computeCostPrice({
         purchasePrice: watch.purchase_price,
         expenses: watch.restoration_projects.flatMap((project) => project.expenses.map((e) => e.amount)),
       }),
