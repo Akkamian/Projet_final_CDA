@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { formatDate, formatMoney } from '../format'
+import { formatDate, formatMargin, formatMoney } from '../format'
 import { useWatchesStore, type ExpenseDetail, type WatchDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
 import ConfirmDialog from './ConfirmDialog.vue'
@@ -31,6 +31,17 @@ const cents = (amount: string) => Math.round(Number(amount) * 100)
 const money = (totalCents: number) => formatMoney((totalCents / 100).toFixed(2))
 const total = (expenses: ExpenseDetail[]) => expenses.reduce((sum, e) => sum + cents(e.amount), 0)
 const grandTotal = computed(() => groups.value.reduce((sum, p) => sum + total(p.expenses), 0))
+
+// RG-FIN-06 : « 350 − 120 − 45 (coûts des 2 projets) », montants sans symbole ni décimales nulles ; pas de terme de coûts s'il n'y en a pas.
+const bare = (amount: string) => formatMoney(amount).replace(/ €$/, '')
+const formula = computed(() => {
+  const { resalePrice, purchasePrice } = props.watch
+  if (props.watch.margin === null || resalePrice === null || purchasePrice === null) return null
+  const base = `${bare(resalePrice)} − ${bare(purchasePrice)}`
+  if (groups.value.length === 0) return base
+  const costs = bare((grandTotal.value / 100).toFixed(2))
+  return `${base} − ${costs} (${groups.value.length === 1 ? 'coûts du projet' : `coûts des ${groups.value.length} projets`})`
+})
 
 function openExpense(projectId: number, expense?: ExpenseDetail): void {
   resaleOpen.value = false
@@ -166,6 +177,11 @@ async function confirmClearResale(): Promise<void> {
       </p>
     </template>
 
+    <p class="total-row">
+      <span>Coût de revient</span>
+      <strong class="tabular" data-test="cost-price">{{ watch.costPrice === null ? '—' : formatMoney(watch.costPrice) }}</strong>
+    </p>
+
     <ResaleForm
       v-if="resaleOpen"
       :watch-id="watch.id"
@@ -174,7 +190,7 @@ async function confirmClearResale(): Promise<void> {
       @saved="resaleSaved"
       @cancel="resaleOpen = false"
     />
-    <div v-else-if="sold" class="resale">
+    <div v-else-if="sold" class="resale" data-test="resale-box">
       <p>
         Revente <span class="date">{{ formatDate(watch.resaleDate!) }}</span>
         <strong v-if="watch.resalePrice !== null"> {{ formatMoney(watch.resalePrice) }}</strong>
@@ -186,15 +202,19 @@ async function confirmClearResale(): Promise<void> {
         </button>
       </div>
     </div>
-    <div v-else class="resale">
+    <div v-else class="resale resale-empty" data-test="resale-empty">
       <p>Revente non renseignée</p>
       <p v-if="inProgress" class="hint">Un projet est en cours : terminez-le avant de renseigner la revente.</p>
       <button v-else type="button" class="ghost" data-test="resale-open" @click="openResale">Renseigner la revente</button>
     </div>
 
-    <p v-if="watch.margin !== null" class="margin">
-      Marge de la montre <strong data-test="margin">{{ formatMoney(watch.margin) }}</strong>
-    </p>
+    <div v-if="watch.margin !== null" class="margin-box">
+      <span class="total-label">Marge</span>
+      <strong class="margin-big tabular" :class="{ negative: watch.margin.startsWith('-') }" data-test="margin">{{
+        formatMargin(watch.margin)
+      }}</strong>
+      <span v-if="formula" class="margin-formula tabular" data-test="margin-formula">{{ formula }}</span>
+    </div>
     <p v-else-if="sold" class="hint">Marge non calculable : le prix d’achat n’est pas renseigné.</p>
     <p v-else class="hint">Marge : calculée dès la saisie de la revente</p>
 
@@ -232,13 +252,16 @@ dl {
   margin: 0;
 }
 
-h3 {
-  font-size: 15px;
+h3,
+h4 {
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 h4 {
-  font-size: 13px;
-  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .facts {
@@ -260,7 +283,7 @@ dd {
 .group-header,
 li,
 .total,
-.margin,
+.total-row,
 .resale > p:first-child {
   display: flex;
   align-items: center;
@@ -312,13 +335,42 @@ li {
   gap: var(--space-3);
 }
 
-.margin {
-  font-size: 15px;
+.total-row {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-weight: 600;
 }
 
-.margin strong {
-  font-size: 20px;
+.resale-empty {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
+.margin-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.margin-big {
   color: var(--accent-text);
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.margin-big.negative {
+  color: var(--danger-text);
+}
+
+.margin-formula {
+  flex-basis: 100%;
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 
 .ghost {

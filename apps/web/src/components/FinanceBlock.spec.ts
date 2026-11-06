@@ -87,6 +87,101 @@ describe('FinanceBlock', () => {
     expect(wrapper.find('[data-test="expenses-total"]').text()).toContain('45 €')
   })
 
+  it('RG-FIN-13 le coût de revient du bloc est celui de l’API, « — » sans prix d’achat', () => {
+    const withCost = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z')], { costPrice: '195.00' }))
+    const without = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z')], { purchasePrice: null, costPrice: null }))
+
+    expect(withCost.find('[data-test="cost-price"]').text()).toBe('195 €')
+    expect(without.find('[data-test="cost-price"]').text()).toBe('—')
+    expect(without.text()).not.toMatch(/null|NaN/)
+  })
+
+  it('montre vendue : bloc de revente avec prix et date, sans encart « non renseignée »', () => {
+    const wrapper = mountBlock(
+      watch([project(1, 'completed', '2025-04-01T10:00:00Z')], { resalePrice: '350.00', resaleDate: '2025-06-01', margin: '185.00' }),
+    )
+
+    expect(wrapper.find('[data-test="resale-box"]').text()).toContain('350 €')
+    expect(wrapper.find('[data-test="resale-box"]').text()).toContain('01/06/2025')
+    expect(wrapper.find('[data-test="resale-empty"]').exists()).toBe(false)
+  })
+
+  it('montre non vendue : encart « Revente non renseignée »', () => {
+    const wrapper = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z')]))
+
+    expect(wrapper.find('[data-test="resale-empty"]').text()).toContain('Revente non renseignée')
+    expect(wrapper.find('[data-test="resale-box"]').exists()).toBe(false)
+  })
+
+  it('RG-FIN-06 la marge affiche sa formule avec les coûts des deux projets', () => {
+    const wrapper = mountBlock(
+      watch(
+        [
+          project(2, 'completed', '2025-05-10T10:00:00Z', [expense(3, 'Joint de fond', '15.00')]),
+          project(1, 'completed', '2025-03-16T10:00:00Z', [
+            expense(1, 'Joint de couronne', '12.00'),
+            expense(2, 'Tube de couronne', '18.00'),
+          ]),
+        ],
+        { purchasePrice: '120.00', resalePrice: '350.00', resaleDate: '2025-06-01', margin: '185.00' },
+      ),
+    )
+
+    expect(wrapper.find('[data-test="margin"]').text()).toBe('+185 €')
+    expect(wrapper.find('[data-test="margin-formula"]').text()).toBe('350 − 120 − 45 (coûts des 2 projets)')
+  })
+
+  it('RG-FIN-06 un seul projet avec des coûts : « coûts du projet » ; aucun coût : pas de terme de coûts', () => {
+    const one = mountBlock(
+      watch([project(1, 'completed', '2025-03-16T10:00:00Z', [expense(1, 'Joint', '45.50')])], {
+        purchasePrice: '120.00',
+        resalePrice: '350.50',
+        resaleDate: '2025-06-01',
+        margin: '185.00',
+      }),
+    )
+    const none = mountBlock(
+      watch([project(1, 'completed', '2025-03-16T10:00:00Z')], {
+        purchasePrice: '120.00',
+        resalePrice: '350.00',
+        resaleDate: '2025-06-01',
+        margin: '230.00',
+      }),
+    )
+
+    expect(one.find('[data-test="margin-formula"]').text()).toBe('350,50 − 120 − 45,50 (coûts du projet)')
+    expect(none.find('[data-test="margin-formula"]').text()).toBe('350 − 120')
+  })
+
+  it('S23 une marge négative prend le vrai signe moins', () => {
+    const wrapper = mountBlock(
+      watch([project(1, 'completed', '2025-03-16T10:00:00Z')], {
+        purchasePrice: '80.00',
+        resalePrice: '55.00',
+        resaleDate: '2025-06-01',
+        margin: '-25.00',
+      }),
+    )
+
+    expect(wrapper.find('[data-test="margin"]').text()).toBe('−25 €')
+  })
+
+  it('S24 vendue sans prix d’achat : ni marge ni formule, la raison est donnée', () => {
+    const wrapper = mountBlock(
+      watch([project(1, 'completed', '2025-03-16T10:00:00Z')], {
+        purchasePrice: null,
+        costPrice: null,
+        resalePrice: '55.00',
+        resaleDate: '2025-06-01',
+        margin: null,
+      }),
+    )
+
+    expect(wrapper.find('[data-test="margin"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="margin-formula"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Marge non calculable')
+  })
+
   it('S22 le formulaire de revente est absent tant qu’un projet est en cours', () => {
     const wrapper = mountBlock(watch([project(1, 'in_progress', '2025-04-01T10:00:00Z')]))
 

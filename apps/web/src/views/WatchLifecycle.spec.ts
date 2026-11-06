@@ -28,6 +28,7 @@ const watch = (projects: ReturnType<typeof project>[], extra: object = {}) => ({
   resalePrice: null,
   resaleDate: null,
   margin: null,
+  costPrice: null,
   projects,
   ...extra,
 })
@@ -215,6 +216,7 @@ describe('Nouveau projet sur une montre existante (S9)', () => {
     status,
     thumbnailUrl: null,
     margin: null,
+    costPrice: null,
   })
   const steps = [
     { label: 'Déposer le cadran', stepOrder: 400, complicationCode: null, complicationLabel: null },

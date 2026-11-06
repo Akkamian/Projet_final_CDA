@@ -36,6 +36,7 @@ const watch = (projects: ReturnType<typeof project>[], extra: object = {}) => ({
   resalePrice: null,
   resaleDate: null,
   margin: null,
+  costPrice: null,
   projects,
   ...extra,
 })
@@ -251,7 +252,7 @@ describe('WatchDetailView', () => {
       status: 200,
       body: watch([], { resalePrice: '70.00', resaleDate: '2025-06-01', margin: '-20.00' }),
     }))
-    expect(wrapper.find('[data-test="margin"]').text()).toContain('-20 €')
+    expect(wrapper.find('[data-test="margin"]').text()).toContain('−20 €')
   })
 
   it('RG-SEC-01 une montre introuvable (404) affiche un message sans rien révéler', async () => {
