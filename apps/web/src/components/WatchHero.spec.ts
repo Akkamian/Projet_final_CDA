@@ -39,7 +39,7 @@ describe('WatchHero', () => {
   it('affiche le titre, le mouvement, les complications et le badge de statut', () => {
     const wrapper = mount(WatchHero, { props: { watch: watch(), project: project(), status: 'in_progress' } })
 
-    expect(wrapper.get('h2').text()).toBe('Seiko 6119-8100')
+    expect(wrapper.get('[data-test="hero-title"]').text()).toBe('Seiko 6119-8100')
     expect(wrapper.text()).toContain('Automatique · Date, Jour')
     expect(wrapper.get('[data-test="status-badge"]').text()).toBe('En cours')
   })

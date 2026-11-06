@@ -5,11 +5,15 @@ import { ApiError } from '../api/client'
 import BeforeAfter from '../components/BeforeAfter.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import FinanceBlock from '../components/FinanceBlock.vue'
+import PageHeader from '../components/PageHeader.vue'
 import PerformanceBlock from '../components/PerformanceBlock.vue'
-import ProjectSelector from '../components/ProjectSelector.vue'
+import ProjectTabs from '../components/ProjectTabs.vue'
 import StepList from '../components/StepList.vue'
-import { MOVEMENT_LABELS } from '../format'
-import { useWatchesStore, type ExpenseDetail, type ProjectDetail, type WatchDetail } from '../stores/watches'
+import WatchFacts from '../components/WatchFacts.vue'
+import WatchHero from '../components/WatchHero.vue'
+import WatchMenu from '../components/WatchMenu.vue'
+import { formatDate } from '../format'
+import { useWatchesStore, type DashboardStatus, type ExpenseDetail, type ProjectDetail, type WatchDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
 
 const watches = useWatchesStore()
@@ -31,6 +35,19 @@ const hasInProgress = computed(() => watch.value?.projects.some((p) => p.status 
 // RG-AFF-04, RG-PRJ-05, RG-PRJ-09 : ni nouvelle révision ni réouverture sur une montre vendue ou qui a déjà un projet en cours.
 const canOpenProject = computed(() => !sold.value && !hasInProgress.value)
 
+// Badge de la fiche : vendue prime ; sinon l'état du projet affiché, ou « Sans projet ».
+const status = computed<DashboardStatus>(() => (sold.value ? 'sold' : project.value ? project.value.status : 'no_project'))
+
+const canReopen = computed(() => project.value?.status === 'completed' && canOpenProject.value)
+const reopenNote = computed(() => {
+  if (canReopen.value || !project.value) return null
+  if (project.value.status === 'in_progress') return 'Ce projet est déjà en cours.'
+  if (sold.value) return 'Montre vendue : un projet ne peut plus être rouvert.'
+  return 'Un autre projet est en cours.'
+})
+
+const title = computed(() => (watch.value ? `${watch.value.brand} ${watch.value.model}` : 'Fiche montre'))
+
 onMounted(async () => {
   try {
     const loaded = await watches.get(Number(route.params.id))
@@ -44,26 +61,23 @@ onMounted(async () => {
   }
 })
 
-// Les coûts ne portent pas la marge : après chaque écriture, on relit la fiche et on n'en garde que la marge.
+// Les coûts ne portent ni la marge ni le coût de revient : après chaque écriture, on relit la fiche et on n'en garde que ces deux champs.
 async function updateExpenses({ projectId, expenses }: { projectId: number; expenses: ExpenseDetail[] }): Promise<void> {
   const target = watch.value?.projects.find((p) => p.id === projectId)
   if (!target || !watch.value) return
   target.expenses = expenses
+  await refreshDerived()
+}
+
+// Les coûts d'un projet supprimé ne comptent plus : marge et coût de revient se relisent sur la fiche, comme après un coût.
+async function refreshDerived(): Promise<void> {
+  if (!watch.value) return
   try {
     const fresh = await watches.get(watch.value.id)
     watch.value.margin = fresh.margin
+    watch.value.costPrice = fresh.costPrice
   } catch {
-    // La liste est à jour ; la marge se corrigera à la prochaine ouverture de la fiche.
-  }
-}
-
-// Les coûts d'un projet supprimé ne comptent plus : la marge se relit sur la fiche, comme après un coût.
-async function refreshMargin(): Promise<void> {
-  if (!watch.value) return
-  try {
-    watch.value.margin = (await watches.get(watch.value.id)).margin
-  } catch {
-    // La fiche affichée est à jour ; la marge se corrigera à la prochaine ouverture.
+    // La fiche affichée est à jour ; marge et coût de revient se corrigeront à la prochaine ouverture.
   }
 }
 
@@ -90,6 +104,7 @@ function applyState(updated: ProjectDetail): void {
 
 const complete = () => run(async () => applyState(await watches.completeProject(project.value!.id)))
 const reopen = () => run(async () => applyState(await watches.reopenProject(project.value!.id)))
+const edit = () => router.push({ name: 'edit-watch', params: { id: watch.value!.id } })
 
 async function confirmRemove(): Promise<void> {
   const kind = removing.value
@@ -105,7 +120,7 @@ async function confirmRemove(): Promise<void> {
     await watches.removeProject(id)
     current.projects = current.projects.filter((p) => p.id !== id)
     selectedId.value = current.projects[0]?.id ?? null
-    await refreshMargin()
+    await refreshDerived()
   })
   // Le dialogue se ferme aussi en cas d'échec : l'alerte, derrière un dialogue modal, resterait invisible.
   removing.value = null
@@ -117,62 +132,101 @@ function updateResale(fresh: WatchDetail): void {
   watch.value.resalePrice = fresh.resalePrice
   watch.value.resaleDate = fresh.resaleDate
   watch.value.margin = fresh.margin
+  watch.value.costPrice = fresh.costPrice
 }
 </script>
 
 <template>
   <section class="detail">
-    <p><RouterLink to="/">← Mes montres</RouterLink></p>
+    <PageHeader :title="title" back="/" :parent="{ label: 'Tableau de bord', to: '/' }">
+      <template #actions>
+        <template v-if="watch">
+          <RouterLink class="btn btn-secondary desktop-only" data-test="edit-watch" :to="{ name: 'edit-watch', params: { id: watch.id } }">
+            Modifier la montre
+          </RouterLink>
+          <WatchMenu
+            :can-reopen="canReopen"
+            :reopen-note="reopenNote"
+            :has-project="project !== null"
+            @edit="edit"
+            @reopen="reopen"
+            @remove-project="removing = 'project'"
+            @remove-watch="removing = 'watch'"
+          />
+          <button
+            v-if="project?.status === 'in_progress'"
+            type="button"
+            class="btn desktop-only"
+            data-test="complete"
+            :disabled="busy"
+            @click="complete"
+          >
+            Marquer le projet terminé
+          </button>
+        </template>
+      </template>
+    </PageHeader>
 
     <p v-if="error" class="alert" role="alert">{{ error }}</p>
 
     <template v-else-if="watch">
-      <h1>{{ watch.brand }} {{ watch.model }}</h1>
-      <p class="hint">
-        {{ MOVEMENT_LABELS[watch.movementCode] }}
-        <template v-if="watch.complications.length > 0"> · {{ watch.complications.map((c) => c.label).join(', ') }}</template>
-      </p>
-
       <p v-if="actionError" class="alert" role="alert">{{ actionError }}</p>
 
-      <RouterLink v-if="canOpenProject" class="btn revision" :to="`/watches/new?watch=${watch.id}`"> Nouvelle révision </RouterLink>
+      <div class="head-card">
+        <WatchHero :watch="watch" :project="project" :status="status" />
+        <WatchFacts :watch="watch" :project="project" />
+      </div>
+
+      <ProjectTabs :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
+
+      <div class="lifecycle">
+        <RouterLink v-if="canOpenProject" class="btn revision" :to="`/watches/new?watch=${watch.id}`"> Nouvelle révision </RouterLink>
+        <p v-else-if="sold" class="hint">Montre vendue : aucun nouveau projet n’est possible.</p>
+        <template v-if="project">
+          <div v-if="project.status === 'in_progress'" class="complete-block mobile-only">
+            <button type="button" class="btn" data-test="complete" :disabled="busy" @click="complete">Marquer le projet terminé</button>
+            <p class="hint">Passe le projet au statut Terminé</p>
+          </div>
+          <p v-else-if="project.completedAt" class="hint">Terminé le {{ formatDate(project.completedAt) }}</p>
+        </template>
+      </div>
 
       <p v-if="watch.projects.length === 0" class="notice">Aucun projet pour cette montre.</p>
-      <template v-else>
-        <ProjectSelector :projects="watch.projects" :selected-id="selectedId" @select="selectedId = $event" />
-        <template v-if="project">
-          <h2>{{ project.status === 'in_progress' ? 'En cours' : 'Terminé' }}</h2>
-          <div class="lifecycle">
-            <button v-if="project.status === 'in_progress'" type="button" class="btn" :disabled="busy" @click="complete">
-              Terminer le projet
-            </button>
-            <button v-else-if="canOpenProject" type="button" class="btn btn-secondary" :disabled="busy" @click="reopen">Rouvrir</button>
+
+      <div class="layout">
+        <div class="rail">
+          <div class="block">
+            <FinanceBlock
+              :watch="watch"
+              :selected-project-id="selectedId"
+              @update:expenses="updateExpenses"
+              @update:resale="updateResale"
+            />
           </div>
-          <BeforeAfter
-            :key="`photos-${project.id}`"
-            :project-id="project.id"
-            :photo-before="project.photoBefore"
-            :photo-after="project.photoAfter"
-            @change="project[$event.kind === 'before' ? 'photoBefore' : 'photoAfter'] = $event.url"
-          />
+          <div v-if="project" class="block">
+            <BeforeAfter
+              :key="`photos-${project.id}`"
+              :project-id="project.id"
+              :photo-before="project.photoBefore"
+              :photo-after="project.photoAfter"
+              @change="project[$event.kind === 'before' ? 'photoBefore' : 'photoAfter'] = $event.url"
+            />
+          </div>
+        </div>
+        <div v-if="project" class="main">
           <!-- key : la liste (éditeur, ajout, requêtes en vol) ne se réutilise jamais d'un projet à l'autre. -->
-          <StepList :key="project.id" :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
-          <PerformanceBlock
-            :key="`perf-${project.id}`"
-            :project-id="project.id"
-            :measurements="project.measurements"
-            @update:measurements="project.measurements = $event"
-          />
-        </template>
-      </template>
-
-      <FinanceBlock :watch="watch" :selected-project-id="selectedId" @update:expenses="updateExpenses" @update:resale="updateResale" />
-
-      <div class="danger-zone">
-        <button v-if="project" type="button" class="ghost-danger" :disabled="busy" @click="removing = 'project'">
-          Supprimer le projet
-        </button>
-        <button type="button" class="ghost-danger" :disabled="busy" @click="removing = 'watch'">Supprimer la montre</button>
+          <div class="block">
+            <StepList :key="project.id" :project-id="project.id" :steps="project.steps" @update:steps="project.steps = $event" />
+          </div>
+          <div class="block">
+            <PerformanceBlock
+              :key="`perf-${project.id}`"
+              :project-id="project.id"
+              :measurements="project.measurements"
+              @update:measurements="project.measurements = $event"
+            />
+          </div>
+        </div>
       </div>
 
       <ConfirmDialog
@@ -198,39 +252,115 @@ function updateResale(fresh: WatchDetail): void {
 <style scoped>
 .detail {
   display: grid;
-  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
 }
 
-h1,
-h2,
 p {
   margin: 0;
 }
 
-.lifecycle,
-.danger-zone {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+.head-card {
+  display: grid;
+  gap: var(--space-4);
 }
 
-.lifecycle .btn {
+.lifecycle,
+.complete-block {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.lifecycle .btn,
+.complete-block .btn {
   width: auto;
 }
 
-.danger-zone {
-  padding-top: var(--space-4);
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.rail,
+.main {
+  display: grid;
+  min-width: 0;
+}
+
+/* Mobile : blocs séparés par un filet, 24 px de marge verticale (maquette). */
+.block {
+  padding: var(--space-5) 0;
   border-top: 1px solid var(--border);
 }
 
-.ghost-danger {
-  min-height: var(--touch-min);
-  padding: 0 var(--space-4);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--danger-text);
-  font: inherit;
-  cursor: pointer;
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .desktop-only {
+    display: inline-flex;
+    width: auto;
+  }
+
+  .mobile-only {
+    display: none;
+  }
+
+  .detail {
+    gap: var(--space-5);
+  }
+
+  /* Barre du haut pleine largeur de la zone de contenu (comme le tableau de bord). */
+  .detail :deep(.page-header) {
+    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
+  }
+
+  .head-card,
+  .block {
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .layout,
+  .rail,
+  .main {
+    gap: var(--space-4);
+  }
+
+  .layout {
+    gap: var(--space-5);
+  }
+}
+
+/* Deux colonnes : étapes et performances à gauche, finances et avant/après dans un rail collant à droite. */
+@media (min-width: 1181px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr);
+    align-items: start;
+  }
+
+  .main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .rail {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-6));
+  }
+}
+
+/* Sous 900 px l'en-tête passe en colonne : le bandeau de faits sous le titre. */
+@media (max-width: 900px) {
+  .head-card {
+    gap: var(--space-3);
+  }
 }
 </style>

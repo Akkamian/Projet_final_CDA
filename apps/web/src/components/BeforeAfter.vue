@@ -119,7 +119,10 @@ p {
 }
 
 h3 {
-  font-size: 15px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .before-after {

@@ -41,7 +41,10 @@ async function mountDetail(initial: object, respond: (url: URL, init: RequestIni
   })
   const pinia = createPinia()
   setActivePinia(pinia)
-  const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+  const router = await makeRouter('/watches/7', [
+    { path: '/watches/:id', name: 'watch-detail', component: WatchDetailView },
+    { path: '/watches/:id/edit', name: 'edit-watch', component: { template: '<div />' } },
+  ])
   const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] }, attachTo: document.body })
   await flushPromises()
   return { wrapper, router, fetchMock }
@@ -49,6 +52,12 @@ async function mountDetail(initial: object, respond: (url: URL, init: RequestIni
 
 const button = (wrapper: VueWrapper, label: string) => wrapper.findAll('button').find((b) => b.text() === label)
 const link = (wrapper: VueWrapper, label: string) => wrapper.findAll('a').find((a) => a.text() === label)
+const COMPLETE = 'Marquer le projet terminé'
+// Les actions du menu « ⋯ » : on l'ouvre puis on cherche l'entrée (son texte peut inclure une note).
+async function menuItem(wrapper: VueWrapper, label: string) {
+  if (!wrapper.find('[role="menu"]').exists()) await wrapper.get('[data-test="menu-toggle"]').trigger('click')
+  return wrapper.findAll('[role="menuitem"]').find((i) => i.text().startsWith(label))
+}
 
 describe('Cycle de vie des projets (fiche montre)', () => {
   beforeEach(() => {
@@ -57,24 +66,24 @@ describe('Cycle de vie des projets (fiche montre)', () => {
     document.body.innerHTML = ''
   })
 
-  it('S11 « Terminer le projet » apparaît sur un projet en cours et le termine', async () => {
+  it('S11 « Marquer le projet terminé » apparaît sur un projet en cours et le termine', async () => {
     const { wrapper, fetchMock } = await mountDetail(watch([project(1, 'in_progress')]), (url, init) => {
       if (url.pathname === '/projects/1/complete' && init.method === 'POST') return { status: 200, body: project(1, 'completed') }
       return { status: 404, body: {} }
     })
 
-    await button(wrapper, 'Terminer le projet')!.trigger('click')
+    await button(wrapper, COMPLETE)!.trigger('click')
     await flushPromises()
 
     expect(calls(fetchMock)).toContain('POST /projects/1/complete')
     expect(wrapper.text()).toContain('Terminé')
-    expect(button(wrapper, 'Terminer le projet')).toBeUndefined()
+    expect(button(wrapper, COMPLETE)).toBeUndefined()
   })
 
-  it('S11 « Terminer le projet » est absent sur un projet terminé', async () => {
+  it('S11 « Marquer le projet terminé » est absent sur un projet terminé', async () => {
     const { wrapper } = await mountDetail(watch([project(1, 'completed')]))
 
-    expect(button(wrapper, 'Terminer le projet')).toBeUndefined()
+    expect(button(wrapper, COMPLETE)).toBeUndefined()
   })
 
   it('S11 affiche le refus de l’API (409) sans changer l’état', async () => {
@@ -83,11 +92,11 @@ describe('Cycle de vie des projets (fiche montre)', () => {
       body: { statusCode: 409, code: 'PROJECT_ALREADY_COMPLETED', message: 'Ce projet est déjà terminé' },
     }))
 
-    await button(wrapper, 'Terminer le projet')!.trigger('click')
+    await button(wrapper, COMPLETE)!.trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Ce projet est déjà terminé')
-    expect(button(wrapper, 'Terminer le projet')).toBeDefined()
+    expect(button(wrapper, COMPLETE)).toBeDefined()
   })
 
   it('S28 « Rouvrir » apparaît sur un projet terminé et le remet en cours', async () => {
@@ -96,27 +105,62 @@ describe('Cycle de vie des projets (fiche montre)', () => {
       return { status: 404, body: {} }
     })
 
-    await button(wrapper, 'Rouvrir')!.trigger('click')
+    await (await menuItem(wrapper, 'Rouvrir ce projet'))!.trigger('click')
     await flushPromises()
 
     expect(calls(fetchMock)).toContain('POST /projects/1/reopen')
-    expect(wrapper.text()).toContain('En cours')
-    expect(button(wrapper, 'Rouvrir')).toBeUndefined()
-    expect(button(wrapper, 'Terminer le projet')).toBeDefined()
+    expect(wrapper.get('[data-test="status-badge"]').text()).toBe('En cours')
+    expect((await menuItem(wrapper, 'Rouvrir ce projet'))!.attributes('aria-disabled')).toBe('true')
+    expect(button(wrapper, COMPLETE)).toBeDefined()
   })
 
-  it('S28 « Rouvrir » est absent si la montre est vendue', async () => {
+  it('S28 « Rouvrir ce projet » est désactivé, avec sa raison, si la montre est vendue', async () => {
+    const { wrapper, fetchMock } = await mountDetail(watch([project(1, 'completed')], sold))
+
+    const reopen = (await menuItem(wrapper, 'Rouvrir ce projet'))!
+    expect(reopen.attributes('aria-disabled')).toBe('true')
+    expect(reopen.text()).toContain('vendue')
+    await reopen.trigger('click')
+    expect(calls(fetchMock).some((c) => c.includes('/reopen'))).toBe(false)
+  })
+
+  it('S28 « Rouvrir ce projet » est désactivé si un autre projet est en cours', async () => {
+    const { wrapper } = await mountDetail(watch([project(2, 'in_progress', '2025-08-01T10:00:00Z'), project(1, 'completed')]))
+    await wrapper.findAll('[role="tab"]')[1]!.trigger('click')
+
+    expect(wrapper.get('[data-test="status-badge"]').text()).toBe('Terminé')
+    const reopen = (await menuItem(wrapper, 'Rouvrir ce projet'))!
+    expect(reopen.attributes('aria-disabled')).toBe('true')
+    expect(reopen.text()).toContain('en cours')
+  })
+
+  it('S28 « Rouvrir ce projet » est désactivé sur un projet déjà en cours', async () => {
+    const { wrapper } = await mountDetail(watch([project(1, 'in_progress')]))
+
+    expect((await menuItem(wrapper, 'Rouvrir ce projet'))!.attributes('aria-disabled')).toBe('true')
+  })
+
+  it('sans projet, le menu ne propose ni « Rouvrir » ni « Supprimer ce projet »', async () => {
+    const { wrapper } = await mountDetail(watch([]))
+
+    await wrapper.get('[data-test="menu-toggle"]').trigger('click')
+
+    expect(wrapper.findAll('[role="menuitem"]').map((i) => i.text())).toEqual(['Modifier la montre', 'Supprimer la montre'])
+  })
+
+  it('montre vendue : une note remplace « Nouvelle révision », « + Mesure » reste proposé', async () => {
     const { wrapper } = await mountDetail(watch([project(1, 'completed')], sold))
 
-    expect(button(wrapper, 'Rouvrir')).toBeUndefined()
+    expect(link(wrapper, 'Nouvelle révision')).toBeUndefined()
+    expect(wrapper.text()).toContain('Montre vendue : aucun nouveau projet')
+    expect(wrapper.find('[data-test="measurement-add"]').exists()).toBe(true)
+    expect(wrapper.get('[data-test="status-badge"]').text()).toBe('Vendue')
   })
 
-  it('S28 « Rouvrir » est absent si un autre projet est en cours', async () => {
-    const { wrapper } = await mountDetail(watch([project(2, 'in_progress', '2025-08-01T10:00:00Z'), project(1, 'completed')]))
-    await wrapper.find('select').setValue('1')
+  it('un projet terminé affiche sa date de fin', async () => {
+    const { wrapper } = await mountDetail(watch([project(1, 'completed')]))
 
-    expect(wrapper.text()).toContain('Terminé')
-    expect(button(wrapper, 'Rouvrir')).toBeUndefined()
+    expect(wrapper.text()).toContain('Terminé le 01/06/2025')
   })
 
   it('RG-AFF-04 « Nouvelle révision » est mise en avant sur une montre libre (terminée ou sans projet)', async () => {
@@ -150,7 +194,7 @@ describe('Cycle de vie des projets (fiche montre)', () => {
     )
     expect(wrapper.text()).toContain('Étape 2')
 
-    await button(wrapper, 'Supprimer le projet')!.trigger('click')
+    await (await menuItem(wrapper, 'Supprimer ce projet'))!.trigger('click')
     expect(wrapper.find('dialog').exists()).toBe(true)
     expect(calls(fetchMock)).not.toContain('DELETE /projects/2')
 
@@ -165,10 +209,54 @@ describe('Cycle de vie des projets (fiche montre)', () => {
     expect(calls(fetchMock).filter((c) => c === 'GET /watches/7')).toHaveLength(2)
   })
 
+  it('S37 supprimer le seul projet laisse la montre « Sans projet »', async () => {
+    const { wrapper } = await mountDetail(watch([project(1, 'completed')]), (url, init) => {
+      if (url.pathname === '/projects/1' && init.method === 'DELETE') return { status: 204 }
+      return { status: 404, body: {} }
+    })
+
+    await (await menuItem(wrapper, 'Supprimer ce projet'))!.trigger('click')
+    await wrapper.find('[data-test="confirm-ok"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-test="status-badge"]').text()).toBe('Sans projet')
+    expect(wrapper.text()).toContain('Aucun projet')
+    expect(wrapper.find('[data-test="step"]').exists()).toBe(false)
+  })
+
+  it('changer d’onglet ne garde ni l’étape dépliée ni le filtre de position de l’autre projet', async () => {
+    const withMeasures = (id: number, createdAt: string, positions: string[]) => ({
+      ...project(id, 'completed', createdAt),
+      measurements: positions.map((position, i) => ({
+        id: id * 100 + i,
+        measuredAt: `2025-0${i + 1}-01T00:00:00.000Z`,
+        rateSecondsPerDay: '5.00',
+        beatErrorMs: '0.30',
+        amplitudeDegrees: '260.00',
+        watchPosition: position,
+      })),
+    })
+    const { wrapper } = await mountDetail(
+      watch([
+        withMeasures(2, '2025-08-01T10:00:00Z', ['Cadran haut', 'Cadran bas']),
+        withMeasures(1, '2025-01-01T10:00:00Z', ['Cadran haut', 'Cadran bas']),
+      ] as unknown as ReturnType<typeof project>[]),
+    )
+    await wrapper.get('[data-test="expand"]').trigger('click')
+    await wrapper.findAll('[data-test="position-chip"]')[2]!.trigger('click')
+    expect(wrapper.get('[data-test="expand"]').attributes('aria-expanded')).toBe('true')
+    expect(wrapper.findAll('[data-test="measurement-row"]')).toHaveLength(1)
+
+    await wrapper.findAll('[role="tab"]')[1]!.trigger('click')
+
+    expect(wrapper.get('[data-test="expand"]').attributes('aria-expanded')).toBe('false')
+    expect(wrapper.findAll('[data-test="measurement-row"]')).toHaveLength(2)
+  })
+
   it('S37 annuler la confirmation ne supprime rien', async () => {
     const { wrapper, fetchMock } = await mountDetail(watch([project(1, 'in_progress')]))
 
-    await button(wrapper, 'Supprimer le projet')!.trigger('click')
+    await (await menuItem(wrapper, 'Supprimer ce projet'))!.trigger('click')
     await wrapper.find('[data-test="confirm-cancel"]').trigger('click')
 
     expect(wrapper.find('dialog').exists()).toBe(false)
@@ -181,7 +269,7 @@ describe('Cycle de vie des projets (fiche montre)', () => {
       return { status: 404, body: {} }
     })
 
-    await button(wrapper, 'Supprimer la montre')!.trigger('click')
+    await (await menuItem(wrapper, 'Supprimer la montre'))!.trigger('click')
     expect(calls(fetchMock)).not.toContain('DELETE /watches/7')
     await wrapper.find('[data-test="confirm-ok"]').trigger('click')
     await flushPromises()
@@ -196,7 +284,7 @@ describe('Cycle de vie des projets (fiche montre)', () => {
       body: { statusCode: 500, message: 'Erreur interne' },
     }))
 
-    await button(wrapper, 'Supprimer la montre')!.trigger('click')
+    await (await menuItem(wrapper, 'Supprimer la montre'))!.trigger('click')
     await wrapper.find('[data-test="confirm-ok"]').trigger('click')
     await flushPromises()
 

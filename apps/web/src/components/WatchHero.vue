@@ -21,7 +21,8 @@ const subtitle = computed(() =>
     <img v-if="photo" class="photo" :src="fileUrl(photo)" alt="" />
     <span v-else class="photo photo-empty" data-test="hero-empty" aria-hidden="true" />
     <div class="body">
-      <h2>{{ watch.brand }} {{ watch.model }}</h2>
+      <!-- Pas de titre de section : la h1 de la page (PageHeader) porte déjà le nom de la montre. -->
+      <p class="title" data-test="hero-title">{{ watch.brand }} {{ watch.model }}</p>
       <p class="subtitle" data-test="hero-subtitle">{{ subtitle }}</p>
       <span class="status" :class="`status-${status}`" data-test="status-badge">{{ STATUS_LABELS[status] }}</span>
     </div>
@@ -57,12 +58,11 @@ const subtitle = computed(() =>
   min-width: 0;
 }
 
-h2,
 p {
   margin: 0;
 }
 
-h2 {
+.title {
   font-size: 19px;
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -117,7 +117,7 @@ h2 {
     height: 140px;
   }
 
-  h2 {
+  .title {
     font-size: 22px;
   }
 }

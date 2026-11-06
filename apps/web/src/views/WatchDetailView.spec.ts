@@ -41,13 +41,16 @@ const watch = (projects: ReturnType<typeof project>[], extra: object = {}) => ({
   ...extra,
 })
 
+const ROUTES = [
+  { path: '/watches/:id', name: 'watch-detail', component: WatchDetailView },
+  { path: '/watches/:id/edit', name: 'edit-watch', component: { template: '<div />' } },
+]
+
 async function mountView(respond: () => StubResponse) {
   stubFetch(respond)
   const pinia = createPinia()
   setActivePinia(pinia)
-  const router = await makeRouter('/watches/7', [
-    { path: '/watches/:id', name: 'watch-detail', component: WatchDetailView },
-  ])
+  const router = await makeRouter('/watches/7', ROUTES)
   const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
   await flushPromises()
   return wrapper
@@ -73,34 +76,67 @@ describe('WatchDetailView', () => {
     expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
   })
 
-  it('S26 le sélecteur de projet n’apparaît qu’avec 2 projets ou plus', async () => {
+  it('S26 les onglets de projet n’apparaissent qu’avec 2 projets ou plus', async () => {
     const one = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z')]) }))
-    expect(one.find('[data-test="project-selector"]').exists()).toBe(false)
+    expect(one.find('[data-test="project-tabs"]').exists()).toBe(false)
 
     const none = await mountView(() => ({ status: 200, body: watch([]) }))
-    expect(none.find('[data-test="project-selector"]').exists()).toBe(false)
+    expect(none.find('[data-test="project-tabs"]').exists()).toBe(false)
     expect(none.text()).toContain('Aucun projet')
+    expect(none.get('[data-test="status-badge"]').text()).toBe('Sans projet')
 
     const two = await mountView(() => ({
       status: 200,
       body: watch([project(2, 'in_progress', '2025-06-01T10:00:00Z'), project(1, 'completed', '2025-01-01T10:00:00Z')]),
     }))
-    expect(two.find('[data-test="project-selector"]').exists()).toBe(true)
-    expect(two.findAll('[data-test="project-selector"] option')).toHaveLength(2)
+    expect(two.find('[data-test="project-tabs"]').exists()).toBe(true)
+    expect(two.findAll('[role="tab"]')).toHaveLength(2)
   })
 
-  it('S26 le projet le plus récent est affiché d’abord, le sélecteur change de projet', async () => {
+  it('S26 le projet le plus récent est affiché d’abord, un onglet change de projet', async () => {
     const wrapper = await mountView(() => ({
       status: 200,
       body: watch([project(2, 'in_progress', '2025-06-01T10:00:00Z'), project(1, 'completed', '2025-01-01T10:00:00Z')]),
     }))
     expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 2'])
 
-    await wrapper.find('[data-test="project-selector"] select').setValue('1')
+    await wrapper.findAll('[role="tab"]')[1]!.trigger('click')
 
     expect(wrapper.findAll('[data-test="step-label"]').map((s) => s.text())).toEqual(['Étape du projet 1'])
-    // Le titre du projet affiché suit le sélecteur (« Terminé » figure aussi dans les options : on cible le h2).
-    expect(wrapper.find('h2').text()).toBe('Terminé')
+    expect(wrapper.get('[data-test="status-badge"]').text()).toBe('Terminé')
+  })
+
+  it('l’ordre du DOM suit la maquette mobile : en-tête, finances, avant/après, étapes, performances', async () => {
+    const wrapper = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z')]) }))
+
+    const parts = ['[data-test="status-badge"]', '.finance', '.before-after-block', '.checklist', '.performance'].map(
+      (selector) => wrapper.get(selector).element,
+    )
+    for (let i = 0; i < parts.length - 1; i++) {
+      expect(parts[i]!.compareDocumentPosition(parts[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING, `bloc ${i}`).toBeTruthy()
+    }
+  })
+
+  it('le bandeau montre le coût de revient de l’API, « — » sans prix d’achat', async () => {
+    const withCost = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z')], { costPrice: '195.00' }) }))
+    const without = await mountView(() => ({
+      status: 200,
+      body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z')], { purchasePrice: null, purchaseDate: null, costPrice: null }),
+    }))
+
+    const fact = (w: typeof withCost) => w.findAll('[data-test="fact"]').find((f) => f.find('dt').text() === 'Coût de revient')!.find('dd').text()
+    expect(fact(withCost)).toBe('195 €')
+    expect(fact(without)).toBe('—')
+  })
+
+  it('le menu « ⋯ » mène à « Modifier la montre »', async () => {
+    const wrapper = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-05-01T10:00:00Z')]) }))
+
+    await wrapper.get('[data-test="menu-toggle"]').trigger('click')
+    await wrapper.findAll('[role="menuitem"]').find((i) => i.text() === 'Modifier la montre')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.vm.$router.currentRoute.value.fullPath).toBe('/watches/7/edit')
   })
 
   it('S12 cocher une étape sur la fiche l’envoie à l’API et met à jour le décompte', async () => {
@@ -112,7 +148,7 @@ describe('WatchDetailView', () => {
     )
     const pinia = createPinia()
     setActivePinia(pinia)
-    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const router = await makeRouter('/watches/7', ROUTES)
     const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
     await flushPromises()
     expect(wrapper.text()).toContain('0/2 terminées')
@@ -140,12 +176,12 @@ describe('WatchDetailView', () => {
     })
     const pinia = createPinia()
     setActivePinia(pinia)
-    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const router = await makeRouter('/watches/7', ROUTES)
     const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
     await flushPromises()
 
     await wrapper.find('[data-test="move-up"]').trigger('click')
-    await wrapper.find('[data-test="project-selector"] select').setValue('1')
+    await wrapper.findAll('[role="tab"]')[1]!.trigger('click')
     release()
     await flushPromises()
 
@@ -160,7 +196,7 @@ describe('WatchDetailView', () => {
     )
     const pinia = createPinia()
     setActivePinia(pinia)
-    const router = await makeRouter('/watches/7', [{ path: '/watches/:id', name: 'watch-detail', component: WatchDetailView }])
+    const router = await makeRouter('/watches/7', ROUTES)
     const wrapper = mount(WatchDetailView, { global: { plugins: [pinia, router] } })
     await flushPromises()
     expect(wrapper.findAll('figure img').map((i) => i.attributes('src'))).toEqual([expect.stringMatching(/\/uploads\/avant\.webp$/)])
@@ -180,7 +216,7 @@ describe('WatchDetailView', () => {
       body: watch([project(1, 'completed', '2025-01-01T10:00:00Z')], { resalePrice: '200.00', resaleDate: '2025-06-01', margin: '80.00' }),
     }))
     expect(sold.find('[data-test="margin"]').text()).toContain('80 €')
-    expect(sold.text()).toContain('Revente')
+    expect(sold.get('[data-test="resale-box"]').text()).toContain('Revente')
 
     const unsold = await mountView(() => ({ status: 200, body: watch([project(1, 'in_progress', '2025-01-01T10:00:00Z')]) }))
     expect(unsold.find('[data-test="margin"]').exists()).toBe(false)
