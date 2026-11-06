@@ -377,6 +377,10 @@ L'application doit permettre à un horloger amateur de :
 
 **And** une montre sans projet s'affiche sans miniature, avec le statut « Sans projet »
 **And** un clic sur une carte ouvre le détail de la montre
+**And** sur grand écran, le tableau de bord affiche six tuiles (Montres, En cours, Terminées, Vendues, Sans projet, Marge cumulée) puis un tableau : montre, statut, progression des étapes du projet le plus récent (« 3/27 »), achat, revente et marge
+**And** les tuiles et la marge cumulée portent sur toutes les montres, quels que soient le filtre et la recherche
+**And** la liste est paginée par 8 : le tableau indique « 1–8 sur 12 » avec « Précédent » et « Suivant », et sur mobile un bouton « Voir plus » ajoute les montres suivantes
+**And** les montants s'affichent sans décimales nulles (« 95 € », « 95,50 € ») et les dates au format JJ/MM/AAAA
 
 ---
 
@@ -406,6 +410,12 @@ L'application doit permettre à un horloger amateur de :
 **And** « Toutes » est sélectionné par défaut
 **And** chaque statut indique le nombre de montres qui lui correspondent
 **And** si aucune montre ne correspond au statut choisi, un message l'indique
+
+**When** je saisis un texte dans le champ de recherche
+**Then** seules les montres dont la marque et le modèle contiennent tous les mots saisis sont affichées, sans tenir compte des majuscules ni des accents, en plus du filtre de statut
+
+**When** je clique sur la colonne « Achat » du tableau
+**Then** les montres sont triées par date d'achat (décroissante, puis croissante, puis l'ordre par défaut), celles sans date d'achat restant en dernier
 
 ---
 

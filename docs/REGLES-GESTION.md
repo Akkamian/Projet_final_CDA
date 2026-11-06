@@ -159,7 +159,13 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-AFF-03 | Le sélecteur de projet n'apparaît que si la montre a deux projets ou plus ; la checklist, les performances et l'avant / après suivent le projet sélectionné. | S26, Q17 | Interface | à écrire |
 | RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée, ni la montre listée dans « Montre existante », si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
 | RG-AFF-05 | Une montre sans projet s'affiche sur le tableau de bord sans miniature, avec le statut « Sans projet », et reste consultable ; un nouveau projet peut y être ouvert si elle n'est pas vendue. | S25, S9 ; arbitrage C3 | Interface | à écrire |
-| RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le compteur du tableau de bord suit le filtre ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
+| RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le sous-titre du tableau de bord indique le nombre de montres correspondant au filtre et à la recherche ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
+| RG-AFF-07 | La progression d'une montre est le nombre d'étapes faites sur le nombre d'étapes du projet le plus récent (RG-PRJ-08) ; elle est absente sans projet. | S25 | Service (`progress`) ; Interface | à écrire |
+| RG-AFF-08 | La recherche du tableau de bord porte sur la marque et le modèle : insensible à la casse et aux accents, tous les mots saisis doivent être présents, le texte n'est jamais interprété comme un motif. Elle se combine au filtre de statut. | S40 ; arbitrage C6 | Service (`?q=`, 1 à 100 caractères) | à écrire |
+| RG-AFF-09 | Le tableau de bord se trie sur la date d'achat, croissante ou décroissante ; les montres sans date d'achat restent en dernier dans les deux sens, l'égalité se départage par ajout le plus récent. Sans tri, les montres les plus récemment ajoutées viennent d'abord. | S40 ; arbitrage C6 | Service (`?sort=purchase_date&order=`) ; Interface | à écrire |
+| RG-AFF-10 | Les compteurs par statut, les tuiles et la marge cumulée (somme des marges des montres vendues, RG-FIN-06) portent sur toutes les montres de l'utilisateur, quels que soient le filtre et la recherche. | S25, S40 | Service (`counts`, `totalMargin`) | à écrire |
+| RG-AFF-11 | La liste est paginée par 8 montres (50 au plus par demande) ; `total` compte les montres après filtre et recherche ; une page hors limites est vide. | S25 | Service (`?page=`, `?pageSize=`) ; Interface | à écrire |
+| RG-AFF-12 | Les montants s'affichent sans décimales nulles (« 95 € », « +185 € », « 95,50 € ») et les dates au format JJ/MM/AAAA. | S25 ; décision d'affichage du 2026-11-06 | Interface | à écrire |
 
 ## 10. Arbitrages du 2026-10-07
 
@@ -189,7 +195,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | C3 | La suppression d'un projet et celle d'une montre sont incluses en v1. | RG-PRJ-11, RG-MON-11, RG-GEN-03, RG-AFF-05 | `SPECS.md` S37, S38, S9, S25. Cascade déjà en base, vérifiée sur PostgreSQL. Effacement des fichiers à ajouter au service. |
 | C4 | Les règles reprises des plans de l'ancien dépôt sont conservées : mot de passe de 8 caractères minimum, hachage bcrypt, liens de 24 h et 1 h, session de 15 min et 7 jours, réponse 404 pour la donnée d'un autre, authentification obligatoire. | RG-CPT-03, 04, 07, 08, 09, 12 ; RG-SEC-02, 03 | Aucun. |
 | C5 | À l'inscription (2026-10-09), le formulaire demande la confirmation du mot de passe et l'acceptation des CGV et de la Politique de Confidentialité, comme dans les maquettes Figma. L'acceptation n'est pas conservée en base à ce stade. | RG-CPT-16, RG-CPT-17 | `SPECS.md` S1. Maquettes `design/…-screen-auth-…`. Pages CGV et confidentialité à rédiger ; conservation de la date d'acceptation à décider (hypothèse ci-dessous). |
-| C6 | Le filtre par statut du tableau de bord est inclus en v1 (2026-10-09), à parité entre mobile et desktop. Le tri du tableau de bord est reporté après la v1. | RG-AFF-06 | `SPECS.md` S40. Maquettes : pastilles de statut sur mobile, liste de statut sur desktop. La maquette desktop garde sa flèche indicative sur la colonne Achat, hors périmètre. |
+| C6 | Le filtre par statut du tableau de bord est inclus en v1 (2026-10-09), à parité entre mobile et desktop. Le tri a d'abord été reporté ; le chantier « fidélité aux maquettes » (2026-11-06) l'inclut sur la seule colonne Achat, avec la recherche, la pagination, la progression et la marge cumulée. Les autres colonnes ne sont pas triables. | RG-AFF-06 à 12 | `SPECS.md` S25 et S40. Maquettes : pastilles de statut sur mobile, liste de statut, tuiles et tableau sur desktop. |
 
 ### Hypothèses restant à confirmer
 
@@ -236,7 +242,7 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S22 — Renseigner la revente | RG-FIN-03, 04, 05, 10 ; RG-PRJ-05 ; RG-MON-09 ; RG-GEN-01 |
 | S23 — Consulter la marge | RG-FIN-06, 08 |
 | S24 — Ne pas afficher une marge incalculable | RG-FIN-07 |
-| S25 — Consulter le tableau de bord | RG-AFF-01, 02, 05 ; RG-PRJ-08 |
+| S25 — Consulter le tableau de bord | RG-AFF-01, 02, 05, 07, 10, 11, 12 ; RG-PRJ-08 |
 | S26 — Historique des interventions | RG-AFF-03 ; RG-FIN-08, 09 |
 | S27 — Refuser l'accès aux données d'un autre | RG-SEC-01, 02, 03, 04, 06 |
 | S28 — Rouvrir un projet terminé | RG-PRJ-10, 05, 09 |
@@ -251,7 +257,7 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S37 — Supprimer un projet | RG-PRJ-11 ; RG-GEN-03 ; RG-FIN-08 ; RG-AFF-05 |
 | S38 — Supprimer une montre | RG-MON-11 ; RG-GEN-03 ; RG-SEC-05 |
 | S39 — Renvoyer le lien de vérification | RG-CPT-08 ; RG-CPT-10 ; RG-CPT-14 |
-| S40 — Filtrer le tableau de bord par statut | RG-AFF-02, 05, 06 |
+| S40 — Filtrer le tableau de bord par statut | RG-AFF-02, 05, 06, 08, 09, 10 |
 
 ## 12. Matrice de couverture des contraintes SQL
 
