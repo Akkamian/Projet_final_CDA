@@ -1,0 +1,356 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Chiffres de même chasse (montants, compteurs, dates). */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--accent-text);
+}
+
+/* Pages d'authentification (connexion, inscription, vérification d'adresse) */
+.auth-main h1,
+.auth-main p {
+  margin: 0;
+}
+
+.auth-main h1 {
+  font-size: 1.5rem;
+}
+
+.auth-main .field input {
+  background: var(--surface);
+}
+
+.auth-main .field > label {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.auth-lead {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.auth-main .auth-forgot {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  text-align: right;
+  font-size: 0.875rem;
+}
+
+.auth-footer {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.banner::before {
+  content: '!';
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+.banner > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.alert.banner-warning {
+  border-color: var(--warning);
+  color: var(--text);
+}
+
+.banner-warning::before {
+  color: var(--warning);
+}
+
+.confirm-badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent-text);
+}
+
+.hint,
+.field-hint {
+  color: var(--text-secondary);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.field input {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.field-hint {
+  font-size: 0.8125rem;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent-text);
+}
+
+.alert {
+  padding: var(--space-3);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  color: var(--danger-text);
+}
+
+.notice {
+  padding: var(--space-3);
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+}
+
+.switch {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* --- Feuille du bas / dialogue (Sheet) : corps, pied et contrôles partagés par les formulaires --- */
+
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+.sheet-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sheet-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
+  overflow-y: auto;
+}
+
+.sheet-body .field,
+.sheet-body fieldset {
+  margin: 0;
+}
+
+.sheet-footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet-actions .btn-secondary {
+  flex: 1;
+}
+
+.sheet-actions .btn:not(.btn-secondary) {
+  flex: 2;
+}
+
+.sheet-danger {
+  min-height: var(--touch-min);
+  border: 0;
+  background: transparent;
+  color: var(--danger-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sheet-row > .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-toggle[aria-pressed='true'],
+.chip-toggle:has(input:checked) {
+  border-color: var(--accent-text);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.chip-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.segmented {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.segmented-option {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.segmented-option:has(input:checked) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segmented-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* L'entrée native couvre toute l'étiquette, invisible : le clic, le clavier et les lecteurs d'écran la trouvent, et rien ne l'intercepte. */
+.chip-toggle input,
+.segmented-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}

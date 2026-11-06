@@ -84,6 +84,8 @@ L'application doit permettre à un horloger amateur de :
 **Then** le mot de passe est modifié
 
 **And** si le mot de passe actuel est incorrect, le changement est refusé
+**And** le changement se fait depuis une feuille ouverte par « Modifier » dans la carte « Sécurité » de l'écran « Mon compte » ; la feuille ne se ferme pas tant que l'enregistrement est en cours
+**And** la carte « Sécurité » indique la date du dernier changement, ou « Jamais modifié »
 
 ---
 
@@ -158,6 +160,8 @@ L'application doit permettre à un horloger amateur de :
 **And** cette action n'est plus proposée si la montre est vendue
 **And** elle est refusée tant qu'un projet est en cours sur la montre : une montre n'a qu'un projet en cours à la fois
 **And** elle est aussi proposée sur une montre non vendue qui n'a plus aucun projet
+**And** depuis « Nouveau projet », je peux aussi choisir la montre dans la liste « Montre existante », qui ne contient que les montres non vendues et sans projet en cours ; cette liste est désactivée s'il n'y en a aucune
+**And** la montre choisie s'affiche en lecture seule : ses informations ne se modifient pas à cet endroit (voir scénario 10)
 
 ---
 
@@ -171,6 +175,8 @@ L'application doit permettre à un horloger amateur de :
 **Then** la montre est mise à jour
 
 **And** les étapes des projets existants ne changent pas ; seules les nouvelles révisions utilisent les complications modifiées
+
+**And** l'écran « Modifier la montre », ouvert depuis la fiche (bouton ou menu « ⋯ »), préremplit la marque, le modèle, le mouvement, les complications, le prix et la date d'achat ; il n'envoie que les champs modifiés
 
 ---
 
@@ -292,6 +298,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** un beat error ou une amplitude négatifs sont refusés, alors qu'une marche négative (la montre retarde) est acceptée
 **And** une date de mesure dans le futur est refusée
+**And** la saisie se fait dans une feuille qui monte du bas de l'écran sur mobile et dans un dialogue centré sur grand écran ; elle se ferme à l'enregistrement, avec « Annuler », la touche Échap ou le bouton de fermeture, sans rien enregistrer
 
 ---
 
@@ -302,7 +309,9 @@ L'application doit permettre à un horloger amateur de :
 
 **Given** un projet contient plusieurs mesures
 **When** j'ouvre le bloc « Performances »
-**Then** je vois un graphique d'évolution dans le temps et la liste des dernières mesures
+**Then** je vois, pour la marche, le beat error et l'amplitude, une échelle avec la zone cible, la première et la dernière mesure et un verdict (« Dans la zone », « Hors zone », « Avance de 14 s/j · hors zone (±10 s/j) »), puis la liste des mesures de la plus récente à la plus ancienne
+
+**And** les échelles ne comparent que les mesures d'une même position de la montre (par défaut la plus fréquente, « Toutes » étant possible) ; la liste garde toutes les mesures et la marche y affiche son écart avec la mesure précédente à la même position
 
 ---
 
@@ -319,6 +328,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** un montant négatif est refusé
 **And** une date de coût dans le futur est refusée
+**And** la saisie se fait dans la même feuille (mobile) ou le même dialogue (grand écran) que la mesure
 
 ---
 
@@ -335,6 +345,7 @@ L'application doit permettre à un horloger amateur de :
 **And** la revente est refusée tant qu'un projet est en cours, ou si la montre est déjà vendue
 **And** il n'est plus possible d'ouvrir un nouveau projet sur une montre vendue
 **And** la date de revente ne peut précéder la date d'achat (lorsqu'elle est connue) ni être dans le futur
+**And** la saisie et la correction de la revente se font dans la même feuille (mobile) ou le même dialogue (grand écran) que la mesure
 
 ---
 
@@ -348,6 +359,8 @@ L'application doit permettre à un horloger amateur de :
 **Then** la marge affichée est de 80 € (200 − 80 − 40)
 
 **And** la marge est calculée par montre : elle additionne les coûts de tous ses projets
+
+**And** le coût de revient (achat 80 € + coûts 40 € = 120 €) s'affiche avec elle, même tant que la montre n'est pas vendue
 
 ---
 
@@ -375,6 +388,10 @@ L'application doit permettre à un horloger amateur de :
 
 **And** une montre sans projet s'affiche sans miniature, avec le statut « Sans projet »
 **And** un clic sur une carte ouvre le détail de la montre
+**And** sur grand écran, le tableau de bord affiche six tuiles (Montres, En cours, Terminées, Vendues, Sans projet, Marge cumulée) puis un tableau : montre, statut, progression des étapes du projet le plus récent (« 3/27 »), achat, revente et marge
+**And** les tuiles et la marge cumulée portent sur toutes les montres, quels que soient le filtre et la recherche
+**And** la liste est paginée par 8 : le tableau indique « 1–8 sur 12 » avec « Précédent » et « Suivant », et sur mobile un bouton « Voir plus » ajoute les montres suivantes
+**And** les montants s'affichent sans décimales nulles (« 95 € », « 95,50 € ») et les dates au format JJ/MM/AAAA
 
 ---
 
@@ -404,6 +421,12 @@ L'application doit permettre à un horloger amateur de :
 **And** « Toutes » est sélectionné par défaut
 **And** chaque statut indique le nombre de montres qui lui correspondent
 **And** si aucune montre ne correspond au statut choisi, un message l'indique
+
+**When** je saisis un texte dans le champ de recherche
+**Then** seules les montres dont la marque et le modèle contiennent tous les mots saisis sont affichées, sans tenir compte des majuscules ni des accents, en plus du filtre de statut
+
+**When** je clique sur la colonne « Achat » du tableau
+**Then** les montres sont triées par date d'achat (décroissante, puis croissante, puis l'ordre par défaut), celles sans date d'achat restant en dernier
 
 ---
 
@@ -499,6 +522,7 @@ L'application doit permettre à un horloger amateur de :
 **Then** la modification ou la suppression est enregistrée
 
 **And** les mêmes contrôles qu'à la saisie s'appliquent (beat error et amplitude non négatifs, date non future)
+**And** chaque ligne du tableau n'a qu'un bouton d'édition ; la suppression se demande depuis la feuille d'édition (« Supprimer cette mesure »), qui se ferme avant la confirmation
 
 ---
 
@@ -528,6 +552,7 @@ L'application doit permettre à un horloger amateur de :
 **And** la montre est conservée, même si elle n'a plus aucun projet
 **And** la marge de la montre est recalculée sans les coûts du projet supprimé
 **And** la suppression est définitive
+**And** la confirmation s'affiche en feuille du bas sur mobile et en dialogue centré sur grand écran
 
 ---
 
@@ -542,6 +567,7 @@ L'application doit permettre à un horloger amateur de :
 
 **And** la montre disparaît du tableau de bord
 **And** la suppression est définitive
+**And** la confirmation s'affiche en feuille du bas sur mobile et en dialogue centré sur grand écran
 
 ---
 
@@ -584,6 +610,27 @@ L'application doit permettre à un horloger amateur de :
 **And** si l'adresse est déjà vérifiée, aucun email n'est envoyé
 **And** les demandes répétées sont limitées comme décrit au scénario 36
 
+#### Scénario 41 — Consulter mon compte et mes statistiques
+**En tant que** horloger amateur connecté,
+**je veux** voir mon identité et le nombre de mes montres par statut,
+**afin de** vérifier mon compte et mesurer l'avancement de ma collection.
+
+**Given** je suis connecté
+**When** j'ouvre « Mon compte »
+**Then** l'écran affiche mon adresse email, le mois de mon inscription et, si elle est vérifiée, la date de vérification
+**And** quatre tuiles indiquent le nombre de montres, en cours, terminées et vendues
+**And** si les statistiques ne peuvent pas être chargées, les tuiles affichent « – » et le reste de l'écran reste utilisable
+
+#### Scénario 42 — Afficher le mot de passe que je saisis
+**En tant que** horloger amateur,
+**je veux** afficher temporairement le mot de passe que je saisis,
+**afin de** vérifier ma saisie avant de valider.
+
+**Given** je suis sur un écran de connexion, d'inscription, de réinitialisation ou de changement de mot de passe
+**When** j'active le bouton « Afficher le mot de passe » d'un champ
+**Then** le texte de ce champ est visible, sa valeur est conservée et le bouton indique son état (« Masquer le mot de passe »)
+**And** le champ redevient masqué dès que je quitte l'écran
+
 ## 4. Critères d'acceptation
 
 - Un compte ne se connecte qu'après vérification de son adresse email ; le lien de vérification peut être renvoyé, avec la même réponse que l'adresse corresponde ou non à un compte.
@@ -603,6 +650,7 @@ L'application doit permettre à un horloger amateur de :
 - L'adresse email est enregistrée en minuscules ; la date de revente ne précède pas la date d'achat ; aucune date saisie n'est dans le futur.
 - Un projet ou une montre peut être supprimé, après confirmation, avec toutes les données qui en dépendent.
 - Un utilisateur peut supprimer son compte avec toutes ses données.
+- L'écran « Mon compte » présente l'identité, quatre statistiques, la sécurité (changement de mot de passe en feuille), la session et la suppression ; les mentions des Conditions Générales de Vente et de la Politique de Confidentialité sont du texte sans lien.
 - Le tableau de bord se filtre par statut (« Toutes », « En cours », « Terminé », « Vendue », « Sans projet »).
 - Les tentatives répétées de connexion, de réinitialisation et de renvoi de lien sont limitées.
 

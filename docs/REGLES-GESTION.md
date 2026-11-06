@@ -45,7 +45,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-CPT-11 | Changer son mot de passe exige le mot de passe actuel correct ; le changement met à jour `password_changed_at`. | S4 | Service | à écrire |
 | RG-CPT-12 | La session utilise un jeton d'accès de 15 minutes et un jeton de renouvellement de 7 jours. | plan AUTH | Service (configuration JWT) | à écrire |
 | RG-CPT-13 | L'adresse email est enregistrée en minuscules, sans espace superflu, avant tout enregistrement ou toute recherche. | S1 ; arbitrage A9 | DTO / Service (normalisation) | à écrire |
-| RG-CPT-14 | Les tentatives répétées sur la connexion, la demande de réinitialisation et le renvoi du lien de vérification sont limitées par adresse IP ; au-delà du plafond, les requêtes sont refusées temporairement. | S36, S39 ; arbitrage A8 | Service (limitation de débit ; plafond fixé en configuration) | à écrire |
+| RG-CPT-14 | Les tentatives répétées sur l'inscription, la connexion, la demande de réinitialisation et le renvoi du lien de vérification sont limitées par adresse IP ; au-delà du plafond, les requêtes sont refusées temporairement. | S36, S39 ; arbitrage A8 | Service (limitation de débit ; plafond fixé en configuration) | à écrire |
 | RG-CPT-15 | L'utilisateur peut supprimer son compte après confirmation de son mot de passe : toutes ses données sont supprimées, y compris les fichiers photos du stockage, et sa session est fermée. | S35 ; arbitrage A7 | Service ; BDD : `ON DELETE CASCADE` | à écrire |
 | RG-CPT-16 | À l'inscription, la confirmation du mot de passe doit être identique au mot de passe saisi ; sinon l'inscription est refusée avec un message explicite. | S1 ; arbitrage C5 | Interface (comparaison à la saisie) | à écrire |
 | RG-CPT-17 | L'inscription exige l'acceptation des Conditions Générales de Vente et de la Politique de Confidentialité ; sans cette acceptation, le compte n'est pas créé. | S1 ; arbitrage C5 | Interface ; DTO (acceptation obligatoire) | à écrire |
@@ -73,7 +73,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-PRJ-01 | Un projet est toujours rattaché à une montre. | §5.3 | BDD : `watch_id NOT NULL`, clé étrangère | à écrire |
 | RG-PRJ-02 | Un projet est « en cours » (par défaut) ou « terminé ». Il n'y a pas de type d'intervention en v1. | S5, S11, §5.3, Q8 | BDD : `chk_restoration_projects_status`, valeur par défaut `in_progress` | à écrire |
 | RG-PRJ-03 | La création d'une montre, de ses complications, de son premier projet et de ses étapes est atomique : si une partie échoue, rien n'est enregistré. | S5, critères d'acceptation | Service (écriture imbriquée unique) | Transaction de création (design MCD) |
-| RG-PRJ-04 | Un nouveau projet peut être ouvert sur une montre déjà suivie sans en ressaisir les informations. | S9 | Service ; Interface | à écrire |
+| RG-PRJ-04 | Un nouveau projet peut être ouvert sur une montre déjà suivie, choisie depuis « Nouveau projet » ou depuis sa fiche, sans en ressaisir les informations. Ses informations s'affichent en lecture seule : elles se modifient depuis sa fiche (S10). | S9 | Service ; Interface | à écrire |
 | RG-PRJ-05 | Aucun projet ne peut être ouvert sur une montre vendue. | S9, S22, §5.3 | Service | à écrire |
 | RG-PRJ-06 | Un projet « en cours » peut être marqué « terminé » : son statut change et sa date de fin est renseignée. Un projet déjà terminé ne peut pas l'être une seconde fois. | S11, Q19 | Service | à écrire |
 | RG-PRJ-07 | Un projet peut avoir une photo d'état initial et une photo d'état final, distinctes des photos d'étape. | S18, §5.3 | BDD : `photo_before`, `photo_after` nullables | à écrire |
@@ -123,6 +123,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-PER-03 | Un beat error ou une amplitude négatifs sont refusés. | S19 ; arbitrage A2 | BDD : `chk_performance_measurements_beat_error`, `chk_performance_measurements_amplitude` ; DTO | à écrire |
 | RG-PER-04 | Les mesures d'un projet sont présentées dans l'ordre chronologique. | S20 | Service (tri sur `measured_at`) ; Interface | à écrire |
 | RG-PER-05 | Une mesure peut être modifiée ou supprimée ; les mêmes contrôles qu'à la saisie s'appliquent. | S33 ; arbitrage A6 | Service ; DTO ; BDD | à écrire |
+| RG-PER-06 | Le verdict d'une mesure se lit par rapport à des zones cibles indicatives : marche entre −10 et +10 s/j, beat error de 0,5 ms au plus, amplitude de 250° à 310°, bornes incluses. Ces repères ne sont pas des normes horlogères : l'écran les présente comme « repères indicatifs ». | S20 ; maquette du 2026-10-07 ; décision du 2026-11-06 | Interface (`performance-zones.ts`) | Unitaire (`performance-zones.spec`), e2e (`watch-detail`) |
 
 ## 8. Finances (`RG-FIN`)
 
@@ -140,6 +141,7 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-FIN-10 | La date de revente ne peut pas précéder la date d'achat, lorsque celle-ci est connue. | S22 ; arbitrage A10 | BDD : `chk_watches_resale_after_purchase` ; DTO | à écrire |
 | RG-FIN-11 | Un coût peut être modifié ou supprimé ; les mêmes contrôles qu'à la saisie s'appliquent et la marge est recalculée à la lecture. | S32 ; arbitrage A6 | Service ; DTO ; BDD | Marge (design MCD) pour le recalcul ; à écrire pour le reste |
 | RG-FIN-12 | La revente peut être corrigée (prix et date modifiés ensemble) ou annulée : la montre n'est alors plus vendue, aucune marge n'est calculée, et elle peut de nouveau recevoir un projet. | S31 ; arbitrage A6 | Service ; BDD : `chk_watches_resale` | à écrire |
+| RG-FIN-13 | Le coût de revient d'une montre = prix d'achat + somme des coûts de tous ses projets. Il est calculé à la lecture, même si la montre n'est pas vendue, et reste inconnu si le prix d'achat est inconnu. | S23, S26 ; décision du 2026-11-06 | Service (`costPrice`, `Prisma.Decimal`) ; Interface | Intégration (`watches-detail.int-spec`), unitaire (`margin.spec`), e2e (`watch-detail`) |
 
 ## 9. Confidentialité (`RG-SEC`), règles transversales (`RG-GEN`) et affichage (`RG-AFF`)
 
@@ -157,9 +159,16 @@ Il sert à vérifier que les besoins formulés dans les spécifications ont bien
 | RG-AFF-01 | Le tableau de bord affiche une carte par montre : miniature (photo finale du projet le plus récent, sinon sa photo initiale), marque et modèle, mouvement et complications. | S25 | Interface | à écrire |
 | RG-AFF-02 | La carte indique le statut du projet le plus récent (« En cours » ou « Terminé »), ou « Vendue » si la montre est vendue, et la marge si elle est vendue et calculable. | S25, §5.3 | Interface | à écrire |
 | RG-AFF-03 | Le sélecteur de projet n'apparaît que si la montre a deux projets ou plus ; la checklist, les performances et l'avant / après suivent le projet sélectionné. | S26, Q17 | Interface | à écrire |
-| RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
+| RG-AFF-04 | La nouvelle révision d'une montre n'est pas proposée, ni la montre listée dans « Montre existante », si la montre est vendue ou si un projet y est déjà en cours. | S9 ; arbitrage A4 | Interface ; Service (RG-PRJ-05, RG-PRJ-09) | à écrire |
 | RG-AFF-05 | Une montre sans projet s'affiche sur le tableau de bord sans miniature, avec le statut « Sans projet », et reste consultable ; un nouveau projet peut y être ouvert si elle n'est pas vendue. | S25, S9 ; arbitrage C3 | Interface | à écrire |
-| RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le compteur du tableau de bord suit le filtre ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
+| RG-AFF-06 | Le tableau de bord se filtre par statut affiché sur la carte (« En cours », « Terminé », « Vendue », « Sans projet »), « Toutes » étant la sélection par défaut. Chaque statut indique le nombre de montres correspondantes ; le sous-titre du tableau de bord indique le nombre de montres correspondant au filtre et à la recherche ; un message s'affiche si aucune montre ne correspond. | S40, S25 ; arbitrage C6 | Interface ; Service (filtre) | à écrire |
+| RG-AFF-07 | La progression d'une montre est le nombre d'étapes faites sur le nombre d'étapes du projet le plus récent (RG-PRJ-08) ; elle est absente sans projet. | S25 | Service (`progress`) ; Interface | à écrire |
+| RG-AFF-08 | La recherche du tableau de bord porte sur la marque et le modèle : insensible à la casse et aux accents, tous les mots saisis doivent être présents, le texte n'est jamais interprété comme un motif. Elle se combine au filtre de statut. | S40 ; arbitrage C6 | Service (`?q=`, 1 à 100 caractères) | à écrire |
+| RG-AFF-09 | Le tableau de bord se trie sur la date d'achat, croissante ou décroissante ; les montres sans date d'achat restent en dernier dans les deux sens, l'égalité se départage par ajout le plus récent. Sans tri, les montres les plus récemment ajoutées viennent d'abord. | S40 ; arbitrage C6 | Service (`?sort=purchase_date&order=`) ; Interface | à écrire |
+| RG-AFF-10 | Les compteurs par statut, les tuiles et la marge cumulée (somme des marges des montres vendues, RG-FIN-06) portent sur toutes les montres de l'utilisateur, quels que soient le filtre et la recherche. | S25, S40 | Service (`counts`, `totalMargin`) | à écrire |
+| RG-AFF-11 | La liste est paginée par 8 montres (50 au plus par demande) ; `total` compte les montres après filtre et recherche ; une page hors limites est vide. | S25 | Service (`?page=`, `?pageSize=`) ; Interface | à écrire |
+| RG-AFF-12 | Les montants s'affichent sans décimales nulles (« 95 € », « +185 € », « 95,50 € ») et les dates au format JJ/MM/AAAA. | S25 ; décision d'affichage du 2026-11-06 | Interface | à écrire |
+| RG-AFF-13 | Les mesures s'affichent sans décimales superflues (« +14 s/j », « 0.4 ms », « 268° », vrai signe moins) ; l'écart de marche d'une mesure est calculé avec la mesure précédente à la même position, et absent sans position ou sans mesure précédente à cette position. | S20 | Interface | Unitaire (`format.spec`, `PerformanceBlock.spec`) |
 
 ## 10. Arbitrages du 2026-10-07
 
@@ -174,7 +183,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | A5 | Un projet terminé reste modifiable et peut être rouvert. | RG-PRJ-10 | `SPECS.md` S28. |
 | A6 | Toutes les corrections sont admises : décocher et supprimer une étape, corriger ou annuler la revente, modifier ou supprimer un coût, une mesure, une photo. | RG-ETP-14, 15 ; RG-PHO-06, 07 ; RG-PER-05 ; RG-FIN-11, 12 | `SPECS.md` S29 à S34. |
 | A7 | Suppression de compte avec ses données, en v1. | RG-CPT-15 | `SPECS.md` S35. La suppression des fichiers du stockage s'ajoute à la cascade en base. |
-| A8 | Limitation de débit sur la connexion, la réinitialisation et le renvoi du lien. | RG-CPT-14 | `SPECS.md` S36. Valeur du plafond fixée à l'implémentation. |
+| A8 | Limitation de débit sur l'inscription, la connexion, la réinitialisation et le renvoi du lien. | RG-CPT-14 | `SPECS.md` S36. Valeur du plafond fixée à l'implémentation. |
 | A9 | Email normalisé en minuscules ; refus explicite d'une adresse déjà utilisée à l'inscription. | RG-CPT-01, 10, 13 | `SPECS.md` S1. Exception assumée à l'anti-énumération. |
 | A10 | La revente ne précède pas l'achat ; aucune date saisie n'est dans le futur. | RG-FIN-10, RG-GEN-01 | Script SQL : `chk_watches_resale_after_purchase`. Dates futures contrôlées par l'application seulement. `SPECS.md` S5, S19, S21, S22. |
 | A11 | Photos servies par URL non devinable, sans limite de nombre par étape. | RG-SEC-06 | Aucun. Compromis à citer en soutenance. |
@@ -189,7 +198,7 @@ Le recensement avait fait apparaître douze points implicites, contradictoires o
 | C3 | La suppression d'un projet et celle d'une montre sont incluses en v1. | RG-PRJ-11, RG-MON-11, RG-GEN-03, RG-AFF-05 | `SPECS.md` S37, S38, S9, S25. Cascade déjà en base, vérifiée sur PostgreSQL. Effacement des fichiers à ajouter au service. |
 | C4 | Les règles reprises des plans de l'ancien dépôt sont conservées : mot de passe de 8 caractères minimum, hachage bcrypt, liens de 24 h et 1 h, session de 15 min et 7 jours, réponse 404 pour la donnée d'un autre, authentification obligatoire. | RG-CPT-03, 04, 07, 08, 09, 12 ; RG-SEC-02, 03 | Aucun. |
 | C5 | À l'inscription (2026-10-09), le formulaire demande la confirmation du mot de passe et l'acceptation des CGV et de la Politique de Confidentialité, comme dans les maquettes Figma. L'acceptation n'est pas conservée en base à ce stade. | RG-CPT-16, RG-CPT-17 | `SPECS.md` S1. Maquettes `design/…-screen-auth-…`. Pages CGV et confidentialité à rédiger ; conservation de la date d'acceptation à décider (hypothèse ci-dessous). |
-| C6 | Le filtre par statut du tableau de bord est inclus en v1 (2026-10-09), à parité entre mobile et desktop. Le tri du tableau de bord est reporté après la v1. | RG-AFF-06 | `SPECS.md` S40. Maquettes : pastilles de statut sur mobile, liste de statut sur desktop. La maquette desktop garde sa flèche indicative sur la colonne Achat, hors périmètre. |
+| C6 | Le filtre par statut du tableau de bord est inclus en v1 (2026-10-09), à parité entre mobile et desktop. Le tri a d'abord été reporté ; le chantier « fidélité aux maquettes » (2026-11-06) l'inclut sur la seule colonne Achat, avec la recherche, la pagination, la progression et la marge cumulée. Les autres colonnes ne sont pas triables. | RG-AFF-06 à 12 | `SPECS.md` S25 et S40. Maquettes : pastilles de statut sur mobile, liste de statut, tuiles et tableau sur desktop. |
 
 ### Hypothèses restant à confirmer
 
@@ -202,7 +211,7 @@ Ces points découlent de C3 sans avoir été posés tels quels.
 
 ### Documents à aligner (non modifiés à ce stade)
 
-- **Design du MCD** (`docs/MCD/2026-09-23-mcd-montre-complications-design.md`) : le parcours dit que « Nouvelle révision » reste proposée, de façon discrète, tant qu'un projet est en cours, et que « Sur une montre déjà suivie ? » liste les montres non vendues. Avec A4, l'action est indisponible tant qu'un projet est en cours, et la liste doit exclure ces montres.
+- **Design du MCD** (`docs/MCD/2026-09-23-mcd-montre-complications-design.md`) : le parcours dit que « Nouvelle révision » reste proposée, de façon discrète, tant qu'un projet est en cours, et que le lien « Sur une montre déjà suivie ? » (devenu la liste « Montre existante » le 2026-10-09) liste les montres non vendues. Avec A4, l'action est indisponible tant qu'un projet est en cours, et la liste doit exclure ces montres.
 - **`docs/UML.md`** : les cas d'utilisation correspondant à S28 à S38 sont à ajouter.
 - **Plans de l'ancien dépôt** : plusieurs règles ne sont plus d'actualité (longueur 200, pas de suppression, pas de réouverture).
 
@@ -231,13 +240,13 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S17 — Ajouter des photos | RG-PHO-01, 02, 03, 04, 05 |
 | S18 — Consulter l'avant / après | RG-PRJ-07 |
 | S19 — Ajouter une mesure | RG-PER-01, 02, 03 ; RG-GEN-01 |
-| S20 — Consulter l'évolution des mesures | RG-PER-04 |
+| S20 — Consulter l'évolution des mesures | RG-PER-04, 06 ; RG-AFF-13 |
 | S21 — Ajouter un coût | RG-FIN-01, 02 ; RG-GEN-01, 02 |
 | S22 — Renseigner la revente | RG-FIN-03, 04, 05, 10 ; RG-PRJ-05 ; RG-MON-09 ; RG-GEN-01 |
-| S23 — Consulter la marge | RG-FIN-06, 08 |
+| S23 — Consulter la marge | RG-FIN-06, 08, 13 |
 | S24 — Ne pas afficher une marge incalculable | RG-FIN-07 |
-| S25 — Consulter le tableau de bord | RG-AFF-01, 02, 05 ; RG-PRJ-08 |
-| S26 — Historique des interventions | RG-AFF-03 ; RG-FIN-08, 09 |
+| S25 — Consulter le tableau de bord | RG-AFF-01, 02, 05, 07, 10, 11, 12 ; RG-PRJ-08 |
+| S26 — Historique des interventions | RG-AFF-03 ; RG-FIN-08, 09, 13 |
 | S27 — Refuser l'accès aux données d'un autre | RG-SEC-01, 02, 03, 04, 06 |
 | S28 — Rouvrir un projet terminé | RG-PRJ-10, 05, 09 |
 | S29 — Décocher une étape terminée | RG-ETP-14 |
@@ -251,7 +260,7 @@ Chaque scénario de `SPECS.md` renvoie aux règles qui le mettent en œuvre. Sep
 | S37 — Supprimer un projet | RG-PRJ-11 ; RG-GEN-03 ; RG-FIN-08 ; RG-AFF-05 |
 | S38 — Supprimer une montre | RG-MON-11 ; RG-GEN-03 ; RG-SEC-05 |
 | S39 — Renvoyer le lien de vérification | RG-CPT-08 ; RG-CPT-10 ; RG-CPT-14 |
-| S40 — Filtrer le tableau de bord par statut | RG-AFF-02, 05, 06 |
+| S40 — Filtrer le tableau de bord par statut | RG-AFF-02, 05, 06, 08, 09, 10 |
 
 ## 12. Matrice de couverture des contraintes SQL
 

@@ -5,13 +5,21 @@
 <meta name="color-scheme" content="dark" />
 <style>
   /*
+    Mise à jour du 2026-10-09 : le lien « Sur une montre déjà suivie ? » est remplacé par une liste
+    « Montre existante » (liste native) en tête du formulaire. Choisir une montre affiche un
+    récapitulatif en lecture seule (marque, modèle, mouvement, complications) : la montre ne se
+    modifie pas ici (S10), et prix / date d'achat n'ont pas lieu d'être affichés pour une révision.
+    « Saisir une nouvelle montre » ramène au formulaire. Sans montre éligible, la liste est
+    désactivée et explique pourquoi. S9, RG-PRJ-04. Barre de navigation basse à jour sur tous
+    les écrans.
+
     Mise à jour du 2026-10-07 (alignement sur le MCD et docs/REGLES-GESTION.md) :
     - Accent Luminova green #11E97E à la place du Luminova green.
     - Marque et modèle sont deux champs (obligatoires, RG-MON-01) ; le calibre se
       note dans le modèle (RG-MON-03).
     - Prix et date d'achat facultatifs (RG-MON-06), date future refusée (RG-GEN-01),
       champs courts limités à 255 caractères (RG-GEN-02).
-    - « Sur une montre déjà suivie ? » ne liste que les montres non vendues et sans
+    - La liste « Montre existante » ne propose que les montres non vendues et sans
       projet en cours (RG-PRJ-05, RG-PRJ-09, RG-AFF-04), y compris celles sans projet.
     - Étapes proposées générées d'après le référentiel (db/seed_reference_data.sql) :
       27 étapes pour un manuel avec chronographe, étiquette portant le nom de la
@@ -20,7 +28,7 @@
     Maquette source : version du 2026-09-23 de cet écran (supprimée, remplacée par celle-ci)
     (ne modifie pas le fichier source). Mêmes tokens CSS / composants de
     base : phone, app-bar, sheet-overlay/sheet, field-group, segmented,
-    radio-row, chip-group, step-list, bottom-nav.
+    chip-group, step-list, bottom-nav.
 
     Ce qui change et pourquoi (voir « Création » de brief-ecran-unique.md
     et la motivation 3 « Historique d'une même montre » de
@@ -32,33 +40,26 @@
       formulaire « Nouvelle montre » (plus de segmented control « Quelle
       montre ? » à deux options équivalentes) : aucun clic de tri à faire
       pour le cas fréquent, zéro friction.
-    - Rouvrir une révision sur une montre déjà suivie reste possible mais
-      est le cas rare (garder une montre, la réviser une seconde fois) :
-      il est accessible via un lien secondaire discret « Sur une montre
-      déjà suivie ? » sous le titre, plutôt que via un contrôle à égalité
-      visuelle avec le cas courant. Cliquer ce lien fait apparaître l'état
-      « montre déjà suivie » (écran 2 de cette galerie) : recherche, liste
-      des montres non vendues en radio, mention des montres vendues
-      exclues, et un lien de retour symétrique « Nouvelle montre
-      plutôt ? » pour revenir sans perdre le fil.
+    - Rouvrir une révision sur une montre déjà suivie reste possible mais est le cas rare
+      (garder une montre, la réviser une seconde fois) : une liste « Montre existante »
+      (liste native du système, sans composant à recréer) est placée en tête du formulaire,
+      séparée du formulaire « Nouvelle montre » par « ou saisir une nouvelle montre ».
     - Étape 2 « Étapes proposées » : inchangée (même contenu que la
       maquette source), toujours générée à partir du mouvement et des
       complications de la montre choisie (nouvelle ou déjà suivie).
-    - Galerie réordonnée pour suivre le parcours réel : 1) Nouvelle
-      montre (défaut), 2) Montre déjà suivie (après clic sur le lien),
-      3) Étapes proposées.
+    - Galerie dans l'ordre du parcours : 1) Nouvelle montre (défaut), 2) liste ouverte,
+      3) montre existante choisie, 4) aucune montre disponible, 5) Étapes proposées.
 
     Éco-conception (RGESN) :
     - Fichier HTML autonome, aucune dépendance externe (pas de webfont,
       pas de librairie JS/CSS) ; icônes en SVG inline minimal.
-    - Aucun composant recréé : le lien discret réutilise la même échelle
-      de couleurs/typo que le reste de la galerie (quelques lignes de CSS
-      ajoutées), pas de nouveau design system parallèle.
+    - Aucun composant recréé : la liste « Montre existante » est un select natif
+      (le sélecteur du système s'ouvre), pas de modale ni de JavaScript.
     - Retirer le segmented control « Quelle montre ? » du cas courant
       simplifie aussi le DOM/CSS rendus par défaut pour l'usage le plus
       fréquent (un fieldset et un jeu de radios en moins à l'écran 1).
-    - Liste de montres existantes toujours courte (5 lignes, non paginée),
-      pas d'image bitmap, pas d'animation coûteuse.
+    - Liste de montres existantes courte, non paginée, pas d'image bitmap,
+      pas d'animation coûteuse.
   */
   :root {
     --page-bg: #05070a;
@@ -524,72 +525,6 @@
     outline-offset: 2px;
   }
 
-  /* --- Liste de montres existantes (radio natif) --- */
-
-  .radio-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    min-height: var(--touch-min);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-3);
-  }
-
-  .radio-row.selected {
-    border-color: var(--accent-text);
-  }
-
-  .radio-input {
-    flex: none;
-    width: 20px;
-    height: 20px;
-    accent-color: var(--accent);
-  }
-
-  .radio-row-label {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    cursor: pointer;
-    min-width: 0;
-  }
-
-  .radio-row-label .name {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .radio-row-label .meta {
-    font-size: 12px;
-    color: var(--text-secondary);
-  }
-
-  .recap-box {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-3);
-  }
-
-  .recap-box .recap-label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .recap-box .recap-value {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
-  }
-
   /* --- Puces de complications (bouton aria-pressed) --- */
 
   .chip-group {
@@ -739,26 +674,123 @@
     cursor: pointer;
   }
 
-  /* --- Lien secondaire discret (bascule nouvelle montre / montre déjà suivie) --- */
+  /* --- Montre existante : liste native + récapitulatif en lecture seule --- */
 
-  .link-discreet {
-    align-self: flex-start;
-    margin: calc(-1 * var(--space-2)) 0 0;
-    padding: var(--space-1) 0;
-    min-height: 0;
-    background: none;
-    border: none;
+  .field-group.has-popup {
+    position: relative;
+  }
+
+  select.field-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .or-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0;
+    font-size: 12px;
     color: var(--text-secondary);
-    font-family: inherit;
-    font-size: 13px;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
-  .link-discreet:hover {
-    color: var(--accent-secondary);
+  .or-divider::before,
+  .or-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
   }
+
+  /* Représentation du sélecteur du système (le rendu réel dépend du téléphone) */
+  .select-popup {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 74px;
+    z-index: 2;
+    list-style: none;
+    margin: 0;
+    padding: var(--space-1);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.7);
+  }
+
+  .select-popup li {
+    padding: var(--space-3);
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .select-popup li.is-highlight {
+    background: color-mix(in srgb, var(--accent-text) 14%, var(--surface));
+  }
+
+  .select-popup .meta {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .watch-recap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: var(--space-3);
+  }
+
+  .watch-recap .field-hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .recap-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+  }
+
+  .recap-grid dt {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .recap-grid dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px var(--space-2);
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .secondary-btn.inline {
+    flex: none;
+    align-self: flex-start;
+    min-height: 36px;
+    padding: 0 var(--space-3);
+    font-size: 13px;
+  }
+
   .sheet-body > .field-hint { margin: 0; font-size: 12px; color: var(--text-secondary); }
   :root { color-scheme: dark; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
@@ -769,20 +801,16 @@
   <p>
     Point d'entrée unique « + Nouveau projet » (barre de navigation basse) :
     Étape 1 s'ouvre directement sur le formulaire Nouvelle montre (cas
-    courant, sans choix préalable) ; un lien discret « Sur une montre déjà
-    suivie ? » bascule vers la liste des montres non vendues (cas rare).
+    courant, sans choix préalable) ; une liste « Montre existante » permet de
+    partir d'une montre non vendue et sans projet en cours (cas rare) : ses
+    informations s'affichent en lecture seule.
     Étape 2 propose la liste des étapes générées à partir du mouvement et
     des complications, ajustable avant création.
   </p>
 </div>
 
 <div class="gallery">
-  <!-- 1. Étape 1 — Nouvelle montre (défaut) 
-
-  Mise à jour du 2026-10-08 : design system A2 (succès teal #5FB5B0) et correctifs d'accessibilité :
-  texte >= 12 px, --danger-text, --danger-ink, --border-strong (contrôles >= 3:1), --accent-text,
-  lang="fr", color-scheme, prefers-reduced-motion.
--->
+  <!-- 1. Étape 1 — Nouvelle montre (défaut) -->
   <div class="gallery-item">
     <div class="phone">
       <div class="app-bar">
@@ -813,6 +841,30 @@
             <span class="status">Vendue</span>
           </div>
         </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Hamilton Khaki</span>
+            <span class="status">Sans projet</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Poljot 3133</span>
+            <span class="status">Terminé</span>
+          </div>
+        </div>
       </div>
 
       <div class="sheet-overlay">
@@ -830,7 +882,18 @@
             </button>
           </div>
           <div class="sheet-body">
-            <button type="button" class="link-discreet">Sur une montre déjà suivie ?</button>
+            <div class="field-group has-popup">
+              <label for="existing-watch-1">Montre existante</label>
+              <select class="field-input" id="existing-watch-1" aria-describedby="existing-hint-1">
+                <option value="" selected>Choisir une montre…</option>
+                <option>Seiko 6309-7040 · Automatique · Jour / date</option>
+                <option>Hamilton Khaki · Manuel · Date</option>
+                <option>Poljot 3133 · Manuel · Chronographe</option>
+              </select>
+              <span class="field-hint" id="existing-hint-1">Montres non vendues et sans projet en cours.</span>
+            </div>
+
+            <p class="or-divider">ou saisir une nouvelle montre</p>
 
             <div class="field-group">
               <label for="brand-1">Marque</label>
@@ -908,11 +971,11 @@
       </nav>
     </div>
     <p class="caption">
-      1. Étape 1 · Nouvelle montre (état par défaut, cas courant) — marque, modèle, type de mouvement, complications en puces, achat facultatif ; lien discret « Sur une montre déjà suivie ? » en haut du formulaire
+      1. Étape 1 · Nouvelle montre (état par défaut, cas courant) — liste « Montre existante » en tête, puis marque, modèle, type de mouvement, complications en puces, achat facultatif
     </p>
   </div>
 
-  <!-- 2. Étape 1 — Montre déjà suivie (après clic sur le lien) -->
+  <!-- 2. Étape 1 — Liste des montres existantes ouverte -->
   <div class="gallery-item">
     <div class="phone">
       <div class="app-bar">
@@ -943,6 +1006,30 @@
             <span class="status">Vendue</span>
           </div>
         </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Hamilton Khaki</span>
+            <span class="status">Sans projet</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Poljot 3133</span>
+            <span class="status">Terminé</span>
+          </div>
+        </div>
       </div>
 
       <div class="sheet-overlay">
@@ -960,43 +1047,67 @@
             </button>
           </div>
           <div class="sheet-body">
-            <button type="button" class="link-discreet">Nouvelle montre plutôt ?</button>
+            <div class="field-group has-popup">
+              <label for="existing-watch-2">Montre existante</label>
+              <select class="field-input" id="existing-watch-2" aria-describedby="existing-hint-2">
+                <option value="" selected>Choisir une montre…</option>
+                <option>Seiko 6309-7040 · Automatique · Jour / date</option>
+                <option>Hamilton Khaki · Manuel · Date</option>
+                <option>Poljot 3133 · Manuel · Chronographe</option>
+              </select>
+              <span class="field-hint" id="existing-hint-2">Montres non vendues et sans projet en cours.</span>
+              <ul class="select-popup" aria-hidden="true">
+                <li class="is-highlight">Seiko 6309-7040<span class="meta">Automatique · Jour / date</span></li>
+                <li>Hamilton Khaki<span class="meta">Manuel · Date</span></li>
+                <li>Poljot 3133<span class="meta">Manuel · Chronographe</span></li>
+              </ul>
+            </div>
+
+            <p class="or-divider">ou saisir une nouvelle montre</p>
 
             <div class="field-group">
-              <label for="watch-search-2">Rechercher une montre</label>
-              <input class="field-input" type="search" id="watch-search-2" placeholder="ex. Seiko, Landeron…" />
+              <label for="brand-2">Marque</label>
+              <input class="field-input" id="brand-2" type="text" value="Landeron" maxlength="255" placeholder="ex. Landeron" required />
+            </div>
+
+            <div class="field-group">
+              <label for="model-2">Modèle</label>
+              <input class="field-input" id="model-2" type="text" value="48 chrono" maxlength="255" placeholder="ex. 48 chrono" required />
+              <span class="field-hint">Le calibre se note dans le modèle (ex. 6119-8100).</span>
             </div>
 
             <fieldset>
-              <legend class="field-legend">Montres disponibles pour une nouvelle révision</legend>
-              <div class="radio-row selected">
-                <input type="radio" id="watch-opt-2-1" name="existing-watch-2" class="radio-input" checked />
-                <label for="watch-opt-2-1" class="radio-row-label">
-                  <span class="name">Seiko 6309-7040</span>
-                  <span class="meta">Automatique · Jour / date</span>
-                </label>
-              </div>
-              <div class="radio-row">
-                <input type="radio" id="watch-opt-2-2" name="existing-watch-2" class="radio-input" />
-                <label for="watch-opt-2-2" class="radio-row-label">
-                  <span class="name">Landeron 48 chrono</span>
-                  <span class="meta">Manuel · Chronographe</span>
-                </label>
-              </div>
-              <div class="radio-row">
-                <input type="radio" id="watch-opt-2-3" name="existing-watch-2" class="radio-input" />
-                <label for="watch-opt-2-3" class="radio-row-label">
-                  <span class="name">Hamilton Khaki</span>
-                  <span class="meta">Manuel · sans projet</span>
-                </label>
+              <legend class="field-legend">Type de mouvement</legend>
+              <div class="segmented">
+                <input type="radio" id="mvt-manual-2" name="movement-type-2" class="segmented-input" checked />
+                <label for="mvt-manual-2" class="segmented-label">Manuel</label>
+                <input type="radio" id="mvt-auto-2" name="movement-type-2" class="segmented-input" />
+                <label for="mvt-auto-2" class="segmented-label">Automatique</label>
               </div>
             </fieldset>
-            <p class="field-hint">Les montres vendues et celles qui ont déjà un projet en cours n'apparaissent pas.</p>
 
-            <div class="recap-box">
-              <span class="recap-label">Mouvement &amp; complications de la montre sélectionnée</span>
-              <p class="recap-value">Automatique · Jour / date</p>
+            <fieldset>
+              <legend class="field-legend">Complications</legend>
+              <div class="chip-group">
+                <button type="button" class="chip-toggle" aria-pressed="true">Chronographe</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Date</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Jour / date</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Petite seconde</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Réserve de marche</button>
+              </div>
+            </fieldset>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <label for="purchase-price-2">Prix d'achat (€) · facultatif</label>
+                <input class="field-input" id="purchase-price-2" type="number" inputmode="decimal" value="210" />
+              </div>
+              <div class="field-group">
+                <label for="purchase-date-2">Date d'achat · facultative</label>
+                <input class="field-input" id="purchase-date-2" type="date" value="2026-02-28" max="2026-10-07" />
+              </div>
             </div>
+            <p class="field-hint">Une montre gardée de longue date peut ne plus avoir de prix ni de date d'achat. Une date dans le futur est refusée.</p>
           </div>
           <div class="sheet-footer">
             <button class="primary-btn">Voir les étapes proposées</button>
@@ -1004,36 +1115,309 @@
         </div>
       </div>
 
-      <div class="bottom-nav">
-        <button class="nav-item" aria-label="Compte">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
-            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <a class="nav-item" href="#" aria-current="page">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
           </svg>
-          Compte
-        </button>
-        <button class="nav-item" aria-label="Recherche">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          Accueil
+        </a>
+        <a class="nav-item" href="#">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
             <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
           </svg>
           Recherche
-        </button>
-        <button class="nav-item accent" aria-label="Nouveau projet">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
-            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
-          </svg>
-          Nouveau
-        </button>
-      </div>
+        </a>
+        <a class="nav-item" href="#">
+          <span class="nav-add" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+              <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            </svg>
+          </span>
+          Nouveau projet
+        </a>
+      </nav>
     </div>
     <p class="caption">
-      2. Étape 1 · Montre déjà suivie (après clic sur « Sur une montre déjà suivie ? ») — recherche, liste filtrable des montres non vendues et sans projet en cours, radio, rappel mouvement · complications, lien retour « Nouvelle montre plutôt ? » en haut
+      2. Étape 1 · Liste « Montre existante » ouverte — le sélecteur du système s'affiche (représenté ici) ; ne propose que les montres non vendues et sans projet en cours
     </p>
   </div>
 
-  <!-- 3. Étape 2 — Étapes proposées (inchangé) -->
+  <!-- 3. Étape 1 — Montre existante choisie -->
+  <div class="gallery-item">
+    <div class="phone">
+      <div class="app-bar">
+        <h1>Tableau de bord</h1>
+      </div>
+      <div class="content">
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Seiko 6309-7040</span>
+            <span class="status">Terminé</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Oris Diver Sixty-Five</span>
+            <span class="status">Vendue</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Hamilton Khaki</span>
+            <span class="status">Sans projet</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Poljot 3133</span>
+            <span class="status">Terminé</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay">
+        <div class="sheet">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="sheet-header">
+            <div class="titles">
+              <h2>Nouveau projet</h2>
+              <span class="step-indicator">Étape 1 sur 2</span>
+            </div>
+            <button class="sheet-close" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <div class="field-group has-popup">
+              <label for="existing-watch-3">Montre existante</label>
+              <select class="field-input" id="existing-watch-3" aria-describedby="existing-hint-3">
+                <option value="">Choisir une montre…</option>
+                <option selected>Seiko 6309-7040 · Automatique · Jour / date</option>
+                <option>Hamilton Khaki · Manuel · Date</option>
+                <option>Poljot 3133 · Manuel · Chronographe</option>
+              </select>
+              <span class="field-hint" id="existing-hint-3">Montres non vendues et sans projet en cours.</span>
+            </div>
+
+            <div class="watch-recap">
+              <dl class="recap-grid">
+                <dt>Marque</dt>
+                <dd>Seiko</dd>
+                <dt>Modèle</dt>
+                <dd>6309-7040</dd>
+                <dt>Mouvement</dt>
+                <dd>Automatique</dd>
+                <dt>Complications</dt>
+                <dd><span class="tag">Jour / date</span></dd>
+              </dl>
+              <p class="field-hint">Pour corriger la montre (marque, modèle, complications), ouvrez sa fiche.</p>
+            </div>
+            <button type="button" class="secondary-btn inline">Saisir une nouvelle montre</button>
+          </div>
+          <div class="sheet-footer">
+            <button class="primary-btn">Voir les étapes proposées</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <a class="nav-item" href="#" aria-current="page">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+          </svg>
+          Accueil
+        </a>
+        <a class="nav-item" href="#">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          Recherche
+        </a>
+        <a class="nav-item" href="#">
+          <span class="nav-add" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+              <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            </svg>
+          </span>
+          Nouveau projet
+        </a>
+      </nav>
+    </div>
+    <p class="caption">
+      3. Étape 1 · Montre existante choisie — récapitulatif en lecture seule (mouvement et complications reprennent ceux de la montre) ; prix et date d'achat non affichés ; « Saisir une nouvelle montre » pour revenir au formulaire
+    </p>
+  </div>
+
+  <!-- 4. Étape 1 — Aucune montre disponible -->
+  <div class="gallery-item">
+    <div class="phone">
+      <div class="app-bar">
+        <h1>Tableau de bord</h1>
+      </div>
+      <div class="content">
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Oris Diver Sixty-Five</span>
+            <span class="status">Vendue</span>
+          </div>
+        </div>
+        <div class="project-row">
+          <div class="thumb" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.5"></circle>
+              <path d="M12 9v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+          </div>
+          <div class="info">
+            <span class="name">Poljot 3133</span>
+            <span class="status">En cours</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-overlay">
+        <div class="sheet">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="sheet-header">
+            <div class="titles">
+              <h2>Nouveau projet</h2>
+              <span class="step-indicator">Étape 1 sur 2</span>
+            </div>
+            <button class="sheet-close" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <div class="field-group has-popup">
+              <label for="existing-watch-4">Montre existante</label>
+              <select class="field-input" id="existing-watch-4" aria-describedby="existing-hint-4" disabled>
+                <option value="" selected>Aucune montre disponible</option>
+              </select>
+              <span class="field-hint" id="existing-hint-4">Aucune montre disponible : elles sont vendues ou ont déjà un projet en cours.</span>
+            </div>
+
+            <p class="or-divider">saisir une nouvelle montre</p>
+
+            <div class="field-group">
+              <label for="brand-4">Marque</label>
+              <input class="field-input" id="brand-4" type="text" value="Landeron" maxlength="255" placeholder="ex. Landeron" required />
+            </div>
+
+            <div class="field-group">
+              <label for="model-4">Modèle</label>
+              <input class="field-input" id="model-4" type="text" value="48 chrono" maxlength="255" placeholder="ex. 48 chrono" required />
+              <span class="field-hint">Le calibre se note dans le modèle (ex. 6119-8100).</span>
+            </div>
+
+            <fieldset>
+              <legend class="field-legend">Type de mouvement</legend>
+              <div class="segmented">
+                <input type="radio" id="mvt-manual-4" name="movement-type-4" class="segmented-input" checked />
+                <label for="mvt-manual-4" class="segmented-label">Manuel</label>
+                <input type="radio" id="mvt-auto-4" name="movement-type-4" class="segmented-input" />
+                <label for="mvt-auto-4" class="segmented-label">Automatique</label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend class="field-legend">Complications</legend>
+              <div class="chip-group">
+                <button type="button" class="chip-toggle" aria-pressed="true">Chronographe</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Date</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Jour / date</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Petite seconde</button>
+                <button type="button" class="chip-toggle" aria-pressed="false">Réserve de marche</button>
+              </div>
+            </fieldset>
+
+            <div class="sheet-row">
+              <div class="field-group">
+                <label for="purchase-price-4">Prix d'achat (€) · facultatif</label>
+                <input class="field-input" id="purchase-price-4" type="number" inputmode="decimal" value="210" />
+              </div>
+              <div class="field-group">
+                <label for="purchase-date-4">Date d'achat · facultative</label>
+                <input class="field-input" id="purchase-date-4" type="date" value="2026-02-28" max="2026-10-07" />
+              </div>
+            </div>
+            <p class="field-hint">Une montre gardée de longue date peut ne plus avoir de prix ni de date d'achat. Une date dans le futur est refusée.</p>
+          </div>
+          <div class="sheet-footer">
+            <button class="primary-btn">Voir les étapes proposées</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <a class="nav-item" href="#" aria-current="page">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+          </svg>
+          Accueil
+        </a>
+        <a class="nav-item" href="#">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+          Recherche
+        </a>
+        <a class="nav-item" href="#">
+          <span class="nav-add" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+              <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            </svg>
+          </span>
+          Nouveau projet
+        </a>
+      </nav>
+    </div>
+    <p class="caption">
+      4. Étape 1 · Aucune montre disponible — la liste est désactivée et indique pourquoi ; seul le formulaire « Nouvelle montre » reste utilisable
+    </p>
+  </div>
+
+  <!-- 5. Étape 2 — Étapes proposées (inchangé) -->
   <div class="gallery-item">
     <div class="phone">
       <div class="app-bar">
@@ -1396,32 +1780,33 @@
         </div>
       </div>
 
-      <div class="bottom-nav">
-        <button class="nav-item" aria-label="Compte">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.5"></circle>
-            <path d="M5 20c1.2-3.6 4.2-5.5 7-5.5s5.8 1.9 7 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <a class="nav-item" href="#" aria-current="page">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
           </svg>
-          Compte
-        </button>
-        <button class="nav-item" aria-label="Recherche">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          Accueil
+        </a>
+        <a class="nav-item" href="#">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.5"></circle>
             <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
           </svg>
           Recherche
-        </button>
-        <button class="nav-item accent" aria-label="Nouveau projet">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
-            <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"></line>
-          </svg>
-          Nouveau
-        </button>
-      </div>
+        </a>
+        <a class="nav-item" href="#">
+          <span class="nav-add" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+              <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            </svg>
+          </span>
+          Nouveau projet
+        </a>
+      </nav>
     </div>
     <p class="caption">
-      3. Étape 2 · Étapes proposées — 27 étapes générées d'après le référentiel (Manuel + Chronographe), étiquette « Chronographe » sur les 5 étapes de la complication, actions ↑ ↓ supprimer, ajout d'une étape à la suite, boutons Retour / Créer le projet. Sheet pleine hauteur.
+      5. Étape 2 · Étapes proposées — 27 étapes générées d'après le référentiel (Manuel + Chronographe), étiquette « Chronographe » sur les 5 étapes de la complication, actions ↑ ↓ supprimer, ajout d'une étape à la suite, boutons Retour / Créer le projet. Sheet pleine hauteur.
     </p>
   </div>
 </div>

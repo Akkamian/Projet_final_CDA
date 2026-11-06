@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: watch_tracker
+    # 5435 côté poste : 5432 est pris par un PostgreSQL installé en local, 5433 et 5434 par d'autres conteneurs.
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+
+  maildev:
+    image: maildev/maildev:2.2.1
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP
+      - "1080:1080" # interface web
+
+volumes:
+  pgdata:

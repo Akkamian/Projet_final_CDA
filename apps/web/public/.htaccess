@@ -1,0 +1,8 @@
+# Application monopage : une URL comme /watches/7 n'existe pas comme fichier.
+# Tout ce qui n'est pas un fichier ou un dossier réel est renvoyé vers index.html (routage côté navigateur).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ index.html [L]
+</IfModule>
