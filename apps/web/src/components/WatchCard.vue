@@ -1,19 +1,26 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { fileUrl } from '../api/client'
 import { formatMargin, MOVEMENT_LABELS, STATUS_LABELS } from '../format'
 import type { WatchCard } from '../stores/watches'
 
-defineProps<{ watch: WatchCard }>()
+const props = defineProps<{ watch: WatchCard }>()
 
-const marginClass = (margin: string) =>
-  margin.startsWith('-') ? 'margin-negative' : Number(margin) > 0 ? 'margin-positive' : ''
+const marginClass = (margin: string) => (margin.startsWith('-') ? 'margin-negative' : Number(margin) > 0 ? 'margin-positive' : '')
+
+const meta = computed(() =>
+  [MOVEMENT_LABELS[props.watch.movementCode], props.watch.complicationLabels.join(', ')].filter((part) => part !== '').join(' · '),
+)
 </script>
 
 <template>
   <li class="card" data-test="watch-card">
-    <RouterLink :to="{ name: 'watch-detail', params: { id: watch.id } }" class="card-link">
-      <!-- Vignette vide : les photos arrivent avec les tâches 21 à 23 (thumbnailUrl est un nom de fichier). -->
-      <span class="thumb" aria-hidden="true">
+    <RouterLink :to="{ name: 'watch-detail', params: { id: watch.id } }" class="card-link" title="Ouvre le détail de la montre">
+      <img v-if="watch.thumbnailUrl" class="thumb" :src="fileUrl(watch.thumbnailUrl)" alt="" />
+      <!-- Sans projet : vignette vide en pointillés ; avec projet mais sans photo : icône d'horloge. -->
+      <span v-else-if="watch.status === 'no_project'" class="thumb thumb-empty" aria-hidden="true" />
+      <span v-else class="thumb" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6">
           <circle cx="12" cy="12" r="6.5" />
           <path d="M12 9v3.2l2 1.3M9 2.5h6M9 21.5h6" stroke-linecap="round" />
@@ -21,15 +28,12 @@ const marginClass = (margin: string) =>
       </span>
       <span class="body">
         <h2>{{ watch.brand }} {{ watch.model }}</h2>
-        <span class="meta">
-          {{ MOVEMENT_LABELS[watch.movementCode] }}
-          <template v-if="watch.complicationLabels.length > 0"> · {{ watch.complicationLabels.join(', ') }}</template>
-        </span>
+        <span class="meta">{{ meta }}</span>
         <span class="line">
           <span class="status" :class="`status-${watch.status}`">{{ STATUS_LABELS[watch.status] }}</span>
           <span
             v-if="watch.margin !== null"
-            class="margin"
+            class="margin tabular"
             :class="marginClass(watch.margin)"
             data-test="margin"
             :aria-label="`Marge ${formatMargin(watch.margin)}`"
@@ -52,7 +56,7 @@ const marginClass = (margin: string) =>
 
 .card-link {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-4);
   color: inherit;
   text-decoration: none;
@@ -77,6 +81,13 @@ const marginClass = (margin: string) =>
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text-secondary);
+  object-fit: cover;
+}
+
+.thumb-empty {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
 }
 
 .body {
@@ -88,12 +99,13 @@ const marginClass = (margin: string) =>
 
 h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .meta {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 12px;
 }
 
 .line {
@@ -114,7 +126,7 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--bg);
-  font-size: 0.8125rem;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -126,6 +138,10 @@ h2 {
   content: '';
 }
 
+.status-completed::before {
+  background: var(--accent-secondary);
+}
+
 .status-in_progress::before {
   background: var(--warning);
 }
@@ -135,6 +151,7 @@ h2 {
 }
 
 .margin {
+  font-size: 13px;
   font-weight: 600;
 }
 
