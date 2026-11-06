@@ -77,7 +77,7 @@ Déduit des scénarios. Une route qui existe déjà dans `docs/UML.md` est repri
 
 | Méthode et route | Scénario |
 |---|---|
-| `GET /watches` : une carte par montre avec statut calculé, miniature et marge ; réponse accompagnée du nombre de montres par statut ; filtre optionnel `?status=` | S25, S40 |
+| `GET /watches` : une carte par montre (statut calculé, miniature, marge, achat, revente, progression du projet le plus récent) ; réponse `{ items, counts, total, page, pageSize, totalMargin }` où `counts` et `totalMargin` (somme des marges des montres vendues) portent sur toutes les montres ; paramètres optionnels `?status=`, `?q=` (recherche sur marque et modèle, sans casse ni accents, tous les mots), `?sort=purchase_date&order=asc\|desc` (sans date d'achat en dernier), `?page=` (1 par défaut) et `?pageSize=` (8 par défaut, 50 au plus) ; toute valeur invalide répond 400 (`INVALID_STATUS`, `INVALID_QUERY`, `INVALID_SORT`, `INVALID_ORDER`, `INVALID_PAGE`, `INVALID_PAGE_SIZE`). Le calcul se fait en mémoire sur une seule requête : le statut reste défini par `computeStatus`, mais le coût croît avec le nombre de montres d'un utilisateur (quelques centaines au plus pour un collectionneur) | S25, S40 |
 | `POST /watches` : montre, complications, premier projet et étapes, en une écriture | S5, S8 |
 | `GET /watches/:id` : montre, projets, finances et marge | S18, S23, S24, S26 |
 | `PATCH /watches/:id` | S10 |

@@ -302,4 +302,113 @@ describe('GET /watches : tableau de bord', () => {
     expect(body).toMatchObject({ total: 1, page: 1, pageSize: 8 });
     expect((await list()).body.total).toBe(4);
   });
+
+  const models = (body: { items: WatchCard[] }) => body.items.map((i) => i.model);
+
+  it('RG-AFF-08 la recherche trouve par marque ou modèle, sans casse ni accents', async () => {
+    await createWatch(prisma, userId, { brand: 'Seiko', model: '6119-8100' });
+    await createWatch(prisma, userId, { brand: 'Omega', model: 'Seamaster' });
+    await createWatch(prisma, userId, { brand: 'Zénith', model: 'El Primero' });
+
+    expect(models((await list('?q=SEIKO')).body)).toEqual(['6119-8100']);
+    expect(models((await list('?q=seamas')).body)).toEqual(['Seamaster']);
+    expect(models((await list(`?q=${encodeURIComponent('zenith')}`)).body)).toEqual(['El Primero']);
+    expect(models((await list(`?q=${encodeURIComponent('zénith')}`)).body)).toEqual(['El Primero']);
+  });
+
+  it('RG-AFF-08 plusieurs mots : chacun doit être présent', async () => {
+    await createWatch(prisma, userId, { brand: 'Seiko', model: '6119-8100' });
+    await createWatch(prisma, userId, { brand: 'Seiko', model: 'SKX007' });
+
+    expect(models((await list('?q=seiko%206119')).body)).toEqual(['6119-8100']);
+    expect(models((await list('?q=6119%20seiko')).body)).toEqual(['6119-8100']);
+  });
+
+  it('RG-AFF-08 une recherche sans résultat renvoie items vide et total 0', async () => {
+    await createWatch(prisma, userId, { brand: 'Seiko', model: '6119' });
+
+    const { status, body } = await list('?q=omega');
+
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ items: [], total: 0 });
+  });
+
+  it('RG-AFF-08 la recherche se combine au statut et counts reste global', async () => {
+    const a = await createWatch(prisma, userId, { brand: 'Seiko', model: 'A' });
+    await createProject(prisma, a.id);
+    const b = await createWatch(prisma, userId, { brand: 'Seiko', model: 'B' });
+    await createProject(prisma, b.id, { status: 'completed' });
+    await createWatch(prisma, userId, { brand: 'Omega', model: 'C' });
+
+    const { body } = await list('?q=seiko&status=completed');
+
+    expect(models(body)).toEqual(['B']);
+    expect(body.total).toBe(1);
+    expect(body.counts).toEqual({ all: 3, in_progress: 1, completed: 1, sold: 0, no_project: 1 });
+  });
+
+  it('RG-AFF-08 un caractère spécial est cherché comme du texte', async () => {
+    await createWatch(prisma, userId, { brand: 'Seiko', model: '100%' });
+    await createWatch(prisma, userId, { brand: 'Seiko', model: 'plain' });
+
+    expect(models((await list('?q=%25')).body)).toEqual(['100%']);
+    expect(models((await list('?q=.*')).body)).toEqual([]);
+  });
+
+  describe('tri sur la date d’achat', () => {
+    beforeEach(async () => {
+      await createWatch(prisma, userId, { model: 'y2024', purchase_date: new Date('2024-01-01') });
+      await createWatch(prisma, userId, { model: 'y2025', purchase_date: new Date('2025-01-01') });
+      await createWatch(prisma, userId, { model: 'sans-date' });
+    });
+
+    it('RG-AFF-09 décroissant : la plus récente d’abord, sans date en dernier', async () => {
+      expect(models((await list('?sort=purchase_date&order=desc')).body)).toEqual(['y2025', 'y2024', 'sans-date']);
+      expect(models((await list('?sort=purchase_date')).body)).toEqual(['y2025', 'y2024', 'sans-date']);
+    });
+
+    it('RG-AFF-09 croissant : la plus ancienne d’abord, sans date toujours en dernier', async () => {
+      expect(models((await list('?sort=purchase_date&order=asc')).body)).toEqual(['y2024', 'y2025', 'sans-date']);
+    });
+
+    it('RG-AFF-09 sans tri : les plus récemment ajoutées d’abord', async () => {
+      expect(models((await list()).body)).toEqual(['sans-date', 'y2025', 'y2024']);
+    });
+  });
+
+  it('RG-AFF-11 la pagination découpe la liste et total reste celui du filtre', async () => {
+    for (let i = 1; i <= 10; i++) await createWatch(prisma, userId, { model: `M${String(i).padStart(2, '0')}` });
+
+    const first = (await list('?pageSize=4')).body;
+    expect(first.items).toHaveLength(4);
+    expect(first).toMatchObject({ total: 10, page: 1, pageSize: 4 });
+
+    const third = (await list('?page=3&pageSize=4')).body;
+    expect(models(third)).toEqual(['M02', 'M01']);
+    expect(third.page).toBe(3);
+
+    expect((await list()).body.items).toHaveLength(8);
+  });
+
+  it('RG-AFF-11 une page hors limites renvoie items vide et un total exact', async () => {
+    await createWatch(prisma, userId);
+    await createWatch(prisma, userId);
+
+    const { status, body } = await list('?page=99');
+
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ items: [], total: 2, page: 99 });
+  });
+
+  it('les paramètres invalides répondent 400 avec leur code', async () => {
+    const codeOf = async (query: string) => (await list(query)).body.code;
+
+    expect(await codeOf('?q=')).toBe('INVALID_QUERY');
+    expect(await codeOf('?sort=brand')).toBe('INVALID_SORT');
+    expect(await codeOf('?order=up')).toBe('INVALID_ORDER');
+    expect(await codeOf('?order=asc')).toBe('INVALID_ORDER');
+    expect(await codeOf('?page=0')).toBe('INVALID_PAGE');
+    expect(await codeOf('?pageSize=51')).toBe('INVALID_PAGE_SIZE');
+    expect((await list('?page=0')).status).toBe(400);
+  });
 });

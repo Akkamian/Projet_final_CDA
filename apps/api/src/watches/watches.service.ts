@@ -9,6 +9,7 @@ import type { CreateWatchDto } from './dto/create-watch.dto.js';
 import type { ResaleDto } from './dto/resale.dto.js';
 import type { UpdateWatchDto } from './dto/update-watch.dto.js';
 import { computeMargin } from './margin.js';
+import { matchesQuery, paginate, sortCards } from './dashboard-list.js';
 import type { WatchListQuery } from './list-query.js';
 import { computeStatus, type DashboardStatus, type ProjectStatus } from './status.js';
 import { toWatchDetail, WATCH_DETAIL_INCLUDE, type WatchDetail } from './watch-detail.js';
@@ -51,7 +52,8 @@ export class WatchesService {
   /**
    * Tableau de bord : une carte par montre, en une seule requête (montres, complications, projets et coûts).
    * `counts` et `totalMargin` portent sur toutes les montres de l'utilisateur, quel que soit le filtre (S40, RG-AFF-10).
-   * Les plus récemment ajoutées d'abord.
+   * Statut, recherche, tri et pagination se font en mémoire : une seule requête, `computeStatus` reste la seule règle de statut.
+   * Sans tri, les plus récemment ajoutées d'abord.
    */
   async list(userId: number, query: WatchListQuery): Promise<WatchList> {
     const watches = await this.prisma.watches.findMany({
@@ -102,9 +104,22 @@ export class WatchesService {
           : null,
       };
       counts[card.status] += 1;
-      if (query.status === undefined || card.status === query.status) items.push(card);
+      items.push(card);
     }
-    return { items, counts, total: items.length, page: query.page, pageSize: query.pageSize, totalMargin: totalMargin.toFixed(2) };
+    // Statut, puis recherche, puis tri, puis page : `total` compte les montres après filtre et recherche (RG-AFF-11).
+    const q = query.q;
+    const matching = items.filter(
+      (card) => (query.status === undefined || card.status === query.status) && (q === undefined || matchesQuery(card.brand, card.model, q)),
+    );
+    const sorted = sortCards(matching, query.sort, query.order);
+    return {
+      items: paginate(sorted, query.page, query.pageSize),
+      counts,
+      total: matching.length,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalMargin: totalMargin.toFixed(2),
+    };
   }
 
   /**
