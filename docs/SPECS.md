@@ -308,7 +308,7 @@ L'application doit permettre à un horloger amateur de :
 **When** j'ouvre le bloc « Performances »
 **Then** je vois, pour la marche, le beat error et l'amplitude, une échelle avec la zone cible, la première et la dernière mesure et un verdict (« Dans la zone », « Hors zone », « Avance de 14 s/j · hors zone (±10 s/j) »), puis la liste des mesures de la plus récente à la plus ancienne
 
-**And** je peux restreindre l'échelle et la liste à une position de la montre ; la marche affiche son écart avec la mesure précédente à la même position
+**And** les échelles ne comparent que les mesures d'une même position de la montre (par défaut la plus fréquente, « Toutes » étant possible) ; la liste garde toutes les mesures et la marche y affiche son écart avec la mesure précédente à la même position
 
 ---
 

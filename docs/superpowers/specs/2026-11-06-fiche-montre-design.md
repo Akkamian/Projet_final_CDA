@@ -49,7 +49,7 @@ Composant `PerformanceScales` : trois pistes de 16 px (Marche, Beat error, Ampli
 
 Zones cibles : constantes indicatives dans un seul module (`performance-zones.ts`), marche ±10 s/j, beat error ≤ 0,5 ms, amplitude 250–310°. Elles sont inscrites dans une règle de gestion et présentées comme repères indicatifs, comme dans la maquette. L'échelle de la marche s'ajuste aux valeurs. Moins de 2 mesures : une seule marque (la dernière), pas de lien.
 
-Le filtre de position (pastilles « Cadran haut 3 »…) restreint le tableau et les échelles à une position. Le tableau montre date, marche avec delta « +14 (−12) », beat error, amplitude, position, actions. Formats de mesure : sans décimales superflues (« +14 », « 0.4 ms », « 268° »). « + Mesure » reste affiché pour une montre vendue (la maquette mobile l'omet, la maquette desktop le montre : ruling, aucune règle ne l'interdit).
+Le filtre de position (pastilles « Cadran haut 3 »…) restreint les échelles à une position, par défaut la plus fréquente comme dans la maquette (« Toutes » reste possible) ; le tableau garde toutes les mesures. Le tableau montre date, marche avec delta « +14 (−12) », beat error, amplitude, position, actions. Formats de mesure : sans décimales superflues (« +14 », « 0.4 ms », « 268° »). « + Mesure » reste affiché pour une montre vendue (la maquette mobile l'omet, la maquette desktop le montre : ruling, aucune règle ne l'interdit).
 
 ## API
 

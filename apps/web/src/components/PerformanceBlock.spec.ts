@@ -77,27 +77,66 @@ describe('PerformanceBlock', () => {
 
     const chips = wrapper.findAll('[data-test="position-chip"]').map((c) => c.text())
     expect(chips).toEqual(['Toutes', 'Cadran haut 3', 'Couronne à gauche 1'])
-    expect(wrapper.find('[data-test="position-chip"][aria-pressed="true"]').text()).toBe('Toutes')
   })
 
-  it('choisir une position restreint le tableau et les échelles', async () => {
+  it('S20 par défaut les échelles ne comparent que la position la plus fréquente, comme la maquette', () => {
+    const wrapper = mountBlock(mockup)
+
+    expect(wrapper.find('[data-test="position-chip"][aria-pressed="true"]').text()).toBe('Cadran haut 3')
+    expect(
+      wrapper
+        .findComponent(PerformanceScales)
+        .props('measurements')
+        .map((m: MeasurementDetail) => m.id),
+    ).toEqual([1, 3, 4])
+    expect(wrapper.text()).toContain('position Cadran haut')
+  })
+
+  it('S20 une première mesure d’une position n’est jamais comparée à une dernière mesure d’une autre', () => {
+    const wrapper = mountBlock([
+      measure(1, '2026-08-11', '48.00', '2.30', '186.00', 'Cadran haut'),
+      measure(2, '2026-08-18', '-3.00', '0.30', '270.00', 'Couronne à gauche'),
+      measure(3, '2026-08-20', '40.00', '1.30', '200.00', 'Cadran haut'),
+    ])
+
+    const verdict = wrapper.findAll('[data-test="scale-verdict"]')[0]!.text()
+    expect(verdict).toBe('Avance de 40 s/j · hors zone (±10 s/j)')
+  })
+
+  it('choisir une position restreint les échelles, le tableau garde toutes les mesures', async () => {
     const wrapper = mountBlock(mockup)
 
     await wrapper.findAll('[data-test="position-chip"]')[2]!.trigger('click')
 
-    expect(rows(wrapper)).toHaveLength(1)
-    expect(rows(wrapper)[0]!.text()).toContain('18/08/2026')
     expect(wrapper.findComponent(PerformanceScales).props('measurements')).toHaveLength(1)
+    expect(rows(wrapper)).toHaveLength(4)
   })
 
-  it('la pastille d’une position disparue (mesure supprimée) revient sur « Toutes »', async () => {
+  it('« Toutes » compare toutes les mesures dans les échelles', async () => {
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.findAll('[data-test="position-chip"]')[0]!.trigger('click')
+
+    expect(wrapper.findComponent(PerformanceScales).props('measurements')).toHaveLength(4)
+    expect(wrapper.find('[data-test="position-chip"][aria-pressed="true"]').text()).toBe('Toutes')
+  })
+
+  it('la pastille d’une position disparue (mesure supprimée) revient sur la position par défaut', async () => {
     const wrapper = mountBlock(mockup)
     await wrapper.findAll('[data-test="position-chip"]')[2]!.trigger('click')
 
     await wrapper.setProps({ measurements: mockup.filter((m) => m.watchPosition !== 'Couronne à gauche') })
 
     expect(rows(wrapper)).toHaveLength(3)
-    expect(wrapper.find('[data-test="position-chip"][aria-pressed="true"]').text()).toBe('Toutes')
+    expect(wrapper.find('[data-test="position-chip"][aria-pressed="true"]').text()).toBe('Cadran haut 3')
+  })
+
+  it('une mesure ajoutée dans une autre position apparaît dans le tableau sans changer de filtre', async () => {
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.setProps({ measurements: [...mockup, measure(9, '2026-09-10', '3.00', '0.30', '260.00', 'Cadran bas')] })
+
+    expect(rows(wrapper)).toHaveLength(5)
   })
 
   it('aucun filtre quand aucune mesure n’a de position', () => {

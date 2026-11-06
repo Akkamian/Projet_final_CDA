@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { formatDate, formatDelta, formatMeasure, formatRate } from '../format'
 import { useWatchesStore, type MeasurementDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
@@ -17,8 +17,8 @@ const editing = ref<MeasurementDetail | null>(null)
 const removing = ref<MeasurementDetail | null>(null)
 const busy = ref(false)
 const error = ref<string | null>(null)
-// Filtre de position : null = toutes les positions.
-const position = ref<string | null>(null)
+// Choix de l'utilisateur pour le filtre de position : undefined = pas encore choisi, null = « Toutes ».
+const choice = ref<string | null | undefined>(undefined)
 
 const chronological = (list: MeasurementDetail[]) => [...list].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt) || a.id - b.id)
 
@@ -29,12 +29,17 @@ const positions = computed(() => {
   return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 })
 
-// Une position qui n'existe plus (mesure supprimée ou corrigée) ne doit pas laisser un filtre vide.
-watch(positions, (list) => {
-  if (position.value !== null && !list.some((p) => p.name === position.value)) position.value = null
+// Comme la maquette, les échelles comparent par défaut la position la plus fréquente : une première mesure en « Cadran haut » ne se compare
+// pas à une dernière mesure en « Couronne à gauche ». Une position qui n'existe plus (mesure supprimée ou corrigée) revient à ce défaut.
+const position = computed<string | null>(() => {
+  const chosen = choice.value
+  if (chosen === null) return null
+  if (chosen !== undefined && positions.value.some((p) => p.name === chosen)) return chosen
+  return positions.value[0]?.name ?? null
 })
 
-const visible = computed(() =>
+// Seules les échelles sont filtrées : le tableau garde toutes les mesures (une mesure qu'on vient d'ajouter doit toujours s'y voir).
+const compared = computed(() =>
   position.value === null ? props.measurements : props.measurements.filter((m) => m.watchPosition === position.value),
 )
 
@@ -55,8 +60,8 @@ const rateText = (m: MeasurementDetail) => {
   return delta ? `${formatRate(m.rateSecondsPerDay)} (${delta})` : formatRate(m.rateSecondsPerDay)
 }
 
-// La liste montre les plus récentes d'abord ; les échelles reçoivent les mesures du filtre (RG-PER-04).
-const latestFirst = computed(() => chronological(visible.value).reverse())
+// La liste montre toutes les mesures, les plus récentes d'abord (RG-PER-04) ; les échelles reçoivent celles du filtre.
+const latestFirst = computed(() => chronological(props.measurements).reverse())
 
 function saved(m: MeasurementDetail): void {
   const next = editing.value ? props.measurements.map((x) => (x.id === m.id ? m : x)) : [...props.measurements, m]
@@ -106,7 +111,7 @@ async function confirmRemove(): Promise<void> {
     <p v-if="measurements.length === 0" class="hint">Aucune mesure : ajoutez un relevé au timegrapher pour suivre l’évolution.</p>
     <template v-else>
       <div v-if="positions.length > 0" class="pos-filter" role="group" aria-label="Position de mesure">
-        <button type="button" class="pos-chip" data-test="position-chip" :aria-pressed="position === null" @click="position = null">
+        <button type="button" class="pos-chip" data-test="position-chip" :aria-pressed="position === null" @click="choice = null">
           Toutes
         </button>
         <button
@@ -116,7 +121,7 @@ async function confirmRemove(): Promise<void> {
           class="pos-chip"
           data-test="position-chip"
           :aria-pressed="position === p.name"
-          @click="position = p.name"
+          @click="choice = p.name"
         >
           {{ p.name }} <span>{{ p.count }}</span>
         </button>
@@ -124,7 +129,7 @@ async function confirmRemove(): Promise<void> {
       <p v-if="position !== null" class="perf-context">
         Première → dernière mesure, position <strong>{{ position }}</strong>
       </p>
-      <PerformanceScales :measurements="visible" />
+      <PerformanceScales :measurements="compared" />
       <div class="table-wrap">
         <table class="measurements">
           <thead>

@@ -256,6 +256,22 @@ describe('StepList', () => {
       expect(row(wrapper, 2).find('.row').text()).not.toContain('Notes en cours')
     })
 
+    it('toucher le titre déplie la ligne, sans cocher l’étape ni rien envoyer', async () => {
+      const { wrapper, fetchMock } = mountList(undefined, rich)
+
+      await row(wrapper, 1).find('[data-test="step-title"]').trigger('click')
+
+      expect(row(wrapper, 1).find('[data-test="expand"]').attributes('aria-expanded')).toBe('true')
+      expect(wrapper.findAll<HTMLInputElement>('input[type="checkbox"]')[1]!.element.checked).toBe(false)
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('la case à cocher porte le nom de l’étape pour les lecteurs d’écran', () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      expect(row(wrapper, 0).find('input[type="checkbox"]').attributes('aria-label')).toBe('Désarmer')
+    })
+
     it('le chevron déplie et replie le détail, aria-expanded suit', async () => {
       const { wrapper } = mountList(undefined, rich)
       const chevron = row(wrapper, 1).find('[data-test="expand"]')

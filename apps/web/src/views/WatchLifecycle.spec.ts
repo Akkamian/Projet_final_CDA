@@ -242,15 +242,16 @@ describe('Cycle de vie des projets (fiche montre)', () => {
         withMeasures(1, '2025-01-01T10:00:00Z', ['Cadran haut', 'Cadran bas']),
       ] as unknown as ReturnType<typeof project>[]),
     )
+    const pressed = () => wrapper.get('[data-test="position-chip"][aria-pressed="true"]').text()
     await wrapper.get('[data-test="expand"]').trigger('click')
     await wrapper.findAll('[data-test="position-chip"]')[2]!.trigger('click')
     expect(wrapper.get('[data-test="expand"]').attributes('aria-expanded')).toBe('true')
-    expect(wrapper.findAll('[data-test="measurement-row"]')).toHaveLength(1)
+    expect(pressed()).toBe('Cadran haut 1')
 
     await wrapper.findAll('[role="tab"]')[1]!.trigger('click')
 
     expect(wrapper.get('[data-test="expand"]').attributes('aria-expanded')).toBe('false')
-    expect(wrapper.findAll('[data-test="measurement-row"]')).toHaveLength(2)
+    expect(pressed()).toBe('Cadran bas 1')
   })
 
   it('S37 annuler la confirmation ne supprime rien', async () => {

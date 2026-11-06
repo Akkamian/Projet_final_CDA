@@ -49,16 +49,19 @@ function onToggle(event: Event): void {
 <template>
   <li class="item" :class="{ done: step.isCompleted, open: expanded }" data-test="step">
     <div class="row">
+      <!-- La case seule coche l'étape ; le titre, lui, déplie la ligne (un appui sur le titre ne doit jamais changer l'état de l'étape). -->
       <label class="check">
-        <input type="checkbox" :checked="step.isCompleted" :disabled="busy" @change="onToggle" />
+        <input type="checkbox" :aria-label="step.label" :checked="step.isCompleted" :disabled="busy" @change="onToggle" />
         <span class="box" aria-hidden="true">
           <svg v-if="step.isCompleted" width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </span>
+      </label>
+      <button type="button" class="title" data-test="step-title" tabindex="-1" @click="emit('toggle-expand')">
         <span class="index tabular" aria-hidden="true">{{ rank }}</span>
         <span class="label" data-test="step-label">{{ step.label }}</span>
-      </label>
+      </button>
       <span v-if="photosChip || status" class="meta">
         <span v-if="photosChip" class="chip" data-test="step-photos-chip">{{ photosChip }}</span>
         <span v-if="status" class="status">{{ status }}</span>
@@ -150,12 +153,27 @@ function onToggle(event: Event): void {
 }
 
 .check {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  min-height: var(--touch-min);
+  cursor: pointer;
+}
+
+.title {
   display: flex;
   flex: 1;
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
   min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
