@@ -25,6 +25,8 @@ const memberSince = computed(() =>
 // Compteurs globaux de la collection : lus ici, sans toucher aux filtres du tableau de bord. Un échec laisse « – » dans les tuiles.
 const counts = ref<StatusCounts | null>(null)
 onMounted(async () => {
+  // Ouverture directe ou rechargement : le profil n'est pas encore là (la coque le charge en parallèle, le store ignore la réponse la plus ancienne).
+  if (!account.profile) void account.load()
   try {
     counts.value = (await apiFetch<{ counts: StatusCounts }>('/watches?page=1&pageSize=1')).counts
   } catch {
@@ -115,71 +117,73 @@ async function confirmDelete() {
   <section class="account">
     <PageHeader title="Mon compte" back="/" />
 
-    <section class="block" aria-labelledby="account-identity">
-      <h2 id="account-identity">Compte</h2>
-      <div class="identity">
-        <Avatar variant="large" :initial="account.initial" />
-        <div class="identity-text">
-          <p class="email" data-test="account-email">{{ profile?.email }}</p>
-          <p v-if="memberSince" class="hint">Membre depuis {{ memberSince }}</p>
-          <p v-if="profile?.emailVerifiedAt" class="hint">Adresse vérifiée le {{ formatDate(profile.emailVerifiedAt) }}</p>
+    <div class="settings">
+      <section class="block" aria-labelledby="account-identity">
+        <h2 id="account-identity">Compte</h2>
+        <div class="identity">
+          <Avatar variant="large" :initial="account.initial" />
+          <div class="identity-text">
+            <p class="email" data-test="account-email">{{ profile?.email }}</p>
+            <p v-if="memberSince" class="hint">Membre depuis {{ memberSince }}</p>
+            <p v-if="profile?.emailVerifiedAt" class="hint">Adresse vérifiée le {{ formatDate(profile.emailVerifiedAt) }}</p>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section aria-labelledby="account-stats">
-      <h2 id="account-stats" class="section-title">Statistiques</h2>
-      <div class="stat-grid">
-        <div class="stat-tile">
-          <span class="stat-value tabular" data-test="stat-total">{{ stat('all') }}</span>
-          <span class="stat-label">Montres</span>
+      <section aria-labelledby="account-stats">
+        <h2 id="account-stats" class="section-title">Statistiques</h2>
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <span class="stat-value tabular" data-test="stat-total">{{ stat('all') }}</span>
+            <span class="stat-label">Montres</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value tabular" data-test="stat-in-progress">{{ stat('in_progress') }}</span>
+            <span class="stat-label">En cours</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value tabular" data-test="stat-finished">{{ stat('completed') }}</span>
+            <span class="stat-label">Terminées</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-value tabular" data-test="stat-sold">{{ stat('sold') }}</span>
+            <span class="stat-label">Vendues</span>
+          </div>
         </div>
-        <div class="stat-tile">
-          <span class="stat-value tabular" data-test="stat-in-progress">{{ stat('in_progress') }}</span>
-          <span class="stat-label">En cours</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-value tabular" data-test="stat-finished">{{ stat('completed') }}</span>
-          <span class="stat-label">Terminées</span>
-        </div>
-        <div class="stat-tile">
-          <span class="stat-value tabular" data-test="stat-sold">{{ stat('sold') }}</span>
-          <span class="stat-label">Vendues</span>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="block" aria-labelledby="account-security">
-      <h2 id="account-security">Sécurité</h2>
-      <p v-if="passwordChanged" class="notice" role="status">Mot de passe modifié.</p>
-      <div class="row">
-        <div>
-          <p class="row-label">Mot de passe</p>
-          <p class="hint">••••••••</p>
+      <section class="block" aria-labelledby="account-security">
+        <h2 id="account-security">Sécurité</h2>
+        <p v-if="passwordChanged" class="notice" role="status">Mot de passe modifié.</p>
+        <div class="row">
+          <div>
+            <p class="row-label">Mot de passe</p>
+            <p class="hint">••••••••</p>
+          </div>
+          <button class="btn btn-secondary" type="button" data-test="password-open" @click="openPassword">Modifier</button>
         </div>
-        <button class="btn btn-secondary" type="button" data-test="password-open" @click="openPassword">Modifier</button>
-      </div>
-      <div class="row">
-        <p class="row-label">Dernier changement</p>
-        <p class="hint" data-test="password-changed-at">
-          {{ profile?.passwordChangedAt ? formatDate(profile.passwordChangedAt) : 'Jamais modifié' }}
+        <div class="row">
+          <p class="row-label">Dernier changement</p>
+          <p class="hint" data-test="password-changed-at">
+            {{ !profile ? '–' : profile.passwordChangedAt ? formatDate(profile.passwordChangedAt) : 'Jamais modifié' }}
+          </p>
+        </div>
+      </section>
+
+      <section class="block" aria-labelledby="account-session">
+        <h2 id="account-session">Session</h2>
+        <p class="hint">La déconnexion ferme la session de cet appareil.</p>
+        <button class="btn btn-secondary" type="button" @click="logout">Se déconnecter</button>
+      </section>
+
+      <section class="block" aria-labelledby="account-delete">
+        <h2 id="account-delete">Suppression du compte</h2>
+        <p class="hint">
+          Supprime définitivement votre compte et toutes vos données : montres, projets, étapes, notes, photos, mesures et coûts.
         </p>
-      </div>
-    </section>
-
-    <section class="block" aria-labelledby="account-session">
-      <h2 id="account-session">Session</h2>
-      <p class="hint">La déconnexion ferme la session de cet appareil.</p>
-      <button class="btn btn-secondary" type="button" @click="logout">Se déconnecter</button>
-    </section>
-
-    <section class="block" aria-labelledby="account-delete">
-      <h2 id="account-delete">Suppression du compte</h2>
-      <p class="hint">
-        Supprime définitivement votre compte et toutes vos données : montres, projets, étapes, notes, photos, mesures et coûts.
-      </p>
-      <button class="danger" type="button" @click="askDelete">Supprimer mon compte</button>
-    </section>
+        <button class="danger" type="button" @click="askDelete">Supprimer mon compte</button>
+      </section>
+    </div>
 
     <Sheet v-if="changingPassword" title="Modifier le mot de passe" :busy="changing" @close="changingPassword = false">
       <form class="sheet-form" data-test="change-password" novalidate @submit.prevent="changePassword">
@@ -226,6 +230,14 @@ async function confirmDelete() {
 .account {
   display: grid;
   gap: var(--space-4);
+}
+
+.settings {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--settings-max);
+  margin: 0 auto;
 }
 
 h2,

@@ -48,12 +48,6 @@ a {
   color: var(--accent-text);
 }
 
-.app {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: var(--space-4);
-}
-
 /* Pages d'authentification (connexion, inscription, vérification d'adresse) */
 .auth-main h1,
 .auth-main p {
@@ -115,7 +109,7 @@ a {
   gap: var(--space-1);
 }
 
-.banner-warning {
+.alert.banner-warning {
   border-color: var(--warning);
   color: var(--text);
 }

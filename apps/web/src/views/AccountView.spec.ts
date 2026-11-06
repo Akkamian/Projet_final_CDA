@@ -6,14 +6,14 @@ import { useAccountStore, type AccountProfile } from '../stores/account'
 import { calls, makeRouter, sentBody, stubFetch, type StubHandler } from '../test/helpers'
 import AccountView from './AccountView.vue'
 
-async function mountView(respond: StubHandler = () => ({ status: 404, body: {} }), profile: Partial<AccountProfile> = {}) {
+async function mountView(respond: StubHandler = () => ({ status: 404, body: {} }), profile: Partial<AccountProfile> | null = {}) {
   vi.unstubAllGlobals()
   setAccessToken('tok')
   document.body.innerHTML = ''
   const fetchMock = stubFetch(respond)
   const pinia = createPinia()
   setActivePinia(pinia)
-  useAccountStore().profile = { ...PROFILE, ...profile }
+  useAccountStore().profile = profile === null ? null : { ...PROFILE, ...profile }
   const router = await makeRouter('/account', [{ path: '/account', name: 'account', component: AccountView }])
   const wrapper = mount(AccountView, { global: { plugins: [pinia, router] }, attachTo: document.body })
   await flushPromises()
@@ -182,6 +182,18 @@ describe('AccountView', () => {
     expect(withDate.wrapper.find('[data-test="password-changed-at"]').text()).toContain('02/08/2026')
     const never = await mountView(undefined, { passwordChangedAt: null })
     expect(never.wrapper.find('[data-test="password-changed-at"]').text()).toContain('Jamais modifié')
+  })
+
+  it('sans profil chargé, « Dernier changement » n’affirme pas « Jamais modifié »', async () => {
+    const { wrapper } = await mountView(() => ({ status: 404, body: {} }), null)
+    expect(wrapper.find('[data-test="password-changed-at"]').text()).toBe('–')
+  })
+
+  it('charge le profil au montage quand il est absent (ouverture directe ou rechargement)', async () => {
+    const { wrapper, fetchMock } = await mountView((url) => (url.pathname === '/account' ? { status: 200, body: PROFILE } : { status: 404, body: {} }), null)
+    expect(calls(fetchMock)).toContain('GET /account')
+    expect(wrapper.find('[data-test="account-email"]').text()).toBe('horloger@example.com')
+    expect(wrapper.find('[data-test="password-changed-at"]').text()).toContain('02/08/2026')
   })
 
   it('le formulaire de mot de passe n’est affiché qu’après « Modifier »', async () => {

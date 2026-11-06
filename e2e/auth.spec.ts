@@ -20,6 +20,8 @@ test('S1 + S2 + connexion : inscription, connexion refusée tant que l’adresse
   await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Connexion' }).click()
   await expect(page.getByRole('alert')).toContainText('pas encore vérifiée')
+  // Bannière d'avertissement ambre (--warning), pas le rouge des erreurs : `.alert` ne doit pas l'emporter sur `.banner-warning`.
+  await expect(page.locator('.banner-warning')).toHaveCSS('border-top-color', 'rgb(201, 154, 62)')
 
   // Le lien est lu dans MailDev, comme le ferait l'utilisateur.
   await page.goto(await readLastEmailLink(email))

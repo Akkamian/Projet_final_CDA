@@ -30,6 +30,16 @@ test('changer son mot de passe depuis la feuille, puis se reconnecter avec le no
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible()
 })
 
+test('desktop : les cartes du compte tiennent dans une colonne de 720 px', async ({ page, request }) => {
+  const email = uniqueEmail('account-width')
+  await createVerifiedAccount(request, email)
+  await login(page, email)
+  await page.goto('/account')
+
+  const box = await page.locator('.settings').boundingBox()
+  expect(box!.width).toBeLessThanOrEqual(720)
+})
+
 test('les statistiques du compte comptent les montres créées', async ({ page, request }) => {
   const email = uniqueEmail('account-stats')
   await createVerifiedAccount(request, email)
