@@ -383,6 +383,6 @@ describe('DashboardView, desktop', () => {
     expect(requested(fetchMock)).toMatchObject({ status: 'sold', page: '1' })
     expect(rows(wrapper)).toHaveLength(1)
     expect(wrapper.findAll('[data-test="stat"]').map((t) => t.text())).toEqual(tilesBefore)
-    expect(wrapper.findAll('[data-test="stat"]')[5]!.text()).toBe('Marge cumulée+60 €')
+    expect(wrapper.findAll('[data-test="stat"]')[5]!.text()).toBe('+60 €Marge cumulée')
   })
 })

@@ -48,7 +48,20 @@ const marginClass = (margin: string) => (margin.startsWith('-') ? 'negative' : N
           <td>
             <div class="watch">
               <img v-if="watch.thumbnailUrl" class="thumb" :src="fileUrl(watch.thumbnailUrl)" alt="" />
-              <span v-else class="thumb" :class="{ 'thumb-empty': watch.status === 'no_project' }" aria-hidden="true" />
+              <span v-else class="thumb" :class="{ 'thumb-empty': watch.status === 'no_project' }" aria-hidden="true">
+                <svg
+                  v-if="watch.status !== 'no_project'"
+                  viewBox="0 0 24 24"
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                >
+                  <circle cx="12" cy="12" r="6.5" />
+                  <path d="M12 9v3.2l2 1.3M9 2.5h6M9 21.5h6" stroke-linecap="round" />
+                </svg>
+              </span>
               <div class="names">
                 <RouterLink class="title" :to="{ name: 'watch-detail', params: { id: watch.id } }"
                   >{{ watch.brand }} {{ watch.model }}</RouterLink
@@ -114,7 +127,7 @@ const marginClass = (margin: string) => (margin.startsWith('-') ? 'negative' : N
 
 <style scoped>
 .table-card {
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
@@ -127,12 +140,15 @@ table {
 }
 
 th {
+  position: relative;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   text-align: left;
+  text-transform: uppercase;
 }
 
 td {
@@ -151,6 +167,8 @@ tbody tr:hover {
 
 .sort {
   padding: 0;
+  letter-spacing: inherit;
+  text-transform: inherit;
   border: 0;
   background: transparent;
   color: inherit;
@@ -165,8 +183,10 @@ tbody tr:hover {
 }
 
 .thumb {
-  display: block;
+  display: grid;
   flex: none;
+  place-items: center;
+  color: var(--text-secondary);
   width: 40px;
   height: 40px;
   border: 1px solid var(--border);
@@ -204,6 +224,7 @@ tbody tr:hover {
 
 .amount {
   display: block;
+  font-weight: 600;
 }
 
 .muted {
@@ -228,6 +249,7 @@ tbody tr:hover {
   background: var(--bg);
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .status::before {

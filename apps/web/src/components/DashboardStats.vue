@@ -19,8 +19,8 @@ const tiles = computed(() => [
 <template>
   <div class="stats">
     <div v-for="tile in tiles" :key="tile.label" class="tile" :class="{ positive: tile.positive }" data-test="stat">
-      <span class="label">{{ tile.label }}</span>
       <span class="value tabular">{{ tile.value }}</span>
+      <span class="label">{{ tile.label }}</span>
     </div>
   </div>
 </template>
@@ -43,7 +43,7 @@ const tiles = computed(() => [
 
 .label {
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .value {

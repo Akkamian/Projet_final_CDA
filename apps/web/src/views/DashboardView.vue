@@ -129,11 +129,13 @@ const subtitle = computed(() =>
 <style scoped>
 .dashboard {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
 .account-btn {
   display: inline-flex;
+  text-decoration: none;
 }
 
 .cards {
@@ -163,6 +165,28 @@ const subtitle = computed(() =>
 @media (min-width: 640px) {
   .dashboard {
     gap: var(--space-5);
+  }
+
+  /* Barre du haut pleine largeur de la zone de contenu, titre et compteur sur une ligne (maquette desktop). */
+  .dashboard :deep(.page-header) {
+    margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) 0;
+  }
+
+  .dashboard :deep(.titles) {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+}
+
+/* Rail d'icônes : la barre d'outils passe sous le titre plutôt que de déborder. */
+@media (min-width: 640px) and (max-width: 900px) {
+  .dashboard :deep(.page-header) {
+    flex-wrap: wrap;
+  }
+
+  .dashboard :deep(.titles) {
+    flex: none;
   }
 }
 </style>

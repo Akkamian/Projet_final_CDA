@@ -48,6 +48,9 @@ select {
 }
 
 .new {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   width: auto;
   min-height: 36px;
   padding: 0 var(--space-4);
