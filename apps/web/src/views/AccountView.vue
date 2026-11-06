@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { apiFetch } from '../api/client'
 import Avatar from '../components/Avatar.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PageHeader from '../components/PageHeader.vue'
 import PasswordField from '../components/PasswordField.vue'
 import Sheet from '../components/Sheet.vue'
 import { formatDate } from '../format'
@@ -112,6 +113,8 @@ async function confirmDelete() {
 
 <template>
   <section class="account">
+    <PageHeader title="Mon compte" back="/" />
+
     <section class="block" aria-labelledby="account-identity">
       <h2 id="account-identity">Compte</h2>
       <div class="identity">

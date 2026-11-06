@@ -84,6 +84,8 @@ L'application doit permettre à un horloger amateur de :
 **Then** le mot de passe est modifié
 
 **And** si le mot de passe actuel est incorrect, le changement est refusé
+**And** le changement se fait depuis une feuille ouverte par « Modifier » dans la carte « Sécurité » de l'écran « Mon compte » ; la feuille ne se ferme pas tant que l'enregistrement est en cours
+**And** la carte « Sécurité » indique la date du dernier changement, ou « Jamais modifié »
 
 ---
 
@@ -608,6 +610,27 @@ L'application doit permettre à un horloger amateur de :
 **And** si l'adresse est déjà vérifiée, aucun email n'est envoyé
 **And** les demandes répétées sont limitées comme décrit au scénario 36
 
+#### Scénario 41 — Consulter mon compte et mes statistiques
+**En tant que** horloger amateur connecté,
+**je veux** voir mon identité et le nombre de mes montres par statut,
+**afin de** vérifier mon compte et mesurer l'avancement de ma collection.
+
+**Given** je suis connecté
+**When** j'ouvre « Mon compte »
+**Then** l'écran affiche mon adresse email, le mois de mon inscription et, si elle est vérifiée, la date de vérification
+**And** quatre tuiles indiquent le nombre de montres, en cours, terminées et vendues
+**And** si les statistiques ne peuvent pas être chargées, les tuiles affichent « – » et le reste de l'écran reste utilisable
+
+#### Scénario 42 — Afficher le mot de passe que je saisis
+**En tant que** horloger amateur,
+**je veux** afficher temporairement le mot de passe que je saisis,
+**afin de** vérifier ma saisie avant de valider.
+
+**Given** je suis sur un écran de connexion, d'inscription, de réinitialisation ou de changement de mot de passe
+**When** j'active le bouton « Afficher le mot de passe » d'un champ
+**Then** le texte de ce champ est visible, sa valeur est conservée et le bouton indique son état (« Masquer le mot de passe »)
+**And** le champ redevient masqué dès que je quitte l'écran
+
 ## 4. Critères d'acceptation
 
 - Un compte ne se connecte qu'après vérification de son adresse email ; le lien de vérification peut être renvoyé, avec la même réponse que l'adresse corresponde ou non à un compte.
@@ -627,6 +650,7 @@ L'application doit permettre à un horloger amateur de :
 - L'adresse email est enregistrée en minuscules ; la date de revente ne précède pas la date d'achat ; aucune date saisie n'est dans le futur.
 - Un projet ou une montre peut être supprimé, après confirmation, avec toutes les données qui en dépendent.
 - Un utilisateur peut supprimer son compte avec toutes ses données.
+- L'écran « Mon compte » présente l'identité, quatre statistiques, la sécurité (changement de mot de passe en feuille), la session et la suppression ; les mentions des Conditions Générales de Vente et de la Politique de Confidentialité sont du texte sans lien.
 - Le tableau de bord se filtre par statut (« Toutes », « En cours », « Terminé », « Vendue », « Sans projet »).
 - Les tentatives répétées de connexion, de réinitialisation et de renvoi de lien sont limitées.
 

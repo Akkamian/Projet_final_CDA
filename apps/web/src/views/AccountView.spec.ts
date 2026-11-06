@@ -140,6 +140,12 @@ describe('AccountView', () => {
     expect((wrapper.find('#current-password').element as HTMLInputElement).value).toBe('')
   })
 
+  it('a pour titre « Mon compte » et un retour vers le tableau de bord', async () => {
+    const { wrapper } = await mountView()
+    expect(wrapper.find('h1').text()).toBe('Mon compte')
+    expect(wrapper.find('a.back').attributes('href')).toBe('/')
+  })
+
   it('affiche l’email, « Membre depuis » et « Adresse vérifiée le »', async () => {
     const { wrapper } = await mountView()
     expect(wrapper.find('[data-test="account-email"]').text()).toBe('horloger@example.com')
