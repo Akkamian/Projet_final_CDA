@@ -116,4 +116,15 @@ legend {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
 }
+
+/* Un champ date a une largeur propre : sans ces règles, il déborde sur le prix à 390 px. */
+.pair .field {
+  min-width: 0;
+}
+
+.pair input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
 </style>
