@@ -5,13 +5,6 @@ import { setAccessToken } from '../api/client'
 import { makeRouter, stubFetch, type StubResponse } from '../test/helpers'
 import WatchDetailView from './WatchDetailView.vue'
 
-// jsdom n'a pas de canvas : le graphique est testé à part (PerformanceChart.spec.ts).
-vi.mock('chart.js', () => {
-  const stub = class {}
-  const Chart = Object.assign(class { destroy() {} }, { register: () => {} })
-  return { Chart, LineController: stub, LineElement: stub, PointElement: stub, LinearScale: stub, CategoryScale: stub, Tooltip: stub }
-})
-
 const step = (id: number, label: string, done = false) => ({
   id,
   stepOrder: id,

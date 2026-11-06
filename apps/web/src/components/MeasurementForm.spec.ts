@@ -5,21 +5,6 @@ import { setAccessToken } from '../api/client'
 import { calls, stubFetch } from '../test/helpers'
 import type { MeasurementDetail } from '../stores/watches'
 import MeasurementForm from './MeasurementForm.vue'
-import PerformanceChart from './PerformanceChart.vue'
-
-// jsdom n'a pas de canvas : on observe la configuration que le composant donne à Chart.js.
-const created = vi.hoisted(() => ({ configs: [] as { data: { labels: string[]; datasets: { label: string; data: number[] }[] } }[] }))
-vi.mock('chart.js', () => {
-  class Chart {
-    static register = vi.fn()
-    destroy = vi.fn()
-    constructor(_canvas: unknown, config: (typeof created.configs)[number]) {
-      created.configs.push(config)
-    }
-  }
-  const stub = class {}
-  return { Chart, LineController: stub, LineElement: stub, PointElement: stub, LinearScale: stub, CategoryScale: stub, Tooltip: stub }
-})
 
 const measure = (id: number, measuredAt: string, rate: string, beat: string, amp: string): MeasurementDetail => ({
   id,
@@ -28,31 +13,6 @@ const measure = (id: number, measuredAt: string, rate: string, beat: string, amp
   beatErrorMs: beat,
   amplitudeDegrees: amp,
   watchPosition: null,
-})
-
-describe('PerformanceChart', () => {
-  beforeEach(() => {
-    created.configs.length = 0
-  })
-
-  it('S20 le graphique reçoit trois séries dans l’ordre chronologique', () => {
-    mount(PerformanceChart, {
-      props: {
-        measurements: [
-          measure(2, '2025-05-20', '7.00', '0.30', '262.00'),
-          measure(1, '2025-05-05', '126.00', '2.90', '188.00'),
-          measure(3, '2025-05-20', '4.00', '0.20', '270.00'),
-        ],
-      },
-    })
-
-    const { data } = created.configs[0]!
-    expect(data.labels).toEqual(['05/05/2025', '20/05/2025', '20/05/2025'])
-    expect(data.datasets.map((d) => d.label)).toEqual(['Marche (s/j)', 'Beat error (ms)', 'Amplitude (°)'])
-    expect(data.datasets[0]!.data).toEqual([126, 7, 4])
-    expect(data.datasets[1]!.data).toEqual([2.9, 0.3, 0.2])
-    expect(data.datasets[2]!.data).toEqual([188, 262, 270])
-  })
 })
 
 describe('MeasurementForm', () => {

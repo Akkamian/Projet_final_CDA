@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { formatDate } from '../format'
+import { computed, ref, watch } from 'vue'
+import { formatDate, formatDelta, formatMeasure, formatRate } from '../format'
 import { useWatchesStore, type MeasurementDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
 import ConfirmDialog from './ConfirmDialog.vue'
 import MeasurementForm from './MeasurementForm.vue'
-import PerformanceChart from './PerformanceChart.vue'
+import PerformanceScales from './PerformanceScales.vue'
 
 const props = defineProps<{ projectId: number; measurements: MeasurementDetail[] }>()
 const emit = defineEmits<{ 'update:measurements': [value: MeasurementDetail[]] }>()
@@ -17,10 +17,46 @@ const editing = ref<MeasurementDetail | null>(null)
 const removing = ref<MeasurementDetail | null>(null)
 const busy = ref(false)
 const error = ref<string | null>(null)
+// Filtre de position : null = toutes les positions.
+const position = ref<string | null>(null)
 
 const chronological = (list: MeasurementDetail[]) => [...list].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt) || a.id - b.id)
-// La liste montre les plus récentes d'abord ; le graphique reçoit l'ordre chronologique (RG-PER-04).
-const latestFirst = computed(() => chronological(props.measurements).reverse())
+
+// Positions présentes, de la plus fréquente à la moins fréquente : une pastille par position.
+const positions = computed(() => {
+  const counts = new Map<string, number>()
+  for (const m of props.measurements) if (m.watchPosition) counts.set(m.watchPosition, (counts.get(m.watchPosition) ?? 0) + 1)
+  return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+})
+
+// Une position qui n'existe plus (mesure supprimée ou corrigée) ne doit pas laisser un filtre vide.
+watch(positions, (list) => {
+  if (position.value !== null && !list.some((p) => p.name === position.value)) position.value = null
+})
+
+const visible = computed(() =>
+  position.value === null ? props.measurements : props.measurements.filter((m) => m.watchPosition === position.value),
+)
+
+// L'écart de marche se calcule avec la mesure précédente à la même position, sur toutes les mesures (pas seulement celles du filtre).
+const deltas = computed(() => {
+  const last = new Map<string, string>()
+  const result = new Map<number, string | null>()
+  for (const m of chronological(props.measurements)) {
+    const previous = m.watchPosition ? (last.get(m.watchPosition) ?? null) : null
+    result.set(m.id, formatDelta(m.rateSecondsPerDay, previous))
+    if (m.watchPosition) last.set(m.watchPosition, m.rateSecondsPerDay)
+  }
+  return result
+})
+
+const rateText = (m: MeasurementDetail) => {
+  const delta = deltas.value.get(m.id)
+  return delta ? `${formatRate(m.rateSecondsPerDay)} (${delta})` : formatRate(m.rateSecondsPerDay)
+}
+
+// La liste montre les plus récentes d'abord ; les échelles reçoivent les mesures du filtre (RG-PER-04).
+const latestFirst = computed(() => chronological(visible.value).reverse())
 
 function saved(m: MeasurementDetail): void {
   const next = editing.value ? props.measurements.map((x) => (x.id === m.id ? m : x)) : [...props.measurements, m]
@@ -69,42 +105,63 @@ async function confirmRemove(): Promise<void> {
 
     <p v-if="measurements.length === 0" class="hint">Aucune mesure : ajoutez un relevé au timegrapher pour suivre l’évolution.</p>
     <template v-else>
-      <PerformanceChart :measurements="measurements" />
-      <table class="measurements">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Marche (s/j)</th>
-            <th>Beat error</th>
-            <th>Amplitude</th>
-            <th><span class="visually-hidden">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in latestFirst" :key="m.id" data-test="measurement-row">
-            <td>
-              {{ formatDate(m.measuredAt) }}<span v-if="m.watchPosition" class="pos">{{ m.watchPosition }}</span>
-            </td>
-            <td>{{ m.rateSecondsPerDay }}</td>
-            <td>{{ m.beatErrorMs }} ms</td>
-            <td>{{ m.amplitudeDegrees }}°</td>
-            <td class="row-end">
-              <button
-                type="button"
-                class="ghost"
-                :data-test="`measurement-edit-${m.id}`"
-                :disabled="busy"
-                @click="((editing = m), (adding = false))"
-              >
-                Modifier
-              </button>
-              <button type="button" class="ghost danger" :data-test="`measurement-remove-${m.id}`" :disabled="busy" @click="removing = m">
-                Supprimer
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-if="positions.length > 0" class="pos-filter" role="group" aria-label="Position de mesure">
+        <button type="button" class="pos-chip" data-test="position-chip" :aria-pressed="position === null" @click="position = null">
+          Toutes
+        </button>
+        <button
+          v-for="p in positions"
+          :key="p.name"
+          type="button"
+          class="pos-chip"
+          data-test="position-chip"
+          :aria-pressed="position === p.name"
+          @click="position = p.name"
+        >
+          {{ p.name }} <span>{{ p.count }}</span>
+        </button>
+      </div>
+      <p v-if="position !== null" class="perf-context">
+        Première → dernière mesure, position <strong>{{ position }}</strong>
+      </p>
+      <PerformanceScales :measurements="visible" />
+      <div class="table-wrap">
+        <table class="measurements">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Position</th>
+              <th>Marche (s/j)</th>
+              <th>Beat error</th>
+              <th>Amplitude</th>
+              <th><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in latestFirst" :key="m.id" data-test="measurement-row">
+              <td class="tabular">{{ formatDate(m.measuredAt) }}</td>
+              <td>{{ m.watchPosition ?? '—' }}</td>
+              <td class="tabular">{{ rateText(m) }}</td>
+              <td class="tabular">{{ formatMeasure(m.beatErrorMs, 'ms') }}</td>
+              <td class="tabular">{{ formatMeasure(m.amplitudeDegrees, '°') }}</td>
+              <td class="row-end">
+                <button
+                  type="button"
+                  class="ghost"
+                  :data-test="`measurement-edit-${m.id}`"
+                  :disabled="busy"
+                  @click="((editing = m), (adding = false))"
+                >
+                  Modifier
+                </button>
+                <button type="button" class="ghost danger" :data-test="`measurement-remove-${m.id}`" :disabled="busy" @click="removing = m">
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </template>
 
     <p v-if="error" class="alert" role="alert">{{ error }}</p>
@@ -131,13 +188,61 @@ p {
 }
 
 h3 {
-  font-size: 15px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.pos-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pos-chip {
+  min-height: 30px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pos-chip span {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.pos-chip[aria-pressed='true'] {
+  border-color: var(--accent-text);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.perf-context {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.perf-context strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
 }
 
 .measurements {
@@ -154,14 +259,9 @@ td {
 }
 
 th {
+  position: relative;
   color: var(--text-secondary);
   font-weight: 600;
-}
-
-.pos {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 12px;
 }
 
 .row-end {

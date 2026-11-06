@@ -6,18 +6,6 @@ import { calls, makeRouter, sentBody, stubFetch, type StubResponse } from '../te
 import NewWatchView from './NewWatchView.vue'
 import WatchDetailView from './WatchDetailView.vue'
 
-// jsdom n'a pas de canvas : le graphique est testé à part (PerformanceChart.spec.ts).
-vi.mock('chart.js', () => {
-  const stub = class {}
-  const Chart = Object.assign(
-    class {
-      destroy() {}
-    },
-    { register: () => {} },
-  )
-  return { Chart, LineController: stub, LineElement: stub, PointElement: stub, LinearScale: stub, CategoryScale: stub, Tooltip: stub }
-})
-
 const project = (id: number, status: 'in_progress' | 'completed', createdAt = '2025-05-01T10:00:00Z') => ({
   id,
   status,
