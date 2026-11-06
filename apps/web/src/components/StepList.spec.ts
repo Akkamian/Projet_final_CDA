@@ -180,8 +180,9 @@ describe('StepList', () => {
   })
 
   it('S16 vider la note l’efface (null) ; un libellé vide n’est pas envoyé', async () => {
-    const withNote = [step(1, 'Désarmer', true, 'À revoir')]
-    const { wrapper, fetchMock } = mountList(() => ({ status: 200, body: step(1, 'Désarmer', true) }), withNote)
+    // Étape non terminée : une liste entièrement terminée s'ouvre sur son récapitulatif replié.
+    const withNote = [step(1, 'Désarmer', false, 'À revoir')]
+    const { wrapper, fetchMock } = mountList(() => ({ status: 200, body: step(1, 'Désarmer', false) }), withNote)
 
     await wrapper.find('[data-test="edit"]').trigger('click')
     await wrapper.find('[data-test="edit-label"]').setValue('   ')
@@ -220,6 +221,114 @@ describe('StepList', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
     expect(wrapper.emitted('update:steps')).toBeUndefined()
     expect(wrapper.findAll<HTMLInputElement>('input[type="checkbox"]')[1]!.element.checked).toBe(false)
+  })
+
+  describe('ligne d’étape à la maquette', () => {
+    const rich = [
+      { ...step(1, 'Désarmer', true), photos: [{ id: 9, url: '/uploads/a.png' }, { id: 10, url: '/uploads/b.png' }] },
+      step(2, 'Sortir le mouvement', false, 'Vis rouillée'),
+      { ...step(3, 'Déposer les aiguilles'), photos: [{ id: 11, url: '/uploads/c.png' }] },
+    ]
+    const row = (wrapper: ReturnType<typeof mountList>['wrapper'], i: number) => wrapper.findAll('[data-test="step"]')[i]!
+
+    it('la ligne montre l’index 01, le titre, « 2 photos » et « Terminé le … »', () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      const text = row(wrapper, 0).find('.row').text()
+      expect(text).toContain('01')
+      expect(text).toContain('Désarmer')
+      expect(text).toContain('2 photos')
+      expect(text).toContain('Terminé le 02/05/2025')
+    })
+
+    it('« 1 photo » au singulier, rien dans la puce sans photo', () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      expect(row(wrapper, 2).find('.row').text()).toContain('1 photo')
+      expect(row(wrapper, 2).find('.row').text()).not.toContain('1 photos')
+      expect(row(wrapper, 1).find('[data-test="step-photos-chip"]').exists()).toBe(false)
+    })
+
+    it('« Notes en cours » pour une étape non terminée qui a une note', () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      expect(row(wrapper, 1).find('.row').text()).toContain('Notes en cours')
+      expect(row(wrapper, 2).find('.row').text()).not.toContain('Notes en cours')
+    })
+
+    it('le chevron déplie et replie le détail, aria-expanded suit', async () => {
+      const { wrapper } = mountList(undefined, rich)
+      const chevron = row(wrapper, 1).find('[data-test="expand"]')
+
+      expect(chevron.attributes('aria-expanded')).toBe('false')
+      expect(row(wrapper, 1).find('[data-test="step-panel"]').isVisible()).toBe(false)
+
+      await chevron.trigger('click')
+      expect(chevron.attributes('aria-expanded')).toBe('true')
+      expect(row(wrapper, 1).find('[data-test="step-panel"]').isVisible()).toBe(true)
+      expect(row(wrapper, 1).find('[data-test="step-notes"]').text()).toBe('Vis rouillée')
+
+      await chevron.trigger('click')
+      expect(chevron.attributes('aria-expanded')).toBe('false')
+    })
+
+    it('une seule ligne dépliée à la fois', async () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      await row(wrapper, 0).find('[data-test="expand"]').trigger('click')
+      await row(wrapper, 1).find('[data-test="expand"]').trigger('click')
+
+      expect(wrapper.findAll('[data-test="expand"]').map((c) => c.attributes('aria-expanded'))).toEqual(['false', 'true', 'false'])
+    })
+
+    it('modifier une étape déplie sa ligne', async () => {
+      const { wrapper } = mountList(undefined, rich)
+
+      await row(wrapper, 1).find('[data-test="edit"]').trigger('click')
+
+      expect(row(wrapper, 1).find('[data-test="expand"]').attributes('aria-expanded')).toBe('true')
+      expect(row(wrapper, 1).find('[data-test="edit-label"]').exists()).toBe(true)
+    })
+
+    it('la barre de progression expose le nombre d’étapes terminées', () => {
+      const { wrapper } = mountList()
+
+      const bar = wrapper.find('[role="progressbar"]')
+      expect(bar.attributes('aria-valuenow')).toBe('1')
+      expect(bar.attributes('aria-valuemax')).toBe('3')
+      expect(bar.attributes('aria-valuemin')).toBe('0')
+    })
+
+    it('toutes les étapes terminées : récapitulatif replié, dépliable pour voir les lignes', async () => {
+      const allDone = [step(1, 'Désarmer', true), step(2, 'Sortir le mouvement', true)]
+      const { wrapper } = mountList(undefined, allDone)
+
+      expect(wrapper.text()).toContain('Toutes les étapes sont terminées')
+      expect(wrapper.find('[data-test="step"]').exists()).toBe(false)
+
+      await wrapper.find('[data-test="recap"]').trigger('click')
+      expect(wrapper.findAll('[data-test="step"]')).toHaveLength(2)
+    })
+
+    it('terminer la dernière étape ne replie pas la liste sous la main de l’utilisateur', async () => {
+      const done = { ...step(3, 'Déposer les aiguilles'), isCompleted: true, completedAt: '2025-05-03T08:00:00Z' }
+      const { wrapper } = mountList(() => ({ status: 200, body: done }), [step(1, 'Désarmer', true), step(2, 'Sortir le mouvement', true), step(3, 'Déposer les aiguilles')])
+
+      await wrapper.findAll('input[type="checkbox"]')[2]!.setValue(true)
+      await flushPromises()
+      await wrapper.setProps({ steps: lastEmitted(wrapper) })
+
+      expect(wrapper.findAll('[data-test="step"]')).toHaveLength(3)
+    })
+
+    it('un projet terminé reçoit une étape ajoutée : la liste réapparaît', async () => {
+      const allDone = [step(1, 'Désarmer', true)]
+      const { wrapper } = mountList(undefined, allDone)
+
+      await wrapper.setProps({ steps: [...allDone, step(2, 'Contrôler')] })
+
+      expect(wrapper.findAll('[data-test="step"]')).toHaveLength(2)
+    })
   })
 
   describe('photos d’une étape', () => {

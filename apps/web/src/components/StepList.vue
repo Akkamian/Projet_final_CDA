@@ -13,12 +13,20 @@ const watches = useWatchesStore()
 const busy = ref(false)
 const error = ref<string | null>(null)
 const editingId = ref<number | null>(null)
+// Une seule ligne dépliée à la fois.
+const expandedId = ref<number | null>(null)
 const deleting = ref<StepDetail | null>(null)
 const removingPhoto = ref<{ step: StepDetail; photo: { id: number; url: string } } | null>(null)
 const adding = ref(false)
 const newLabel = ref('')
 
 const doneCount = computed(() => props.steps.filter((s) => s.isCompleted).length)
+const allDone = computed(() => props.steps.length > 0 && doneCount.value === props.steps.length)
+// Un projet dont toutes les étapes sont terminées à l'ouverture montre un récapitulatif replié. Terminer la dernière étape en cours de
+// session ne replie pas la liste : l'utilisateur est en train de s'en servir.
+const listOpen = ref(!allDone.value)
+const showList = computed(() => !allDone.value || listOpen.value)
+const progress = computed(() => (props.steps.length === 0 ? 0 : Math.round((doneCount.value / props.steps.length) * 100)))
 
 /** Une seule écriture à la fois ; une erreur de l'API laisse la liste telle qu'elle était. */
 async function run(action: () => Promise<void>): Promise<boolean> {
@@ -124,6 +132,16 @@ async function add(): Promise<void> {
       </div>
       <button type="button" class="ghost" data-test="add-open" @click="adding = !adding">+ Étape</button>
     </header>
+    <div
+      class="progress-bar"
+      role="progressbar"
+      aria-label="Progression des étapes"
+      aria-valuemin="0"
+      :aria-valuemax="steps.length"
+      :aria-valuenow="doneCount"
+    >
+      <span class="fill" :style="{ width: `${progress}%` }"></span>
+    </div>
 
     <form v-if="adding" class="add" @submit.prevent="add">
       <input
@@ -139,19 +157,26 @@ async function add(): Promise<void> {
 
     <p v-if="error" class="alert" role="alert">{{ error }}</p>
 
-    <ol>
+    <button v-if="allDone" type="button" class="recap" data-test="recap" :aria-expanded="listOpen" @click="listOpen = !listOpen">
+      Toutes les étapes sont terminées
+    </button>
+
+    <ol v-if="showList">
       <StepItem
         v-for="(step, index) in steps"
         :key="step.id"
         :step="step"
+        :index="index"
         :first="index === 0"
         :last="index === steps.length - 1"
         :busy="busy"
         :editing="editingId === step.id"
+        :expanded="expandedId === step.id"
+        @toggle-expand="expandedId = expandedId === step.id ? null : step.id"
         @toggle="(done, box) => toggle(step, done, box)"
         @move-up="move(index, -1)"
         @move-down="move(index, 1)"
-        @edit="editingId = editingId === step.id ? null : step.id"
+        @edit="((editingId = editingId === step.id ? null : step.id), (expandedId = step.id))"
         @cancel-edit="editingId = null"
         @save="(value) => saveEdit(step, value)"
         @delete="deleting = step"
@@ -198,7 +223,35 @@ p {
 }
 
 h3 {
-  font-size: 15px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.progress-bar {
+  height: 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.progress-bar .fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.recap {
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
 }
 
 .progress {
@@ -209,7 +262,6 @@ h3 {
 ol {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
   margin: 0;
   padding: 0;
 }
