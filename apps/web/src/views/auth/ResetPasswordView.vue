@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError, apiFetch } from '../../api/client'
+import AuthLayout from '../../components/AuthLayout.vue'
+import PasswordField from '../../components/PasswordField.vue'
 
 const route = useRoute()
 // Le lien de l'email est /reset-password?token=… (1 h, usage unique).
@@ -44,44 +46,42 @@ async function submit() {
 </script>
 
 <template>
-  <section class="auth-card">
-    <p class="brand">Watch Restoration Tracker</p>
-
+  <AuthLayout>
     <template v-if="done">
       <h1>Mot de passe modifié</h1>
       <p>Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
       <RouterLink class="btn" to="/login">Connexion</RouterLink>
     </template>
-
     <template v-else-if="invalidLink">
       <h1>Nouveau mot de passe</h1>
-      <p class="alert" role="alert">Ce lien est invalide ou a expiré. Demandez-en un nouveau.</p>
+      <p class="alert banner" role="alert">Ce lien est invalide ou a expiré. Demandez-en un nouveau.</p>
       <RouterLink class="btn" to="/forgot-password">Demander un nouveau lien</RouterLink>
     </template>
-
     <template v-else>
       <h1>Nouveau mot de passe</h1>
-      <p v-if="error" class="alert" role="alert">{{ error }}</p>
+      <p v-if="error" class="alert banner" role="alert">{{ error }}</p>
       <form @submit.prevent="submit">
-        <div class="field">
-          <label for="password">Nouveau mot de passe</label>
-          <input id="password" v-model="password" name="password" type="password" autocomplete="new-password" maxlength="72" required />
-          <span class="field-hint">8 caractères minimum.</span>
-        </div>
-        <div class="field">
-          <label for="confirmPassword">Confirmation du mot de passe</label>
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            maxlength="72"
-            required
-          />
-        </div>
+        <PasswordField
+          id="password"
+          v-model="password"
+          name="password"
+          label="Nouveau mot de passe"
+          autocomplete="new-password"
+          :maxlength="72"
+          hint="8 caractères minimum."
+          required
+        />
+        <PasswordField
+          id="confirmPassword"
+          v-model="confirmPassword"
+          name="confirmPassword"
+          label="Confirmation du mot de passe"
+          autocomplete="new-password"
+          :maxlength="72"
+          required
+        />
         <button class="btn" type="submit" :disabled="busy">Modifier le mot de passe</button>
       </form>
     </template>
-  </section>
+  </AuthLayout>
 </template>

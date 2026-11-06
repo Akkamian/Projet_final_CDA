@@ -34,7 +34,7 @@ export async function createVerifiedAccount(request: APIRequestContext, email: s
 export async function login(page: Page, email: string): Promise<void> {
   await page.goto('/login')
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Mot de passe').fill(PASSWORD)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Connexion' }).click()
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible()
 }

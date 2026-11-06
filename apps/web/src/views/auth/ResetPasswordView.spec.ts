@@ -79,4 +79,9 @@ describe('ResetPasswordView', () => {
     expect(wrapper.find('[role="alert"]').text()).toContain('Une erreur est survenue')
     expect(wrapper.find('form').exists()).toBe(true)
   })
+
+  it('les deux champs ont un bouton œil', async () => {
+    const { wrapper } = await mountView()
+    expect(wrapper.findAll('[data-test="toggle-password"]')).toHaveLength(2)
+  })
 })

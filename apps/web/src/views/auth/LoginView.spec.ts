@@ -98,4 +98,20 @@ describe('LoginView', () => {
 
     expect(router.currentRoute.value.path).toBe('/')
   })
+
+  it('le champ mot de passe a un bouton œil', async () => {
+    const { wrapper } = await mountView()
+    expect(wrapper.findAll('[data-test="toggle-password"]')).toHaveLength(1)
+    expect(wrapper.find('main').exists()).toBe(true)
+  })
+
+  it('une adresse non vérifiée affiche la bannière d’avertissement avec le renvoi du lien', async () => {
+    stubFetch(() => ({ status: 403, body: { statusCode: 403, code: 'EMAIL_NOT_VERIFIED', message: 'x' } }))
+    const { wrapper } = await mountView()
+
+    await submit(wrapper)
+
+    expect(wrapper.find('.banner-warning').exists()).toBe(true)
+    expect(wrapper.find('.banner-warning button[data-test="resend"], button[data-test="resend"]').exists()).toBe(true)
+  })
 })

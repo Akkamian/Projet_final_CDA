@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ApiError, apiFetch } from '../../api/client'
+import AuthLayout from '../../components/AuthLayout.vue'
 
 type State = 'loading' | 'verified' | 'invalid' | 'error'
 
@@ -25,24 +26,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="auth-card">
-    <p class="brand">Watch Restoration Tracker</p>
-
+  <AuthLayout>
     <p v-if="state === 'loading'" role="status">Vérification de votre adresse…</p>
-
     <template v-else-if="state === 'verified'">
       <h1>Adresse vérifiée</h1>
       <p>Votre compte est activé. Vous pouvez maintenant vous connecter.</p>
       <RouterLink class="btn" to="/login">Connexion</RouterLink>
     </template>
-
     <template v-else>
       <h1>Vérification de l’adresse</h1>
-      <p v-if="state === 'invalid'" class="alert" role="alert">
+      <p v-if="state === 'invalid'" class="alert banner" role="alert">
         Ce lien est invalide ou a expiré. Connectez-vous pour recevoir un nouveau lien.
       </p>
-      <p v-else class="alert" role="alert">Une erreur est survenue. Réessayez dans un instant.</p>
-      <p class="switch"><RouterLink to="/login">Retour à la connexion</RouterLink></p>
+      <p v-else class="alert banner" role="alert">Une erreur est survenue. Réessayez dans un instant.</p>
+      <p class="auth-footer"><RouterLink to="/login">Retour à la connexion</RouterLink></p>
     </template>
-  </section>
+  </AuthLayout>
 </template>

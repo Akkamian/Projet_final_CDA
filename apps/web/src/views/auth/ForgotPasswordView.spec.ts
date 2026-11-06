@@ -62,4 +62,9 @@ describe('ForgotPasswordView', () => {
 
     expect(wrapper.find('a[href="/login"]').exists()).toBe(true)
   })
+
+  it('le contenu est dans la zone principale de la mise en page d’authentification', async () => {
+    const { wrapper } = await mountView()
+    expect(wrapper.find('main form').exists()).toBe(true)
+  })
 })

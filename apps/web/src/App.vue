@@ -10,5 +10,5 @@ const showShell = computed(() => route.matched.length > 0 && !route.meta.public)
 
 <template>
   <AppShell v-if="showShell"><RouterView /></AppShell>
-  <div v-else class="app"><RouterView /></div>
+  <RouterView v-else />
 </template>

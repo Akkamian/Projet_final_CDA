@@ -56,6 +56,11 @@ describe('PasswordField', () => {
     expect(wrapper.emitted('update:modelValue')).toEqual([['abc']])
   })
 
+  it('required est transmis à l’input', () => {
+    expect(mountField({ required: true }).get('input').attributes('required')).toBeDefined()
+    expect(mountField().get('input').attributes('required')).toBeUndefined()
+  })
+
   it('autocomplete, maxlength et name sont transmis à l’input', () => {
     const input = mountField({ autocomplete: 'new-password', maxlength: 72, name: 'password' }).get('input')
     expect(input.attributes('autocomplete')).toBe('new-password')

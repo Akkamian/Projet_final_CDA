@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, apiFetch } from '../../api/client'
+import AuthLayout from '../../components/AuthLayout.vue'
+import PasswordField from '../../components/PasswordField.vue'
 import { useAuthStore } from '../../stores/auth'
 
 type LoginError = 'invalid' | 'unverified' | 'other'
@@ -52,19 +54,20 @@ async function resend() {
 </script>
 
 <template>
-  <section class="auth-card">
-    <p class="brand">Watch Restoration Tracker</p>
+  <AuthLayout>
     <h1>Bienvenue</h1>
-    <p class="hint">Connectez-vous pour retrouver vos montres.</p>
+    <p class="auth-lead">Connectez-vous pour retrouver vos montres.</p>
 
-    <div v-if="error === 'invalid'" class="alert" role="alert">
+    <div v-if="error === 'invalid'" class="alert banner" role="alert">
       <p>Adresse email ou mot de passe incorrect.</p>
     </div>
-    <div v-else-if="error === 'unverified'" class="alert" role="alert">
-      <p><strong>Votre adresse n’est pas encore vérifiée.</strong></p>
-      <p>Ouvrez le lien reçu par email pour vous connecter. Il est valable 24 h.</p>
+    <div v-else-if="error === 'unverified'" class="alert banner banner-warning" role="alert">
+      <div>
+        <p><strong>Votre adresse n’est pas encore vérifiée.</strong></p>
+        <p>Ouvrez le lien reçu par email pour vous connecter. Il est valable 24 h.</p>
+      </div>
     </div>
-    <div v-else-if="error === 'other'" class="alert" role="alert">
+    <div v-else-if="error === 'other'" class="alert banner" role="alert">
       <p>Une erreur est survenue. Réessayez dans un instant.</p>
     </div>
 
@@ -73,20 +76,10 @@ async function resend() {
         <label for="email">Email</label>
         <input id="email" v-model="email" name="email" type="email" autocomplete="email" required />
       </div>
-      <div class="field">
-        <label for="password">Mot de passe</label>
-        <input
-          id="password"
-          v-model="password"
-          name="password"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
-      </div>
+      <PasswordField id="password" v-model="password" name="password" label="Mot de passe" autocomplete="current-password" required />
+      <p class="auth-forgot"><RouterLink to="/forgot-password">Mot de passe oublié ?</RouterLink></p>
       <button class="btn" type="submit" :disabled="busy">Connexion</button>
     </form>
-    <p class="switch"><RouterLink to="/forgot-password">Mot de passe oublié ?</RouterLink></p>
 
     <template v-if="error === 'unverified'">
       <button class="btn btn-secondary" type="button" data-test="resend" @click="resend">
@@ -97,6 +90,6 @@ async function resend() {
       Si cette adresse correspond à un compte non vérifié, un nouveau lien vient d’être envoyé.
     </p>
 
-    <p class="switch">Pas encore de compte ? <RouterLink to="/register">Créer un compte</RouterLink></p>
-  </section>
+    <p class="auth-footer">Pas encore de compte ? <RouterLink to="/register">Créer un compte</RouterLink></p>
+  </AuthLayout>
 </template>

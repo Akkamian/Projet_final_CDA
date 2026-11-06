@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError, apiFetch } from '../../api/client'
+import AuthLayout from '../../components/AuthLayout.vue'
+import PasswordField from '../../components/PasswordField.vue'
 
 const email = ref('')
 const password = ref('')
@@ -59,61 +61,59 @@ async function resend() {
 </script>
 
 <template>
-  <section class="auth-card">
-    <p class="brand">Watch Restoration Tracker</p>
-
+  <AuthLayout>
     <template v-if="sentTo">
+      <div class="confirm-badge" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5.5" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.5" />
+          <path d="M3.5 7l8.5 6 8.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
       <h1>Vérifiez votre boîte mail</h1>
       <p>
         Nous avons envoyé un lien de vérification à <strong>{{ sentTo }}</strong
         >. Il est valable 24 h.
       </p>
-      <p v-if="error" class="alert" role="alert">{{ error }}</p>
+      <p v-if="error" class="alert banner" role="alert">{{ error }}</p>
       <p v-if="resent" class="notice" role="status">
         Si cette adresse correspond à un compte non vérifié, un nouveau lien vient d’être envoyé.
       </p>
       <button class="btn btn-secondary" type="button" data-test="resend" @click="resend">
         Renvoyer le lien
       </button>
-      <p class="switch"><RouterLink to="/login">Retour à la connexion</RouterLink></p>
+      <p class="auth-footer"><RouterLink to="/login">Retour à la connexion</RouterLink></p>
     </template>
 
     <template v-else>
       <h1>Création de compte</h1>
-      <p class="hint">Un email de vérification vous sera envoyé.</p>
+      <p class="auth-lead">Un email de vérification vous sera envoyé.</p>
 
-      <p v-if="error" class="alert" role="alert">{{ error }}</p>
+      <p v-if="error" class="alert banner" role="alert">{{ error }}</p>
 
       <form @submit.prevent="submit">
         <div class="field">
           <label for="email">Email</label>
           <input id="email" v-model="email" name="email" type="email" autocomplete="email" required />
         </div>
-        <div class="field">
-          <label for="password">Mot de passe</label>
-          <input
-            id="password"
-            v-model="password"
-            name="password"
-            type="password"
-            autocomplete="new-password"
-            maxlength="72"
-            required
-          />
-          <span class="field-hint">8 caractères minimum.</span>
-        </div>
-        <div class="field">
-          <label for="confirmPassword">Confirmation du mot de passe</label>
-          <input
-            id="confirmPassword"
-            v-model="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            autocomplete="new-password"
-            maxlength="72"
-            required
-          />
-        </div>
+        <PasswordField
+          id="password"
+          v-model="password"
+          name="password"
+          label="Mot de passe"
+          autocomplete="new-password"
+          :maxlength="72"
+          hint="8 caractères minimum."
+          required
+        />
+        <PasswordField
+          id="confirmPassword"
+          v-model="confirmPassword"
+          name="confirmPassword"
+          label="Confirmation du mot de passe"
+          autocomplete="new-password"
+          :maxlength="72"
+          required
+        />
         <label class="choice">
           <input v-model="acceptTerms" name="acceptTerms" type="checkbox" />
           <span>
@@ -123,7 +123,7 @@ async function resend() {
         <button class="btn" type="submit" :disabled="busy">Créer mon compte</button>
       </form>
 
-      <p class="switch">Vous avez déjà un compte ? <RouterLink to="/login">Connexion</RouterLink></p>
+      <p class="auth-footer">Vous avez déjà un compte ? <RouterLink to="/login">Connexion</RouterLink></p>
     </template>
-  </section>
+  </AuthLayout>
 </template>

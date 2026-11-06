@@ -47,4 +47,9 @@ describe('VerifyEmailView', () => {
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Réessayez')
   })
+
+  it('le contenu est dans la zone principale de la mise en page d’authentification', async () => {
+    const wrapper = await mountView('/verify-email?token=abc')
+    expect(wrapper.find('main').exists()).toBe(true)
+  })
 })

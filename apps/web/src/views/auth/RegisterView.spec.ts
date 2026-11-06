@@ -114,4 +114,23 @@ describe('RegisterView', () => {
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Réessayez')
   })
+
+  it('les deux champs mot de passe ont un bouton œil', async () => {
+    const wrapper = await mountView()
+    expect(wrapper.findAll('[data-test="toggle-password"]')).toHaveLength(2)
+  })
+
+  it('la mention des CGV et de la confidentialité ne contient aucun lien', async () => {
+    const wrapper = await mountView()
+    expect(wrapper.find('label.choice a').exists()).toBe(false)
+    expect(wrapper.find('label.choice').text()).toContain('Conditions Générales de Vente')
+  })
+
+  it('la confirmation d’envoi affiche la pastille de confirmation', async () => {
+    stubFetch(() => ({ status: 201 }))
+    const wrapper = await mountView()
+    await fill(wrapper, {})
+    await submit(wrapper)
+    expect(wrapper.find('.confirm-badge').exists()).toBe(true)
+  })
 })

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-const props = defineProps<{ id: string; label: string; autocomplete: string; maxlength?: number; name?: string; hint?: string; error?: string | null }>()
+const props = defineProps<{ id: string; label: string; autocomplete: string; maxlength?: number; name?: string; required?: boolean; hint?: string; error?: string | null }>()
 const model = defineModel<string>({ required: true })
 
 // Affiché en clair : état local à ce champ, il redevient masqué dès que le composant est démonté.
@@ -20,6 +20,7 @@ const describedBy = computed(() => [props.hint ? `${props.id}-hint` : '', props.
         :type="shown ? 'text' : 'password'"
         :autocomplete="autocomplete"
         :maxlength="maxlength"
+        :required="required"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy"
       />

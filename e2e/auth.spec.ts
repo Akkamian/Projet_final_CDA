@@ -17,7 +17,7 @@ test('S1 + S2 + connexion : inscription, connexion refusée tant que l’adresse
   // S2 : tant que l'adresse n'est pas vérifiée, la connexion est refusée avec un message distinct.
   await page.goto('/login')
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Mot de passe').fill(PASSWORD)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Connexion' }).click()
   await expect(page.getByRole('alert')).toContainText('pas encore vérifiée')
 
@@ -27,7 +27,7 @@ test('S1 + S2 + connexion : inscription, connexion refusée tant que l’adresse
 
   await page.getByRole('link', { name: 'Connexion' }).click()
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Mot de passe').fill(PASSWORD)
+  await page.getByLabel('Mot de passe', { exact: true }).fill(PASSWORD)
   await page.getByRole('button', { name: 'Connexion' }).click()
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible()
 })
@@ -50,7 +50,7 @@ test('S3 : mot de passe oublié, lien reçu dans MailDev, nouveau mot de passe, 
 
   await page.getByRole('link', { name: 'Connexion' }).click()
   await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Mot de passe').fill('nouveau-mdp-e2e-1')
+  await page.getByLabel('Mot de passe', { exact: true }).fill('nouveau-mdp-e2e-1')
   await page.getByRole('button', { name: 'Connexion' }).click()
   await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible()
 })
