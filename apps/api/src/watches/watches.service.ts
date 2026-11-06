@@ -9,6 +9,7 @@ import type { CreateWatchDto } from './dto/create-watch.dto.js';
 import type { ResaleDto } from './dto/resale.dto.js';
 import type { UpdateWatchDto } from './dto/update-watch.dto.js';
 import { computeMargin } from './margin.js';
+import type { WatchListQuery } from './list-query.js';
 import { computeStatus, type DashboardStatus, type ProjectStatus } from './status.js';
 import { toWatchDetail, WATCH_DETAIL_INCLUDE, type WatchDetail } from './watch-detail.js';
 
@@ -21,11 +22,22 @@ export interface WatchCard {
   status: DashboardStatus;
   thumbnailUrl: string | null;
   margin: string | null;
+  purchasePrice: string | null;
+  purchaseDate: string | null;
+  resalePrice: string | null;
+  resaleDate: string | null;
+  /** Étapes du projet le plus récent (RG-AFF-07) ; null sans projet. */
+  progress: { done: number; total: number } | null;
 }
 
 export interface WatchList {
   items: WatchCard[];
   counts: { all: number } & Record<DashboardStatus, number>;
+  total: number;
+  page: number;
+  pageSize: number;
+  /** Somme des marges de toutes les montres vendues (RG-AFF-10), indépendante du filtre. */
+  totalMargin: string;
 }
 
 @Injectable()
@@ -38,10 +50,10 @@ export class WatchesService {
 
   /**
    * Tableau de bord : une carte par montre, en une seule requête (montres, complications, projets et coûts).
-   * `counts` porte sur toutes les montres de l'utilisateur, quel que soit le filtre (S40).
+   * `counts` et `totalMargin` portent sur toutes les montres de l'utilisateur, quel que soit le filtre (S40, RG-AFF-10).
    * Les plus récemment ajoutées d'abord.
    */
-  async list(userId: number, status?: DashboardStatus): Promise<WatchList> {
+  async list(userId: number, query: WatchListQuery): Promise<WatchList> {
     const watches = await this.prisma.watches.findMany({
       where: { user_id: userId },
       orderBy: { id: 'desc' },
@@ -54,6 +66,7 @@ export class WatchesService {
             photo_before: true,
             photo_after: true,
             expenses: { select: { amount: true } },
+            restoration_steps: { select: { is_completed: true } },
           },
         },
       },
@@ -61,9 +74,16 @@ export class WatchesService {
 
     const counts = { all: watches.length, in_progress: 0, completed: 0, sold: 0, no_project: 0 };
     const items: WatchCard[] = [];
+    let totalMargin = new Prisma.Decimal(0);
     for (const watch of watches) {
       const resaleDate = watch.resale_date ? watch.resale_date.toISOString().slice(0, 10) : null;
       const latest = watch.restoration_projects[0] ?? null; // RG-PRJ-08 : le plus récent par created_at
+      const margin = computeMargin({
+        resalePrice: watch.resale_price,
+        purchasePrice: watch.purchase_price,
+        expenses: watch.restoration_projects.flatMap((p) => p.expenses.map((e) => e.amount)),
+      });
+      if (margin) totalMargin = totalMargin.plus(margin);
       const card: WatchCard = {
         id: watch.id,
         brand: watch.brand,
@@ -72,16 +92,19 @@ export class WatchesService {
         complicationLabels: watch.comporte.map((c) => c.complications.label).sort((a, b) => a.localeCompare(b)),
         status: computeStatus({ resaleDate, latestProjectStatus: latest?.status as ProjectStatus | null ?? null }),
         thumbnailUrl: latest ? (latest.photo_after ?? latest.photo_before) : null,
-        margin: computeMargin({
-          resalePrice: watch.resale_price,
-          purchasePrice: watch.purchase_price,
-          expenses: watch.restoration_projects.flatMap((p) => p.expenses.map((e) => e.amount)),
-        })?.toFixed(2) ?? null,
+        margin: margin?.toFixed(2) ?? null,
+        purchasePrice: watch.purchase_price?.toFixed(2) ?? null,
+        purchaseDate: watch.purchase_date ? watch.purchase_date.toISOString().slice(0, 10) : null,
+        resalePrice: watch.resale_price?.toFixed(2) ?? null,
+        resaleDate,
+        progress: latest
+          ? { done: latest.restoration_steps.filter((s) => s.is_completed).length, total: latest.restoration_steps.length }
+          : null,
       };
       counts[card.status] += 1;
-      if (status === undefined || card.status === status) items.push(card);
+      if (query.status === undefined || card.status === query.status) items.push(card);
     }
-    return { items, counts };
+    return { items, counts, total: items.length, page: query.page, pageSize: query.pageSize, totalMargin: totalMargin.toFixed(2) };
   }
 
   /**

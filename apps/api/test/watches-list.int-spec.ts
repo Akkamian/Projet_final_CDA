@@ -207,6 +207,99 @@ describe('GET /watches : tableau de bord', () => {
 
   it('S25 une liste vide donne items vide et des compteurs à zéro', async () => {
     const { body } = await list();
-    expect(body).toEqual({ items: [], counts: { all: 0, in_progress: 0, completed: 0, sold: 0, no_project: 0 } });
+    expect(body).toEqual({
+      items: [],
+      counts: { all: 0, in_progress: 0, completed: 0, sold: 0, no_project: 0 },
+      total: 0,
+      page: 1,
+      pageSize: 8,
+      totalMargin: '0.00',
+    });
+  });
+
+  const addSteps = async (projectId: number, done: number, total: number) => {
+    for (let i = 1; i <= total; i++) {
+      await prisma.restoration_steps.create({
+        data: { project_id: projectId, step_order: i, label: `Étape ${i}`, is_completed: i <= done },
+      });
+    }
+  };
+
+  it('S25 la carte porte achat, revente et progression', async () => {
+    const watch = await createWatch(prisma, userId, {
+      model: 'full',
+      purchase_price: '95',
+      purchase_date: new Date('2025-03-01'),
+      resale_price: '200',
+      resale_date: new Date('2025-06-01'),
+    });
+    await addSteps((await createProject(prisma, watch.id, { status: 'completed' })).id, 1, 3);
+
+    expect(byModel((await list()).body, 'full')).toMatchObject({
+      purchasePrice: '95.00',
+      purchaseDate: '2025-03-01',
+      resalePrice: '200.00',
+      resaleDate: '2025-06-01',
+      progress: { done: 1, total: 3 },
+    });
+  });
+
+  it('RG-AFF-07 progress est null sans projet, { done: 0, total: 0 } pour un projet sans étape', async () => {
+    await createWatch(prisma, userId, { model: 'none' });
+    const empty = await createWatch(prisma, userId, { model: 'empty' });
+    await createProject(prisma, empty.id);
+
+    const { body } = await list();
+
+    expect(byModel(body, 'none')?.progress).toBeNull();
+    expect(byModel(body, 'empty')?.progress).toEqual({ done: 0, total: 0 });
+  });
+
+  it('RG-AFF-07 la progression suit le projet le plus récent, pas le plus ancien', async () => {
+    const watch = await createWatch(prisma, userId, { model: 'two' });
+    const old = await prisma.restoration_projects.create({
+      data: { watch_id: watch.id, status: 'completed', created_at: new Date('2024-01-01') },
+    });
+    const recent = await prisma.restoration_projects.create({
+      data: { watch_id: watch.id, status: 'in_progress', created_at: new Date('2025-05-01') },
+    });
+    await addSteps(old.id, 5, 5);
+    await addSteps(recent.id, 2, 4);
+
+    expect(byModel((await list()).body, 'two')?.progress).toEqual({ done: 2, total: 4 });
+  });
+
+  it('une montre sans prix ni date d’achat renvoie null pour ces champs', async () => {
+    await createWatch(prisma, userId, { model: 'bare' });
+
+    expect(byModel((await list()).body, 'bare')).toMatchObject({
+      purchasePrice: null,
+      purchaseDate: null,
+      resalePrice: null,
+      resaleDate: null,
+    });
+  });
+
+  it('RG-AFF-10 totalMargin additionne les marges des montres vendues et reste global avec un filtre', async () => {
+    await createWatch(prisma, userId, { model: 'gain', purchase_price: '100', resale_price: '180', resale_date: new Date('2025-06-01') });
+    await createWatch(prisma, userId, { model: 'perte', purchase_price: '100', resale_price: '80', resale_date: new Date('2025-06-01') });
+    await createWatch(prisma, userId, { model: 'invendue', purchase_price: '50' });
+
+    expect((await list()).body.totalMargin).toBe('60.00');
+    expect((await list('?status=no_project')).body.totalMargin).toBe('60.00');
+  });
+
+  it('RG-AFF-10 totalMargin vaut 0.00 sans aucune vente', async () => {
+    await createWatch(prisma, userId, { model: 'invendue', purchase_price: '50' });
+    expect((await list()).body.totalMargin).toBe('0.00');
+  });
+
+  it('RG-AFF-11 l’enveloppe renvoie total (après filtre), page et pageSize', async () => {
+    await seedOnePerStatus();
+
+    const { body } = await list('?status=completed');
+
+    expect(body).toMatchObject({ total: 1, page: 1, pageSize: 8 });
+    expect((await list()).body.total).toBe(4);
   });
 });
