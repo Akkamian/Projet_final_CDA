@@ -78,7 +78,7 @@ a {
   font-size: 0.875rem;
 }
 
-.auth-forgot {
+.auth-main .auth-forgot {
   margin: calc(-1 * var(--space-2)) 0 var(--space-4);
   text-align: right;
   font-size: 0.875rem;

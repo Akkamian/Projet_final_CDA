@@ -9,7 +9,7 @@ test('changer son mot de passe depuis la feuille, puis se reconnecter avec le no
   await login(page, email)
   await page.goto('/account')
 
-  await expect(page.locator('[data-test="account-email"]')).toHaveText(email)
+  await expect(page.locator('main [data-test="account-email"]')).toHaveText(email)
   await expect(page.locator('[data-test="password-changed-at"]')).toContainText('Jamais modifié')
 
   await page.getByRole('button', { name: 'Modifier', exact: true }).click()
