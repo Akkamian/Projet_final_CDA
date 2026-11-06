@@ -26,8 +26,8 @@ test('S21 + S22 + S23 : coût de 40 €, projet terminé, revente à 200 €, ac
   await expect(page.locator('[data-test="expenses-total"]')).toContainText('40 €')
 
   // S22 : la revente exige un projet terminé.
-  await page.getByRole('button', { name: 'Terminer le projet' }).click()
-  await expect(page.getByRole('heading', { name: 'Terminé' })).toBeVisible()
+  await page.getByRole('button', { name: 'Marquer le projet terminé' }).click()
+  await expect(page.locator('[data-test="status-badge"]')).toHaveText('Terminé')
   await page.locator('[data-test="resale-open"]').click()
   await page.locator('[data-test="resale-price"]').fill('200')
   await page.locator('[data-test="resale-date"]').fill(today())
