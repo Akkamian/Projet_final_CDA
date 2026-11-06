@@ -152,3 +152,152 @@ a {
   color: var(--text-secondary);
   text-align: center;
 }
+
+/* --- Feuille du bas / dialogue (Sheet) : corps, pied et contrôles partagés par les formulaires --- */
+
+body:has(dialog[open]) {
+  overflow: hidden;
+}
+
+.sheet-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sheet-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: 0 var(--space-4) var(--space-4);
+  overflow-y: auto;
+}
+
+.sheet-body .field,
+.sheet-body fieldset {
+  margin: 0;
+}
+
+.sheet-footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet-actions .btn-secondary {
+  flex: 1;
+}
+
+.sheet-actions .btn:not(.btn-secondary) {
+  flex: 2;
+}
+
+.sheet-danger {
+  min-height: var(--touch-min);
+  border: 0;
+  background: transparent;
+  color: var(--danger-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheet-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.sheet-row > .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-toggle[aria-pressed='true'],
+.chip-toggle:has(input:checked) {
+  border-color: var(--accent-text);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.chip-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.segmented {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.segmented-option {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.segmented-option:has(input:checked) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.segmented-option:has(input:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.chip-toggle input,
+.segmented-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
