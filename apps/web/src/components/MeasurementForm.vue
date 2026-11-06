@@ -4,7 +4,7 @@ import { useWatchesStore, type MeasurementDetail, type MeasurementPayload } from
 import { errorMessage, today } from '../utils/today'
 
 const props = defineProps<{ projectId: number; measurement?: MeasurementDetail }>()
-const emit = defineEmits<{ saved: [value: MeasurementDetail]; cancel: [] }>()
+const emit = defineEmits<{ saved: [value: MeasurementDetail]; cancel: []; remove: [] }>()
 
 const POSITIONS = ['Cadran haut', 'Cadran bas', 'Couronne en haut', 'Couronne en bas', 'Couronne à gauche', 'Couronne à droite']
 
@@ -81,68 +81,88 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <form class="measurement-form" novalidate @submit.prevent="submit">
-    <h3>{{ initial ? 'Modifier la mesure' : 'Ajouter une mesure' }}</h3>
-    <div class="field">
-      <label for="m-date">Date de la mesure</label>
-      <input id="m-date" v-model="date" data-test="m-date" type="date" :max="today()" required />
+  <form class="sheet-form" novalidate @submit.prevent="submit">
+    <div class="sheet-body">
+      <div class="field">
+        <label for="m-date">Date de la mesure</label>
+        <input id="m-date" v-model="date" data-test="m-date" type="date" :max="today()" required />
+      </div>
+
+      <fieldset class="field">
+        <legend>Position de la montre · facultative</legend>
+        <div class="chip-group">
+          <button
+            v-for="p in positions"
+            :key="p"
+            type="button"
+            class="chip-toggle"
+            :data-test="`m-position-${p}`"
+            :aria-pressed="position === p"
+            @click="togglePosition(p)"
+          >
+            {{ p }}
+          </button>
+        </div>
+        <span class="field-hint">
+          Les mesures sont comparées à position égale ; une position non précisée est comparée avec les autres mesures sans position.
+        </span>
+      </fieldset>
+
+      <div class="sheet-row">
+        <div class="field">
+          <label for="m-rate">Marche (s/j)</label>
+          <input id="m-rate" v-model="rate" data-test="m-rate" type="number" inputmode="decimal" step="1" placeholder="+12" required />
+        </div>
+        <div class="field">
+          <label for="m-beat">Beat error (ms)</label>
+          <input
+            id="m-beat"
+            v-model="beat"
+            data-test="m-beat"
+            type="number"
+            inputmode="decimal"
+            step="0.1"
+            min="0"
+            placeholder="0.4"
+            required
+          />
+        </div>
+        <div class="field">
+          <label for="m-amp">Amplitude (°)</label>
+          <input
+            id="m-amp"
+            v-model="amplitude"
+            data-test="m-amp"
+            type="number"
+            inputmode="numeric"
+            step="1"
+            min="0"
+            placeholder="260"
+            required
+          />
+        </div>
+      </div>
+      <p class="field-hint">
+        Marche négative si la montre retarde (ex. −8). Beat error et amplitude ne peuvent pas être négatifs. Aucune date dans le futur.
+      </p>
+
+      <p v-if="error" class="alert" role="alert">{{ error }}</p>
     </div>
 
-    <fieldset class="field">
-      <legend>Position de la montre · facultative</legend>
-      <div class="chips">
-        <button
-          v-for="p in positions"
-          :key="p"
-          type="button"
-          class="chip"
-          :data-test="`m-position-${p}`"
-          :aria-pressed="position === p"
-          @click="togglePosition(p)"
-        >
-          {{ p }}
-        </button>
+    <div class="sheet-footer">
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-secondary" data-test="m-cancel" :disabled="busy" @click="emit('cancel')">Annuler</button>
+        <button type="submit" class="btn" :disabled="busy">{{ initial ? 'Enregistrer' : 'Enregistrer la mesure' }}</button>
       </div>
-      <span class="field-hint">Les mesures sont comparées à position égale.</span>
-    </fieldset>
-
-    <div class="row">
-      <div class="field">
-        <label for="m-rate">Marche (s/j)</label>
-        <input id="m-rate" v-model="rate" data-test="m-rate" type="number" inputmode="decimal" step="any" placeholder="+12" required />
-      </div>
-      <div class="field">
-        <label for="m-beat">Beat error (ms)</label>
-        <input id="m-beat" v-model="beat" data-test="m-beat" type="number" inputmode="decimal" step="any" placeholder="0.4" required />
-      </div>
-      <div class="field">
-        <label for="m-amp">Amplitude (°)</label>
-        <input id="m-amp" v-model="amplitude" data-test="m-amp" type="number" inputmode="decimal" step="any" placeholder="260" required />
-      </div>
-    </div>
-    <p class="field-hint">Marche négative si la montre retarde. Beat error et amplitude ne peuvent pas être négatifs.</p>
-
-    <p v-if="error" class="alert" role="alert">{{ error }}</p>
-    <div class="actions">
-      <button type="button" class="btn btn-secondary" :disabled="busy" @click="emit('cancel')">Annuler</button>
-      <button type="submit" class="btn" :disabled="busy">{{ initial ? 'Enregistrer' : 'Enregistrer la mesure' }}</button>
+      <button v-if="initial" type="button" class="sheet-danger" data-test="m-remove" :disabled="busy" @click="emit('remove')">
+        Supprimer cette mesure
+      </button>
     </div>
   </form>
 </template>
 
 <style scoped>
-.measurement-form {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-h3,
-p,
-.field {
+p {
   margin: 0;
 }
 
@@ -157,43 +177,8 @@ legend {
   margin-bottom: var(--space-2);
 }
 
-.row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-.row .field,
-.row input {
+.sheet-row .field,
+.sheet-row input {
   min-width: 0;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.chip {
-  min-height: var(--touch-min);
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.chip[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
 }
 </style>

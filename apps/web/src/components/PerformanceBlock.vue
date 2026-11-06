@@ -6,12 +6,13 @@ import { errorMessage } from '../utils/today'
 import ConfirmDialog from './ConfirmDialog.vue'
 import MeasurementForm from './MeasurementForm.vue'
 import PerformanceScales from './PerformanceScales.vue'
+import Sheet from './Sheet.vue'
 
 const props = defineProps<{ projectId: number; measurements: MeasurementDetail[] }>()
 const emit = defineEmits<{ 'update:measurements': [value: MeasurementDetail[]] }>()
 
 const watches = useWatchesStore()
-// `adding` : formulaire de saisie ; `editing` : mesure en cours de correction ; `removing` : mesure à confirmer.
+// `adding` : feuille de saisie ; `editing` : mesure en cours de correction (feuille d'édition) ; `removing` : mesure à confirmer.
 const adding = ref(false)
 const editing = ref<MeasurementDetail | null>(null)
 const removing = ref<MeasurementDetail | null>(null)
@@ -63,6 +64,17 @@ const rateText = (m: MeasurementDetail) => {
 // La liste montre toutes les mesures, les plus récentes d'abord (RG-PER-04) ; les échelles reçoivent celles du filtre.
 const latestFirst = computed(() => chronological(props.measurements).reverse())
 
+function closeForm(): void {
+  adding.value = false
+  editing.value = null
+}
+
+// La suppression se demande depuis la feuille d'édition : elle se ferme avant que la confirmation s'ouvre (jamais deux dialogues modaux empilés).
+function askRemove(): void {
+  removing.value = editing.value
+  closeForm()
+}
+
 function saved(m: MeasurementDetail): void {
   const next = editing.value ? props.measurements.map((x) => (x.id === m.id ? m : x)) : [...props.measurements, m]
   emit('update:measurements', chronological(next))
@@ -96,17 +108,19 @@ async function confirmRemove(): Promise<void> {
   <section class="performance">
     <div class="header">
       <h3>Performances du mouvement</h3>
-      <button v-if="!adding && !editing" type="button" class="ghost" data-test="measurement-add" @click="adding = true">+ Mesure</button>
+      <button type="button" class="ghost" data-test="measurement-add" @click="adding = true">+ Mesure</button>
     </div>
 
-    <MeasurementForm
-      v-if="adding || editing"
-      :key="editing?.id ?? 'new'"
-      :project-id="projectId"
-      :measurement="editing ?? undefined"
-      @saved="saved"
-      @cancel="((adding = false), (editing = null))"
-    />
+    <Sheet v-if="adding || editing" :title="editing ? 'Modifier la mesure' : 'Ajouter une mesure'" @close="closeForm">
+      <MeasurementForm
+        :key="editing?.id ?? 'new'"
+        :project-id="projectId"
+        :measurement="editing ?? undefined"
+        @saved="saved"
+        @cancel="closeForm"
+        @remove="askRemove"
+      />
+    </Sheet>
 
     <p v-if="measurements.length === 0" class="hint">Aucune mesure : ajoutez un relevé au timegrapher pour suivre l’évolution.</p>
     <template v-else>
@@ -152,15 +166,15 @@ async function confirmRemove(): Promise<void> {
               <td class="row-end">
                 <button
                   type="button"
-                  class="ghost"
+                  class="icon-edit"
                   :data-test="`measurement-edit-${m.id}`"
+                  :aria-label="`Modifier la mesure du ${formatDate(m.measuredAt)}`"
                   :disabled="busy"
                   @click="((editing = m), (adding = false))"
                 >
-                  Modifier
-                </button>
-                <button type="button" class="ghost danger" :data-test="`measurement-remove-${m.id}`" :disabled="busy" @click="removing = m">
-                  Supprimer
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" />
+                  </svg>
                 </button>
               </td>
             </tr>
@@ -296,7 +310,17 @@ th {
   cursor: pointer;
 }
 
-.ghost.danger {
-  color: var(--danger-text);
+.icon-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
 }
 </style>

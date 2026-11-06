@@ -26,6 +26,11 @@ const mockup = [
 
 const mountBlock = (measurements: MeasurementDetail[]) => mount(PerformanceBlock, { props: { projectId: 5, measurements } })
 const rows = (wrapper: ReturnType<typeof mountBlock>) => wrapper.findAll('[data-test="measurement-row"]')
+// La suppression d'une mesure se fait depuis sa feuille d'édition : crayon de la ligne, puis « Supprimer cette mesure ».
+const openRemoval = async (wrapper: ReturnType<typeof mountBlock>, id: number) => {
+  await wrapper.find(`[data-test="measurement-edit-${id}"]`).trigger('click')
+  await wrapper.find('[data-test="m-remove"]').trigger('click')
+}
 
 describe('PerformanceBlock', () => {
   beforeEach(() => {
@@ -152,13 +157,100 @@ describe('PerformanceBlock', () => {
     await wrapper.find('[data-test="measurement-add"]').trigger('click')
 
     expect(wrapper.find('[data-test="m-date"]').exists()).toBe(true)
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Ajouter une mesure')
+    expect(wrapper.find('dialog.sheet [data-test="m-date"]').exists()).toBe(true)
+  })
+
+  it('« + Mesure » reste affiché pendant que la feuille est ouverte', async () => {
+    const wrapper = mountBlock([])
+
+    await wrapper.find('[data-test="measurement-add"]').trigger('click')
+
+    expect(wrapper.find('[data-test="measurement-add"]').exists()).toBe(true)
+  })
+
+  it('S33 le crayon d’une ligne ouvre la feuille « Modifier la mesure » avec la mesure choisie', async () => {
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.find('[data-test="measurement-edit-2"]').trigger('click')
+
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Modifier la mesure')
+    expect((wrapper.find('[data-test="m-rate"]').element as HTMLInputElement).value).toBe('35.00')
+  })
+
+  it('chaque ligne n’a qu’un bouton d’édition (icône nommée avec la date), plus de bouton Supprimer', () => {
+    const wrapper = mountBlock(mockup)
+
+    const buttons = rows(wrapper)[0]!.findAll('button')
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0]!.attributes('aria-label')).toBe('Modifier la mesure du 06/09/2026')
+    expect(wrapper.find('[data-test="measurement-remove-4"]').exists()).toBe(false)
+  })
+
+  it('Annuler et Échap ferment la feuille sans appel réseau', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: {} }))
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.find('[data-test="measurement-edit-2"]').trigger('click')
+    await wrapper.find('dialog.sheet').trigger('cancel')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+
+    await wrapper.find('[data-test="measurement-add"]').trigger('click')
+    await wrapper.find('[data-test="m-cancel"]').trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(calls(fetchMock)).toEqual([])
+  })
+
+  it('enregistrer une mesure ferme la feuille et émet la liste mise à jour', async () => {
+    const created = measure(9, '2026-09-10', '3.00', '0.30', '260.00')
+    stubFetch(() => ({ status: 201, body: created }))
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.find('[data-test="measurement-add"]').trigger('click')
+    await wrapper.find('[data-test="m-date"]').setValue('2026-09-10')
+    await wrapper.find('[data-test="m-rate"]').setValue('3')
+    await wrapper.find('[data-test="m-beat"]').setValue('0.3')
+    await wrapper.find('[data-test="m-amp"]').setValue('260')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect((wrapper.emitted('update:measurements')![0]![0] as MeasurementDetail[]).map((m) => m.id)).toContain(9)
+  })
+
+  it('une erreur de validation laisse la feuille ouverte avec la saisie', async () => {
+    const wrapper = mountBlock(mockup)
+
+    await wrapper.find('[data-test="measurement-add"]').trigger('click')
+    await wrapper.find('[data-test="m-rate"]').setValue('3')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('dialog.sheet').exists()).toBe(true)
+    expect(wrapper.find('dialog.sheet [role="alert"]').exists()).toBe(true)
+    expect((wrapper.find('[data-test="m-rate"]').element as HTMLInputElement).value).toBe('3')
+  })
+
+  it('S33 « Supprimer cette mesure » ferme la feuille puis ouvre la confirmation ; annuler ne rouvre pas la feuille', async () => {
+    const fetchMock = stubFetch(() => ({ status: 204 }))
+    const wrapper = mountBlock(mockup)
+
+    await openRemoval(wrapper, 4)
+    expect(wrapper.find('[data-test="m-date"]').exists()).toBe(false)
+    expect(wrapper.find('dialog.confirm').exists()).toBe(true)
+
+    await wrapper.find('[data-test="confirm-cancel"]').trigger('click')
+
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(calls(fetchMock)).toEqual([])
+    expect(rows(wrapper)).toHaveLength(4)
   })
 
   it('S33 supprimer une mesure demande confirmation puis la retire de la liste', async () => {
     const fetchMock = stubFetch(() => ({ status: 204 }))
     const wrapper = mountBlock(mockup)
 
-    await wrapper.find('[data-test="measurement-remove-4"]').trigger('click')
+    await openRemoval(wrapper, 4)
     await wrapper.find('[data-test="confirm-ok"]').trigger('click')
     await flushPromises()
 
@@ -170,7 +262,7 @@ describe('PerformanceBlock', () => {
     const fetchMock = stubFetch(() => ({ status: 204 }))
     const wrapper = mountBlock(mockup)
 
-    await wrapper.find('[data-test="measurement-remove-4"]').trigger('click')
+    await openRemoval(wrapper, 4)
     await wrapper.find('[data-test="confirm-cancel"]').trigger('click')
 
     expect(calls(fetchMock)).toEqual([])
@@ -181,7 +273,7 @@ describe('PerformanceBlock', () => {
     stubFetch(() => ({ status: 500, body: { message: 'Erreur serveur' } }))
     const wrapper = mountBlock(mockup)
 
-    await wrapper.find('[data-test="measurement-remove-4"]').trigger('click')
+    await openRemoval(wrapper, 4)
     await wrapper.find('[data-test="confirm-ok"]').trigger('click')
     await flushPromises()
 

@@ -94,6 +94,39 @@ describe('MeasurementForm', () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({ beatErrorMs: 0.3 })
   })
 
+  it('les champs portent les attributs de la maquette (pas, minimum, clavier numérique)', () => {
+    const wrapper = mount(MeasurementForm, { props: { projectId: 5 } })
+
+    const attrs = (test: string) => wrapper.find(`[data-test="${test}"]`).attributes()
+    expect(attrs('m-rate').step).toBe('1')
+    expect(attrs('m-beat')).toMatchObject({ step: '0.1', min: '0' })
+    expect(attrs('m-amp')).toMatchObject({ step: '1', min: '0', inputmode: 'numeric' })
+  })
+
+  it('les aides de position et de valeurs sont celles de la maquette', () => {
+    const wrapper = mount(MeasurementForm, { props: { projectId: 5 } })
+
+    expect(wrapper.text()).toContain('une position non précisée est comparée avec les autres mesures sans position')
+    expect(wrapper.text()).toContain('Marche négative si la montre retarde (ex. −8)')
+    expect(wrapper.text()).toContain('Aucune date dans le futur')
+  })
+
+  it('en saisie, le bouton « Supprimer cette mesure » n’existe pas', () => {
+    const wrapper = mount(MeasurementForm, { props: { projectId: 5 } })
+
+    expect(wrapper.find('[data-test="m-remove"]').exists()).toBe(false)
+  })
+
+  it('S33 en édition, « Supprimer cette mesure » émet remove sans appel réseau', async () => {
+    const fetchMock = stubFetch(() => ({ status: 204 }))
+    const wrapper = mount(MeasurementForm, { props: { projectId: 5, measurement: measure(9, '2025-05-01', '4.00', '0.40', '260.00') } })
+
+    await wrapper.find('[data-test="m-remove"]').trigger('click')
+
+    expect(wrapper.emitted('remove')).toHaveLength(1)
+    expect(calls(fetchMock)).toEqual([])
+  })
+
   it('affiche le message de l’API quand l’enregistrement échoue', async () => {
     stubFetch(() => ({ status: 400, body: { message: 'La date de mesure doit être une date existante' } }))
     const wrapper = mount(MeasurementForm, { props: { projectId: 5 } })
