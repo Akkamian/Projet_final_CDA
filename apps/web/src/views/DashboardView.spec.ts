@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setAccessToken } from '../api/client'
 import { makeRouter, stubFetch, type StubResponse } from '../test/helpers'
+import { useWatchesStore } from '../stores/watches'
 import DashboardView from './DashboardView.vue'
 
 const card = (id: number, model: string, status: string, margin: string | null = null) => ({
@@ -220,6 +221,43 @@ describe('DashboardView, mobile', () => {
 
     expect(wrapper.find('[role="alert"]').text()).toContain('Impossible de charger')
     expect(wrapper.find('[data-test="empty"]').exists()).toBe(false)
+  })
+
+  it('un « Voir plus » en échec garde la liste affichée, ajoute le message et laisse réessayer', async () => {
+    let failMore = true
+    api(many, (url) => {
+      if (url.searchParams.get('page') === '2' && failMore) {
+        failMore = false
+        return { status: 500, body: {} }
+      }
+    })
+    const wrapper = await mountView()
+
+    await wrapper.get('[data-test="load-more"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').text()).toContain('Impossible de charger')
+    expect(cards(wrapper)).toHaveLength(8)
+
+    await wrapper.get('[data-test="load-more"]').trigger('click')
+    await flushPromises()
+    expect(cards(wrapper)).toHaveLength(12)
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('une recherche conservée d’une visite à l’autre garde son champ affiché quand on l’efface', async () => {
+    api()
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    useWatchesStore().params.q = 'seiko'
+    const router = await makeRouter('/', routes)
+    const wrapper = mount(DashboardView, { global: { plugins: [pinia, router] }, attachTo: document.body })
+    await flushPromises()
+    expect(wrapper.find('input[type="search"]').exists()).toBe(true)
+
+    await wrapper.get('input[type="search"]').setValue('')
+
+    expect(wrapper.find('input[type="search"]').exists()).toBe(true)
   })
 
   it('le tableau de bord n’a plus de texte « Mon compte » ni de bouton Se déconnecter (la déconnexion est dans l’écran compte)', async () => {

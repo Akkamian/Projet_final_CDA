@@ -160,6 +160,8 @@ export const useWatchesStore = defineStore('watches', () => {
     const next: WatchListParams = { ...current, ...patch, page: patch.page ?? (resets ? 1 : current.page) }
     const request = ++latestRequest
     loading.value = true
+    // Les paramètres choisis sont connus tout de suite : une demande lancée avant la réponse part de ceux-ci, pas des anciens.
+    params.value = next
     try {
       const result = await apiFetch<WatchListResponse>(`/watches?${listQuery(next, PAGE_SIZE)}`)
       if (request !== latestRequest) return
@@ -172,6 +174,8 @@ export const useWatchesStore = defineStore('watches', () => {
     } catch {
       if (request !== latestRequest) return
       if (mode === 'replace') items.value = []
+      // « Voir plus » en échec : la page suivante n'est pas chargée, on la redemandera.
+      else params.value = current
       error.value = 'Impossible de charger vos montres. Réessayez dans un instant.'
     } finally {
       if (request === latestRequest) loading.value = false
@@ -182,6 +186,18 @@ export const useWatchesStore = defineStore('watches', () => {
   async function loadMore(): Promise<void> {
     if (loading.value || items.value.length >= total.value) return
     await list({ page: params.value.page + 1 }, 'append')
+  }
+
+  /** Remet le tableau de bord à zéro (déconnexion) : rien du précédent utilisateur ne doit rester. */
+  function reset(): void {
+    latestRequest++
+    items.value = []
+    counts.value = { ...EMPTY_COUNTS }
+    total.value = 0
+    totalMargin.value = '0.00'
+    params.value = { status: null, q: '', sort: null, order: 'desc', page: 1 }
+    loading.value = false
+    error.value = null
   }
 
   function get(id: number): Promise<WatchDetail> {
@@ -323,6 +339,7 @@ export const useWatchesStore = defineStore('watches', () => {
     error,
     list,
     loadMore,
+    reset,
     get,
     create,
     fetchPreview,

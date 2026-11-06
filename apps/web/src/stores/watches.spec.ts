@@ -122,6 +122,70 @@ describe('useWatchesStore', () => {
     expect(store.error).toContain('Impossible de charger')
   })
 
+  it('une erreur pendant loadMore n’avance pas la page : réessayer redemande la même', async () => {
+    let failNext = true
+    const fetchMock = stubFetch((url) => {
+      if (url.searchParams.get('page') === '1') return reply([card(1, 'sold')], { total: 2 })
+      if (failNext) {
+        failNext = false
+        return { status: 500, body: {} }
+      }
+      return reply([card(2, 'sold')], { total: 2, page: 2 })
+    })
+    const store = useWatchesStore()
+
+    await store.list()
+    await store.loadMore()
+    expect(store.page).toBe(1)
+    await store.loadMore()
+
+    expect(params(fetchMock, 1)).toMatchObject({ page: '2' })
+    expect(params(fetchMock, 2)).toMatchObject({ page: '2' })
+    expect(store.items.map((i) => i.id)).toEqual([1, 2])
+  })
+
+  it('une demande lancée pendant qu’une autre est en vol garde les paramètres de la première', async () => {
+    let release!: () => void
+    const slow = new Promise<void>((resolve) => (release = resolve))
+    const fetchMock = stubFetch(async (url) => {
+      if (url.searchParams.get('q') === 'seiko' && !url.searchParams.get('status')) await slow
+      return reply([])
+    })
+    const store = useWatchesStore()
+
+    const first = store.list({ q: 'seiko' })
+    const second = store.list({ status: 'sold' })
+    release()
+    await Promise.all([first, second])
+
+    expect(params(fetchMock, 1)).toMatchObject({ q: 'seiko', status: 'sold', page: '1' })
+    expect(store.params).toMatchObject({ q: 'seiko', status: 'sold' })
+  })
+
+  it('les paramètres choisis sont connus tout de suite, sans attendre la réponse (deux clics rapides sur Achat)', async () => {
+    stubFetch(() => reply([]))
+    const store = useWatchesStore()
+
+    void store.list({ sort: 'purchase_date', order: 'desc' })
+
+    expect(store.params).toMatchObject({ sort: 'purchase_date', order: 'desc' })
+  })
+
+  it('reset() remet la liste et les paramètres à l’état initial', async () => {
+    stubFetch(() => reply([card(1, 'sold')], { total: 12, totalMargin: '60.00' }))
+    const store = useWatchesStore()
+    await store.list({ q: 'seiko', status: 'sold', sort: 'purchase_date', order: 'asc' })
+
+    store.reset()
+
+    expect(store.items).toEqual([])
+    expect(store.total).toBe(0)
+    expect(store.totalMargin).toBe('0.00')
+    expect(store.counts.all).toBe(0)
+    expect(store.error).toBeNull()
+    expect(store.params).toEqual({ status: null, q: '', sort: null, order: 'desc', page: 1 })
+  })
+
   it('S40 list(status) envoie le filtre et garde les compteurs globaux de la réponse', async () => {
     const fetchMock = stubFetch(() => reply([card(2, 'completed')]))
     const store = useWatchesStore()

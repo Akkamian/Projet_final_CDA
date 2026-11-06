@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { setAccessToken } from '../api/client'
 import { calls, sentBody, stubFetch } from '../test/helpers'
 import { useAuthStore } from './auth'
+import { useWatchesStore } from './watches'
 
 describe('auth store', () => {
   beforeEach(() => {
@@ -101,6 +102,25 @@ describe('auth store', () => {
     await apiFetch('/complications').catch(() => undefined)
 
     expect(auth.isAuthenticated).toBe(false)
+  })
+
+  it('la déconnexion vide le tableau de bord : filtres et montres du précédent utilisateur ne passent pas au suivant', async () => {
+    const auth = useAuthStore()
+    const watches = useWatchesStore()
+    stubFetch((url) =>
+      url.pathname === '/watches'
+        ? { status: 200, body: { items: [], counts: { all: 3, in_progress: 0, completed: 0, sold: 3, no_project: 0 }, total: 3, page: 1, pageSize: 8, totalMargin: '60.00' } }
+        : { status: 200, body: { accessToken: 'tok' } },
+    )
+    await auth.login('foo@bar.fr', 'password123')
+    await watches.list({ q: 'rolex', status: 'sold' })
+    expect(watches.params.q).toBe('rolex')
+
+    await auth.logout()
+
+    expect(watches.params).toEqual({ status: null, q: '', sort: null, order: 'desc', page: 1 })
+    expect(watches.counts.all).toBe(0)
+    expect(watches.totalMargin).toBe('0.00')
   })
 
   it('changePassword garde la session : le nouveau jeton d’accès renvoyé par l’API remplace l’ancien', async () => {

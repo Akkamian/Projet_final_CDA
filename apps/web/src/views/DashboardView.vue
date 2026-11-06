@@ -26,10 +26,13 @@ const selected = computed(() => watches.params.status)
 const search = ref(watches.params.q)
 const searchField = ref<InstanceType<typeof SearchField> | null>(null)
 // En mobile le champ n'a pas de place fixe : il apparaît par le lien « Recherche » (?recherche=1) ou tant qu'il est rempli.
-const showSearch = computed(() => route.query.recherche === '1' || search.value !== '')
+const searchOpen = ref(search.value !== '')
+const showSearch = computed(() => route.query.recherche === '1' || searchOpen.value)
 
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 watch(search, (text) => {
+  // Une fois ouvert, le champ reste là : l'effacer caractère par caractère ne doit pas le démonter.
+  if (text !== '') searchOpen.value = true
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => watches.list({ q: text }), SEARCH_DELAY_MS)
 })
@@ -86,7 +89,8 @@ const subtitle = computed(() =>
     </template>
 
     <p v-if="watches.error" class="alert" role="alert">{{ watches.error }}</p>
-    <template v-else>
+    <!-- Un « Voir plus » en échec garde la liste déjà affichée (et son bouton pour réessayer) sous le message. -->
+    <template v-if="!watches.error || watches.items.length > 0">
       <template v-if="watches.items.length > 0">
         <WatchTable
           v-if="isDesktop"
