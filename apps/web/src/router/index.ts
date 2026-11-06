@@ -16,6 +16,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('../views/NewWatchView.vue'),
   },
   {
+    path: '/watches/:id/edit',
+    name: 'edit-watch',
+    component: () => import('../views/EditWatchView.vue'),
+  },
+  {
     path: '/watches/:id',
     name: 'watch-detail',
     component: () => import('../views/WatchDetailView.vue'),

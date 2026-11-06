@@ -329,6 +329,17 @@ describe('useWatchesStore', () => {
     expect(sentBody(fetchMock, 1)).toEqual({ amount: '30.00' })
   })
 
+  it('S10 update envoie le PATCH de la montre avec le corps donné et renvoie la fiche', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: { id: 7, model: 'Nouveau' } }))
+    const store = useWatchesStore()
+
+    const result = await store.update(7, { model: 'Nouveau', purchasePrice: null })
+
+    expect(calls(fetchMock)).toEqual(['PATCH /watches/7'])
+    expect(sentBody(fetchMock, 0)).toEqual({ model: 'Nouveau', purchasePrice: null })
+    expect(result).toMatchObject({ id: 7 })
+  })
+
   it('S22 S31 setResale et clearResale appellent PUT et DELETE sur la montre', async () => {
     const fetchMock = stubFetch(() => ({ status: 200, body: { id: 7 } }))
     const store = useWatchesStore()

@@ -122,6 +122,16 @@ export interface CreateWatchPayload {
   steps: { label: string }[]
 }
 
+/** Modification d'une montre (S10) : seuls les champs envoyés changent ; `complicationCodes` remplace la liste entière. */
+export interface UpdateWatchPayload {
+  brand?: string
+  model?: string
+  movementCode?: string
+  complicationCodes?: string[]
+  purchasePrice?: string | null
+  purchaseDate?: string | null
+}
+
 const EMPTY_COUNTS: StatusCounts = { all: 0, in_progress: 0, completed: 0, sold: 0, no_project: 0 }
 
 export const useWatchesStore = defineStore('watches', () => {
@@ -208,6 +218,10 @@ export const useWatchesStore = defineStore('watches', () => {
 
   function create(payload: CreateWatchPayload): Promise<WatchDetail> {
     return apiFetch<WatchDetail>('/watches', { method: 'POST', body: JSON.stringify(payload) })
+  }
+
+  function update(id: number, patch: UpdateWatchPayload): Promise<WatchDetail> {
+    return apiFetch<WatchDetail>(`/watches/${id}`, { method: 'PATCH', body: JSON.stringify(patch) })
   }
 
   function fetchPreview(movementCode: string, complicationCodes: string[]): Promise<GeneratedStep[]> {
@@ -344,6 +358,7 @@ export const useWatchesStore = defineStore('watches', () => {
     reset,
     get,
     create,
+    update,
     fetchPreview,
     addStep,
     updateStep,
