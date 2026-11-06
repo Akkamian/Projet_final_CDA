@@ -35,4 +35,26 @@ describe('ConfirmDialog', () => {
 
     expect(wrapper.emitted('cancel')).toHaveLength(1)
   })
+
+  it('la confirmation est une feuille compacte (classes sheet et confirm)', () => {
+    const wrapper = mount(ConfirmDialog, { props })
+
+    expect(wrapper.classes()).toEqual(expect.arrayContaining(['sheet', 'confirm']))
+  })
+
+  it('un clic sur le fond émet cancel', async () => {
+    const wrapper = mount(ConfirmDialog, { props })
+
+    await wrapper.trigger('click')
+
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
+
+  it('le bouton fermer de la feuille émet cancel', async () => {
+    const wrapper = mount(ConfirmDialog, { props })
+
+    await wrapper.find('[data-test="sheet-close"]').trigger('click')
+
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
 })
