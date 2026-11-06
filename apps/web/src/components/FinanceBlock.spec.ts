@@ -239,6 +239,84 @@ describe('FinanceBlock', () => {
     expect(wrapper.emitted('update:resale')![0]![0]).toEqual(unsold)
   })
 
+  it('S21 « + Coût » ouvre la feuille « Ajouter un coût » et reste affiché pendant qu’elle est ouverte', async () => {
+    const wrapper = mountBlock(watch([project(1, 'in_progress', '2025-04-01T10:00:00Z')]))
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Ajouter un coût')
+    expect(wrapper.find('dialog.sheet [data-test="expense-form"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="expense-add"]').exists()).toBe(true)
+  })
+
+  it('S32 « Modifier » un coût ouvre la feuille « Modifier le coût »', async () => {
+    const wrapper = mountBlock(watch([project(1, 'completed', '2025-03-16T10:00:00Z', [expense(1, 'Joint', '12.00')])]))
+
+    await wrapper.find('[data-test="expense-edit-1"]').trigger('click')
+
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Modifier le coût')
+  })
+
+  it('S22 la revente se renseigne et se corrige dans la feuille', async () => {
+    const free = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z')]))
+    await free.find('[data-test="resale-open"]').trigger('click')
+    expect(free.find('dialog.sheet h2').text()).toBe('Renseigner la revente')
+    expect(free.find('dialog.sheet [data-test="resale-form"]').exists()).toBe(true)
+
+    const sold = mountBlock(
+      watch([project(1, 'completed', '2025-04-01T10:00:00Z')], { resalePrice: '200.00', resaleDate: '2025-06-01', margin: '120.00' }),
+    )
+    await sold.find('[data-test="resale-edit"]').trigger('click')
+    expect(sold.find('dialog.sheet h2').text()).toBe('Corriger la revente')
+    expect(sold.find('[data-test="resale-box"]').exists()).toBe(true)
+  })
+
+  it('une seule feuille à la fois : ouvrir la revente remplace celle du coût', async () => {
+    const wrapper = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z', [expense(1, 'Joint', '12.00')])]))
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+    await wrapper.find('[data-test="resale-open"]').trigger('click')
+
+    expect(wrapper.findAll('dialog.sheet')).toHaveLength(1)
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Renseigner la revente')
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+
+    expect(wrapper.findAll('dialog.sheet')).toHaveLength(1)
+    expect(wrapper.find('dialog.sheet h2').text()).toBe('Ajouter un coût')
+  })
+
+  it('Annuler et Échap ferment la feuille de coût et celle de revente sans appel réseau', async () => {
+    const fetchMock = stubFetch(() => ({ status: 200, body: {} }))
+    const wrapper = mountBlock(watch([project(1, 'completed', '2025-04-01T10:00:00Z')]))
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+    await wrapper.find('[data-test="e-cancel"]').trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+
+    await wrapper.find('[data-test="resale-open"]').trigger('click')
+    await wrapper.find('dialog.sheet').trigger('cancel')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+
+    await wrapper.find('[data-test="resale-open"]').trigger('click')
+    await wrapper.find('[data-test="resale-cancel"]').trigger('click')
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(calls(fetchMock)).toEqual([])
+  })
+
+  it('une erreur de validation laisse la feuille de coût ouverte avec la saisie', async () => {
+    const wrapper = mountBlock(watch([project(1, 'in_progress', '2025-04-01T10:00:00Z')]))
+
+    await wrapper.find('[data-test="expense-add"]').trigger('click')
+    await wrapper.find('[data-test="e-label"]').setValue('Poussoirs')
+    await wrapper.find('[data-test="expense-form"]').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('dialog.sheet').exists()).toBe(true)
+    expect(wrapper.find('dialog.sheet [role="alert"]').exists()).toBe(true)
+    expect((wrapper.find('[data-test="e-label"]').element as HTMLInputElement).value).toBe('Poussoirs')
+  })
+
   it('S21 ajouter un coût l’envoie au projet choisi et émet les coûts du projet', async () => {
     const added = expense(5, 'Poussoirs', '34.00', '2025-05-02')
     const fetchMock = stubFetch(() => ({ status: 201, body: added }))

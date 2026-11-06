@@ -6,6 +6,7 @@ import { errorMessage } from '../utils/today'
 import ConfirmDialog from './ConfirmDialog.vue'
 import ExpenseForm from './ExpenseForm.vue'
 import ResaleForm from './ResaleForm.vue'
+import Sheet from './Sheet.vue'
 
 const props = defineProps<{ watch: WatchDetail; selectedProjectId: number | null }>()
 const emit = defineEmits<{
@@ -16,7 +17,7 @@ const emit = defineEmits<{
 const watches = useWatchesStore()
 const busy = ref(false)
 const error = ref<string | null>(null)
-// Un seul formulaire ouvert à la fois : ajout de coût, correction d'un coût, revente (saisie ou correction).
+// Une seule feuille ouverte à la fois : ajout de coût, correction d'un coût, revente (saisie ou correction).
 const expenseForm = ref<{ projectId: number; expense?: ExpenseDetail } | null>(null)
 const resaleOpen = ref(false)
 const removing = ref<{ projectId: number; expense: ExpenseDetail } | null>(null)
@@ -122,7 +123,7 @@ async function confirmClearResale(): Promise<void> {
     <div class="header">
       <h4>Coûts par projet</h4>
       <button
-        v-if="watch.projects.length > 0 && !expenseForm"
+        v-if="watch.projects.length > 0"
         type="button"
         class="ghost"
         data-test="expense-add"
@@ -132,15 +133,16 @@ async function confirmClearResale(): Promise<void> {
       </button>
     </div>
 
-    <ExpenseForm
-      v-if="expenseForm"
-      :key="expenseForm.expense?.id ?? 'new'"
-      :projects="watch.projects"
-      :project-id="expenseForm.projectId"
-      :expense="expenseForm.expense"
-      @saved="expenseSaved"
-      @cancel="expenseForm = null"
-    />
+    <Sheet v-if="expenseForm" :title="expenseForm.expense ? 'Modifier le coût' : 'Ajouter un coût'" @close="expenseForm = null">
+      <ExpenseForm
+        :key="expenseForm.expense?.id ?? 'new'"
+        :projects="watch.projects"
+        :project-id="expenseForm.projectId"
+        :expense="expenseForm.expense"
+        @saved="expenseSaved"
+        @cancel="expenseForm = null"
+      />
+    </Sheet>
 
     <p v-if="groups.length === 0" class="hint">Aucun coût : un coût se rattache à un projet.</p>
     <template v-else>
@@ -182,15 +184,16 @@ async function confirmClearResale(): Promise<void> {
       <strong class="tabular" data-test="cost-price">{{ watch.costPrice === null ? '—' : formatMoney(watch.costPrice) }}</strong>
     </p>
 
-    <ResaleForm
-      v-if="resaleOpen"
-      :watch-id="watch.id"
-      :purchase-date="watch.purchaseDate"
-      :initial="sold ? { price: watch.resalePrice ?? '', date: watch.resaleDate ?? '' } : undefined"
-      @saved="resaleSaved"
-      @cancel="resaleOpen = false"
-    />
-    <div v-else-if="sold" class="resale" data-test="resale-box">
+    <Sheet v-if="resaleOpen" :title="sold ? 'Corriger la revente' : 'Renseigner la revente'" @close="resaleOpen = false">
+      <ResaleForm
+        :watch-id="watch.id"
+        :purchase-date="watch.purchaseDate"
+        :initial="sold ? { price: watch.resalePrice ?? '', date: watch.resaleDate ?? '' } : undefined"
+        @saved="resaleSaved"
+        @cancel="resaleOpen = false"
+      />
+    </Sheet>
+    <div v-if="sold" class="resale" data-test="resale-box">
       <p>
         Revente <span class="date">{{ formatDate(watch.resaleDate!) }}</span>
         <strong v-if="watch.resalePrice !== null"> {{ formatMoney(watch.resalePrice) }}</strong>

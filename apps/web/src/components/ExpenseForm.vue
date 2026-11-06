@@ -68,56 +68,42 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <form class="expense-form" data-test="expense-form" novalidate @submit.prevent="submit">
-    <h3>{{ initial ? 'Modifier le coût' : 'Ajouter un coût' }}</h3>
-    <div v-if="!initial && projects.length > 1" class="field">
-      <label for="e-project">Projet</label>
-      <select id="e-project" v-model.number="targetId" data-test="e-project">
-        <option v-for="p in projects" :key="p.id" :value="p.id">Projet du {{ formatDate(p.createdAt) }}</option>
-      </select>
-    </div>
-    <div class="field">
-      <label for="e-label">Libellé</label>
-      <input id="e-label" v-model="label" data-test="e-label" type="text" maxlength="255" placeholder="Poussoirs" required />
-    </div>
-    <div class="row">
-      <div class="field">
-        <label for="e-amount">Montant (€)</label>
-        <input id="e-amount" v-model="amount" data-test="e-amount" type="text" inputmode="decimal" placeholder="34" required />
+  <form class="sheet-form" data-test="expense-form" novalidate @submit.prevent="submit">
+    <div class="sheet-body">
+      <div v-if="!initial && projects.length > 1" class="field">
+        <label for="e-project">Projet</label>
+        <select id="e-project" v-model.number="targetId" data-test="e-project">
+          <option v-for="p in projects" :key="p.id" :value="p.id">Projet du {{ formatDate(p.createdAt) }}</option>
+        </select>
       </div>
       <div class="field">
-        <label for="e-date">Date</label>
-        <input id="e-date" v-model="date" data-test="e-date" type="date" :max="today()" required />
+        <label for="e-label">Libellé</label>
+        <input id="e-label" v-model="label" data-test="e-label" type="text" maxlength="255" placeholder="Poussoirs" required />
       </div>
+      <div class="sheet-row">
+        <div class="field">
+          <label for="e-amount">Montant (€)</label>
+          <input id="e-amount" v-model="amount" data-test="e-amount" type="text" inputmode="decimal" placeholder="34" required />
+        </div>
+        <div class="field">
+          <label for="e-date">Date</label>
+          <input id="e-date" v-model="date" data-test="e-date" type="date" :max="today()" required />
+        </div>
+      </div>
+      <p v-if="error" class="alert" role="alert">{{ error }}</p>
     </div>
-    <p v-if="error" class="alert" role="alert">{{ error }}</p>
-    <div class="actions">
-      <button type="button" class="btn btn-secondary" :disabled="busy" @click="emit('cancel')">Annuler</button>
-      <button type="submit" class="btn" :disabled="busy">Enregistrer</button>
+    <div class="sheet-footer">
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-secondary" data-test="e-cancel" :disabled="busy" @click="emit('cancel')">Annuler</button>
+        <button type="submit" class="btn" :disabled="busy">Enregistrer</button>
+      </div>
     </div>
   </form>
 </template>
 
 <style scoped>
-.expense-form {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-h3,
-p,
-.field {
+p {
   margin: 0;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
 }
 
 select {
@@ -128,11 +114,5 @@ select {
   background: var(--bg);
   color: var(--text);
   font: inherit;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
 }
 </style>

@@ -50,51 +50,31 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <form class="resale-form" data-test="resale-form" novalidate @submit.prevent="submit">
-    <h3>{{ initial ? 'Corriger la revente' : 'Renseigner la revente' }}</h3>
-    <div class="row">
-      <div class="field">
-        <label for="r-price">Prix de revente (€)</label>
-        <input id="r-price" v-model="price" data-test="resale-price" type="text" inputmode="decimal" placeholder="350" required />
+  <form class="sheet-form" data-test="resale-form" novalidate @submit.prevent="submit">
+    <div class="sheet-body">
+      <div class="sheet-row">
+        <div class="field">
+          <label for="r-price">Prix de revente (€)</label>
+          <input id="r-price" v-model="price" data-test="resale-price" type="text" inputmode="decimal" placeholder="350" required />
+        </div>
+        <div class="field">
+          <label for="r-date">Date de revente</label>
+          <input id="r-date" v-model="date" data-test="resale-date" type="date" :min="purchaseDate ?? undefined" :max="today()" required />
+        </div>
       </div>
-      <div class="field">
-        <label for="r-date">Date de revente</label>
-        <input id="r-date" v-model="date" data-test="resale-date" type="date" :min="purchaseDate ?? undefined" :max="today()" required />
-      </div>
+      <p v-if="error" class="alert" role="alert">{{ error }}</p>
     </div>
-    <p v-if="error" class="alert" role="alert">{{ error }}</p>
-    <div class="actions">
-      <button type="button" class="btn btn-secondary" :disabled="busy" @click="emit('cancel')">Annuler</button>
-      <button type="submit" class="btn" :disabled="busy">Enregistrer</button>
+    <div class="sheet-footer">
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-secondary" data-test="resale-cancel" :disabled="busy" @click="emit('cancel')">Annuler</button>
+        <button type="submit" class="btn" :disabled="busy">Enregistrer</button>
+      </div>
     </div>
   </form>
 </template>
 
 <style scoped>
-.resale-form {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-h3,
-p,
-.field {
+p {
   margin: 0;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
 }
 </style>
