@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ApiError, apiFetch } from '../api/client'
+import WatchIdentityFields from '../components/WatchIdentityFields.vue'
 import type { Complication, MovementType } from '../stores/stepPreview'
 import { useWatchesStore, type UpdateWatchPayload, type WatchDetail } from '../stores/watches'
 import { errorMessage } from '../utils/today'
@@ -74,6 +75,12 @@ function problem(): string | null {
   return null
 }
 
+function toggleComplication(code: string): void {
+  complicationCodes.value = complicationCodes.value.includes(code)
+    ? complicationCodes.value.filter((c) => c !== code)
+    : [...complicationCodes.value, code]
+}
+
 const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((code) => b.includes(code))
 
 /** Uniquement les champs modifiés ; si les complications changent, la liste est envoyée en entier. */
@@ -133,41 +140,20 @@ async function save(): Promise<void> {
     <form v-else-if="original" novalidate @submit.prevent="save">
       <p v-if="error" class="alert" role="alert">{{ error }}</p>
 
-      <div class="field">
-        <label for="brand">Marque</label>
-        <input id="brand" v-model="brand" name="brand" type="text" maxlength="255" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="model">Modèle</label>
-        <input id="model" v-model="model" name="model" type="text" maxlength="255" autocomplete="off" />
-        <span class="field-hint">Le calibre se note dans le modèle (ex. 6119-8100).</span>
-      </div>
-
-      <fieldset>
-        <legend>Type de mouvement</legend>
-        <label v-for="type in movementTypes" :key="type.movementCode" class="choice">
-          <input v-model="movementCode" type="radio" name="movement" :value="type.movementCode" />
-          <span>{{ type.label }}</span>
-        </label>
-      </fieldset>
-
-      <fieldset>
-        <legend>Complications</legend>
-        <label v-for="item in complications" :key="item.complicationCode" class="choice">
-          <input v-model="complicationCodes" type="checkbox" :value="item.complicationCode" />
-          <span>{{ item.label }}</span>
-        </label>
-        <p class="field-hint">Les étapes des projets existants ne changent pas : seules les prochaines révisions en tiennent compte.</p>
-      </fieldset>
-
-      <div class="field">
-        <label for="purchasePrice">Prix d’achat (€) · facultatif</label>
-        <input id="purchasePrice" v-model="purchasePrice" name="purchasePrice" type="text" inputmode="decimal" />
-      </div>
-      <div class="field">
-        <label for="purchaseDate">Date d’achat · facultative</label>
-        <input id="purchaseDate" v-model="purchaseDate" name="purchaseDate" type="date" :max="localToday()" />
-      </div>
+      <WatchIdentityFields
+        v-model:brand="brand"
+        v-model:model="model"
+        v-model:purchase-price="purchasePrice"
+        v-model:purchase-date="purchaseDate"
+        :movement-code="movementCode"
+        :complication-codes="complicationCodes"
+        :movement-types="movementTypes"
+        :complications="complications"
+        :max-date="localToday()"
+        complication-hint="Les étapes des projets existants ne changent pas : seules les prochaines révisions en tiennent compte."
+        @select-movement="movementCode = $event"
+        @toggle-complication="toggleComplication"
+      />
 
       <div class="actions">
         <button class="btn" type="submit" data-test="save" :disabled="busy">Enregistrer</button>
@@ -186,18 +172,6 @@ async function save(): Promise<void> {
 h1,
 p {
   margin: 0;
-}
-
-fieldset {
-  margin: 0 0 var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-legend {
-  padding: 0 var(--space-2);
-  color: var(--text-secondary);
 }
 
 .actions {

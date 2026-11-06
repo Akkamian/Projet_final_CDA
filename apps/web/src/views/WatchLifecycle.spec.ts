@@ -393,6 +393,31 @@ describe('Nouveau projet sur une montre existante (S9)', () => {
     expect(wrapper.find('a[href="/watches/7"]').exists()).toBe(true)
   })
 
+  it('le récapitulatif de la montre existante a quatre lignes : montre, mouvement, complications, achat', async () => {
+    const { wrapper } = await mountNew([card(7, '6119-8100', 'completed')], '/watches/new?watch=7')
+
+    const summary = wrapper.find('[data-test="existing-summary"]')
+    expect(summary.findAll('dt').map((d) => d.text())).toEqual(['Montre', 'Mouvement', 'Complications', 'Achat'])
+    expect(summary.findAll('dd')[3]!.text()).toContain('80 €')
+  })
+
+  it('« Saisir une nouvelle montre » vide la sélection et garde la marque et le modèle déjà saisis', async () => {
+    const { wrapper } = await mountNew([card(7, '6119-8100', 'completed')])
+    await wrapper.find('#brand').setValue('Orient')
+    await wrapper.find('#model').setValue('Bambino')
+    await wrapper.find('#existing-watch').setValue('7')
+    await flushPromises()
+    expect(wrapper.find('[data-test="existing-summary"]').exists()).toBe(true)
+
+    await wrapper.find('[data-test="existing-clear"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="existing-summary"]').exists()).toBe(false)
+    expect((wrapper.find('#existing-watch').element as HTMLSelectElement).value).toBe('')
+    expect((wrapper.find('#brand').element as HTMLInputElement).value).toBe('Orient')
+    expect((wrapper.find('#model').element as HTMLInputElement).value).toBe('Bambino')
+  })
+
   it('la montre est présélectionnée depuis la fiche (« Nouvelle révision »)', async () => {
     const { wrapper } = await mountNew([card(7, '6119-8100', 'completed')], '/watches/new?watch=7')
 

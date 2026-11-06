@@ -76,6 +76,19 @@ describe('EditWatchView (S10)', () => {
     expect((wrapper.find('#purchaseDate').element as HTMLInputElement).value).toBe('2025-03-01')
   })
 
+  it('l’aide « Les étapes des projets existants ne changent pas » s’affiche sous les complications', async () => {
+    const { wrapper } = await mountEdit()
+
+    expect(wrapper.text()).toContain('Les étapes des projets existants ne changent pas')
+  })
+
+  it('le mouvement est un contrôle segmenté et les complications des pastilles', async () => {
+    const { wrapper } = await mountEdit()
+
+    expect(wrapper.findAll('.segmented input[name="movement"]')).toHaveLength(2)
+    expect(wrapper.findAll('.chip-group input[type="checkbox"]')).toHaveLength(2)
+  })
+
   it('enregistrer n’envoie que les champs modifiés puis revient à la fiche', async () => {
     const { wrapper, fetchMock, router } = await mountEdit()
 

@@ -26,7 +26,12 @@ const localDay = (offsetDays: number) => {
 const today = () => localDay(0)
 const tomorrow = () => localDay(1)
 
-function api(onCreate: () => StubResponse = () => ({ status: 201, body: { id: 7, brand: 'Seiko', model: '6119', projects: [{ steps: [{}, {}, {}] }] } })) {
+function api(
+  onCreate: () => StubResponse = () => ({
+    status: 201,
+    body: { id: 7, brand: 'Seiko', model: '6119', projects: [{ steps: [{}, {}, {}] }] },
+  }),
+) {
   return stubFetch((url, init): StubResponse => {
     if (url.pathname === '/movement-types') {
       return {
@@ -174,14 +179,45 @@ describe('NewWatchView', () => {
 
     await toSteps(wrapper)
 
-    expect(labels(wrapper)).toEqual([
-      'Déposer les aiguilles',
-      'Déposer les aiguilles chrono',
-      'Déposer le cadran',
-      'Déposer le balancier',
-    ])
-    const badges = wrapper.findAll('ol.steps li').map((li) => li.find('.badge').exists())
-    expect(badges).toEqual([false, true, false, false])
+    expect(labels(wrapper)).toEqual(['Déposer les aiguilles', 'Déposer les aiguilles chrono', 'Déposer le cadran', 'Déposer le balancier'])
+    const tags = wrapper.findAll('ol.steps li').map((li) => li.find('.step-tag').exists())
+    expect(tags).toEqual([false, true, false, false])
+    expect(wrapper.find('ol.steps li .step-tag').text()).toBe('Chronographe')
+  })
+
+  it('les étapes proposées sont numérotées 01, 02, 03', async () => {
+    api()
+    const wrapper = await mountView()
+    await fillIdentity(wrapper)
+    await toSteps(wrapper)
+
+    expect(wrapper.findAll('ol.steps li .step-order').map((n) => n.text())).toEqual(['01', '02', '03'])
+  })
+
+  it('le bouton « + » ajoute l’étape saisie, comme la touche Entrée', async () => {
+    api()
+    const wrapper = await mountView()
+    await fillIdentity(wrapper)
+    await toSteps(wrapper)
+
+    const add = wrapper.find('button[data-test="add-step"]')
+    expect(add.attributes('aria-label')).toBe('Ajouter une étape')
+    await wrapper.find('input[name="newStep"]').setValue('Polir le verre')
+    await add.trigger('click')
+    await wrapper.find('input[name="newStep"]').setValue('Régler la marche')
+    await wrapper.find('input[name="newStep"]').trigger('keydown.enter')
+
+    expect(labels(wrapper).slice(-2)).toEqual(['Polir le verre', 'Régler la marche'])
+  })
+
+  it('le mouvement est un contrôle segmenté et les complications des pastilles', async () => {
+    api()
+    const wrapper = await mountView()
+
+    expect(wrapper.findAll('.segmented input[name="movement"]')).toHaveLength(2)
+    expect(wrapper.findAll('.chip-group input[type="checkbox"]')).toHaveLength(2)
+    expect(wrapper.find('.pair #purchasePrice').exists()).toBe(true)
+    expect(wrapper.find('.pair #purchaseDate').exists()).toBe(true)
   })
 
   it('S8 supprimer, déplacer et ajouter une étape modifie la liste envoyée', async () => {
